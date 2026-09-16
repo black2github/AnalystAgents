@@ -1,0 +1,5 @@
+.env
+data
+workspace/
+config/
+data.host-snapshot-*
