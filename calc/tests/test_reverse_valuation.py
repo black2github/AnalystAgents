@@ -75,3 +75,22 @@ def test_flat_inputs_compat():
     out = rv.run({"market_cap_usd": 200e9, "revenue_ttm_usd": 10e9, "current_fcf_margin": 0.1,
                   "terminal_fcf_margin": 0.2, "terminal_multiple": 25, "discount_rate": 0.1}, seed=0)
     assert out["validation"]["converged"] is True
+
+
+def test_explicit_margin_path_two_phase():
+    p = rv._norm({**_with_cap(1.0), "margin_transition": {"type": "two_phase_capex_normalization",
+                  "path": {1: -0.75, 2: -0.15, 3: 0.10, 4: {"factor_of_terminal": 0.70}, 5: "terminal"}}})
+    assert rv._margin_at(1, 5, -2.0, 0.27, p["margin_path"]) == -0.75
+    assert rv._margin_at(4, 5, -2.0, 0.27, p["margin_path"]) == pytest.approx(0.189)
+    assert rv._margin_at(5, 5, -2.0, 0.27, p["margin_path"]) == 0.27
+    # Y0 не влияет: одинаковый результат при разной текущей марже
+    base = {**_with_cap(300e9), "margin_transition": {"path": {1: -0.75, 2: -0.15, 3: 0.10, 4: {"factor_of_terminal": 0.7}, 5: "terminal"}}}
+    a = rv.run({**base, "base_period": {"revenue_ttm": 10e9, "current_fcf_margin": -2.0}}, 0)
+    b = rv.run({**base, "base_period": {"revenue_ttm": 10e9, "current_fcf_margin": -0.5}}, 0)
+    assert a["calculated"]["implied_revenue_cagr_5y"] == b["calculated"]["implied_revenue_cagr_5y"]
+    assert a["margin_transition"] == "explicit_path"
+
+
+def test_margin_path_missing_year_raises():
+    with pytest.raises(ValueError):
+        rv.run({**_with_cap(300e9), "margin_transition": {"path": {1: -0.5, 5: "terminal"}}}, 0)

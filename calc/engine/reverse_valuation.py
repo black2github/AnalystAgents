@@ -1,7 +1,8 @@
 """Reverse valuation v1.0: какой 5-летний CAGR выручки заложен в текущей капитализации (спецификация v1.0 от 20.09.2026).
 
 PV_Equity(g) = Σ_{t=1..4} FCF_t/(1+r)^t + FCF_5·M/(1+r)^5,  FCF_t = Revenue_0·(1+g)^t · margin_t,
-margin_t = current + (terminal − current)·t/5 (линейная конвергенция, §5). Equity-мультипликатор: net debt не вычитается (§7).
+margin_t = current + (terminal − current)·t/5 (линейная конвергенция, §5) ЛИБО явная траектория margin_path по годам
+(калибровка: числа, "terminal", {factor_of_terminal: f}); Y0 при явной траектории — только наблюдение. Equity-мультипликатор: net debt не вычитается (§7).
 Enterprise-мультипликатор: TerminalEquity_5 = FCF_5·M − net_debt_5. Решение по g — бисекция в расширяемых границах (§14).
 Классификации V1..V5 движок НЕ придумывает (§12.1): вычисляет метрики и проверяет только существующие переходы
 E-31/E-32/E-33 из текущего состояния Valuation, если оно передано.
@@ -18,7 +19,7 @@ import hashlib
 import json
 import math
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 SPEC_VERSION = "Investment_System_Reverse_Valuation_Specification_v1.0"
 
 # существующие нормативные переходы оси Valuation (triggers.yaml SpaceX); движок их только проверяет
@@ -48,6 +49,7 @@ def _norm(inputs: dict) -> dict:
         "years": int(calc.get("forecast_years", g("forecast_years", d=5))),
         "method": calc.get("terminal_method", g("multiple_kind", d="equity_fcf_multiple")),
         "net_debt_5": calc.get("net_debt_5", g("net_debt_5", d=None)),
+        "margin_path": (inputs.get("margin_transition") or {}).get("path", g("margin_path")),
         "cagr_bounds": list(g("cagr_bounds", d=[-0.5, 3.0])),
         "hard_limit": float(g("hard_limit", d=10.0)),
         "scenario_state": inputs.get("scenario_state"),
@@ -67,12 +69,28 @@ def _norm(inputs: dict) -> dict:
     return p
 
 
+def _margin_at(t: int, n: int, m0: float, m1: float, path) -> float:
+    """Маржа года t: линейная конвергенция (§5) или явный узел траектории (калибровка two_phase_capex_normalization)."""
+    if not path:
+        return m0 + (m1 - m0) * t / n
+    node = path.get(t, path.get(str(t)))
+    if node is None:
+        raise ValueError(f"margin_path: нет узла для года {t}")
+    if isinstance(node, (int, float)):
+        return float(node)
+    if node == "terminal":
+        return m1
+    if isinstance(node, dict) and "factor_of_terminal" in node:
+        return float(node["factor_of_terminal"]) * m1
+    raise ValueError(f"margin_path: непонятный узел года {t}: {node!r}")
+
+
 def _pv_parts(g: float, m1: float, M: float, r: float, p: dict) -> tuple[float, float, float, float]:
     n = p["years"]; rev0 = float(p["revenue0"]); m0 = float(p["m0"])
     pv_interim = 0.0; rev = rev0; fcf_n = 0.0
     for t in range(1, n + 1):
         rev = rev0 * (1.0 + g) ** t
-        fcf_t = rev * (m0 + (m1 - m0) * t / n)
+        fcf_t = rev * _margin_at(t, n, m0, m1, p.get("margin_path"))
         if t < n:
             pv_interim += fcf_t / (1.0 + r) ** t
         else:
@@ -115,7 +133,7 @@ def run(inputs: dict, seed: int) -> dict:
     inputs_hash = hashlib.sha256(json.dumps(inputs, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")).hexdigest()[:16]
     out = {
         "model_version": VERSION, "spec_version": SPEC_VERSION, "inputs_hash": inputs_hash,
-        "scenario_state": p["scenario_state"], "terminal_method": p["method"],
+        "scenario_state": p["scenario_state"], "terminal_method": p["method"], "margin_transition": "explicit_path" if p.get("margin_path") else "linear",
         "calculated": {"equity_value": p["equity_value"], "enterprise_value": p["equity_value"] + float(p["net_debt"]),
                        "terminal_fcf_margin": m_b, "terminal_multiple": M_b, "discount_rate": r, "current_fcf_margin": p["m0"],
                        "revenue_ttm": float(p["revenue0"])},
