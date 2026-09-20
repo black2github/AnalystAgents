@@ -94,3 +94,13 @@ def test_explicit_margin_path_two_phase():
 def test_margin_path_missing_year_raises():
     with pytest.raises(ValueError):
         rv.run({**_with_cap(300e9), "margin_transition": {"path": {1: -0.5, 5: "terminal"}}}, 0)
+
+
+def test_model_stability_classes():
+    assert rv._stability(0.5)["class"] == "stable"
+    assert rv._stability(0.9)["class"] == "terminal_dependent"
+    fr = rv._stability(0.9996)
+    assert fr["class"] == "model_fragile" and fr["valuation_transition_allowed"] is True and fr["require_explicit_model_risk_flag"] is True
+    out = rv.run(_with_cap(300e9), seed=0)
+    assert out["model_stability"]["class"] in ("stable", "terminal_dependent", "model_fragile")
+    assert out["valuation_state"]["evaluation_case"] == "calibration_base_case"

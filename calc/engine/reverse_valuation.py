@@ -19,8 +19,8 @@ import hashlib
 import json
 import math
 
-VERSION = "1.1.0"
-SPEC_VERSION = "Investment_System_Reverse_Valuation_Specification_v1.0"
+VERSION = "1.2.0"
+SPEC_VERSION = "Investment_System_Reverse_Valuation_Specification_v1.0 + Rules_v1.1"
 
 # существующие нормативные переходы оси Valuation (triggers.yaml SpaceX); движок их только проверяет
 VALUATION_TRANSITIONS = [
@@ -85,6 +85,17 @@ def _margin_at(t: int, n: int, m0: float, m1: float, path) -> float:
     raise ValueError(f"margin_path: непонятный узел года {t}: {node!r}")
 
 
+def _stability(tv_share) -> dict:
+    """Правила v1.1 §1: диагностика устойчивости модели по доле терминальной стоимости; состояние Valuation не меняет."""
+    if tv_share is None:
+        return {"class": "unknown", "valuation_transition_allowed": True}
+    if tv_share < 0.80:
+        return {"class": "stable", "valuation_transition_allowed": True, "require_sensitivity_evidence": False, "require_explicit_model_risk_flag": False}
+    if tv_share < 0.95:
+        return {"class": "terminal_dependent", "valuation_transition_allowed": True, "require_sensitivity_evidence": True, "require_explicit_model_risk_flag": False}
+    return {"class": "model_fragile", "valuation_transition_allowed": True, "require_sensitivity_evidence": True, "require_explicit_model_risk_flag": True}
+
+
 def _pv_parts(g: float, m1: float, M: float, r: float, p: dict) -> tuple[float, float, float, float]:
     n = p["years"]; rev0 = float(p["revenue0"]); m0 = float(p["m0"])
     pv_interim = 0.0; rev = rev0; fcf_n = 0.0
@@ -140,7 +151,9 @@ def run(inputs: dict, seed: int) -> dict:
         "validation": {"converged": base.get("converged", False), "residual": base.get("residual"), "status": base["status"],
                        "assumption_conflict": False},
         "sensitivity": {"margin_multiple_grid": {}, "discount_rate_grid": {}},
-        "valuation_state": {"previous": p["current_v"], "candidate": p["current_v"], "transition_trigger": None, "transition_allowed": False},
+        "valuation_state": {"previous": p["current_v"], "candidate": p["current_v"], "transition_trigger": None, "transition_allowed": False,
+                            "evaluation_case": "calibration_base_case"},
+        "model_stability": None,
     }
     if base["status"] != "ok":
         out["calculated"]["implied_revenue_cagr_5y"] = None
@@ -154,6 +167,7 @@ def run(inputs: dict, seed: int) -> dict:
         "terminal_value_share_of_pv": round(base["pv_terminal"] / pv_total, 4) if pv_total else None,
         "control_cagr": round((base["terminal_revenue"] / float(p["revenue0"])) ** (1.0 / p["years"]) - 1.0, 6),
     })
+    out["model_stability"] = _stability(out["calculated"]["terminal_value_share_of_pv"])
     # sensitivity 3×3 по марже × мультипликатору (если заданы min/max)
     ms = [m_r.get(k) for k in ("min", "base", "max") if m_r.get(k) is not None]
     Ms = [M_r.get(k) for k in ("min", "base", "max") if M_r.get(k) is not None]
