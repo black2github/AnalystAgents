@@ -54,6 +54,7 @@ def test_deterministic_and_outputs():
     assert 0 <= r["P_2x_5Y"] <= 1 and 0 <= d["P_loss_gt_30pct_5Y"] <= 1
     assert -1 <= d["max_drawdown_5Y_quantiles"]["0.5"] <= 0
     assert a["base"]["scenario"]["scenario_concentration"] is None
+    assert r["CAGR_3Y_bridge_dependent"] is True
 
 
 def test_higher_starting_value_lowers_returns():

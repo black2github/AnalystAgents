@@ -19,7 +19,7 @@ import math
 import numpy as np
 from scipy.special import ndtr
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 SPEC_VERSION = "SPCX_Conditional_Monte_Carlo_Specification_v1.0"
 VARS = ["AI_growth", "Connectivity_growth", "Space_growth", "margin_improvement", "terminal_margin", "terminal_multiple"]
 SEGMENTS = {"AI": "AI_growth", "Connectivity": "Connectivity_growth", "Space": "Space_growth"}
@@ -161,7 +161,9 @@ def _summarize(E0, acc, quantiles):
         "return": {"median_CAGR_3Y": float(np.median(c3)), "median_CAGR_5Y": med5, "median_CAGR_8Y": med8,
                    "P_2x_3Y": float((r3 >= 2).mean()), "P_2x_5Y": float((r5 >= 2).mean()), "P_2x_8Y": float((r8 >= 2).mean()),
                    "P_5x_5Y": float((r5 >= 5).mean()), "P_5x_8Y": float((r8 >= 5).mean()),
-                   "CAGR_5Y_quantiles": qs},
+                   "CAGR_5Y_quantiles": qs,
+                   "CAGR_3Y_bridge_dependent": True,
+                   "CAGR_3Y_note": "3Y оценивается через revenue-multiple bridge (§5) — структурно менее надёжен, чем 5Y (решение автора спецификации 20.09)"},
         "downside": {"P_loss_gt_30pct_5Y": float((r5 < 0.7).mean()), "P_loss_gt_50pct_5Y": float((r5 < 0.5).mean()),
                      "expected_shortfall_5pct_5Y": es5,
                      "max_drawdown_5Y_quantiles": {str(qq): float(np.quantile(dd, qq)) for qq in (0.05, 0.25, 0.5, 0.75, 0.95)},
