@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import importlib
 
-from engine import reverse_valuation, selftest, valuation_multiple
+from engine import conditional_mc, portfolio_regime, reverse_valuation, selftest, valuation_multiple
 
 importlib.reload(selftest)
 importlib.reload(valuation_multiple)
 importlib.reload(reverse_valuation)
+importlib.reload(portfolio_regime)
+importlib.reload(conditional_mc)
 
 MODELS = {
     "selftest": {
@@ -24,5 +26,15 @@ MODELS = {
         "version": reverse_valuation.VERSION,
         "fn": reverse_valuation.run,
         "doc": reverse_valuation.__doc__.strip().splitlines()[0],
+    },
+    "portfolio_regime": {
+        "version": portfolio_regime.VERSION,
+        "fn": portfolio_regime.run,
+        "doc": portfolio_regime.__doc__.strip().splitlines()[0],
+    },
+    "conditional_mc": {
+        "version": conditional_mc.VERSION,
+        "fn": conditional_mc.run,
+        "doc": conditional_mc.__doc__.strip().splitlines()[0],
     },
 }
