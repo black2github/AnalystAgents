@@ -7,12 +7,14 @@ inputs:
   sector_benchmarks: {sector_id: {index, index_12m_max}}  (сектора без benchmark исключаются из знаменателя)
   severity: {WATCH: -0.15, STRESS: -0.25, SHOCK: -0.40}; regime_rules — v1.0 по умолчанию (переопределяемы)
   limits: {single_name_max_weight, sector_max_weight, ...} — проверка нарушений, если заданы
+  sector_overrides (1.1.0): [{sector_id, min_weight, dd_threshold, regime_floor}] — floor режима по концентрации сектора
+  (AI_COMPUTE_Sector_Benchmark_Specification_v1.0 §8); sector_benchmarks[sid].quality — пробрасывается в benchmark_quality
 outputs: nav, weights, drawdowns (по позициям, портфелю, секторам), weighted_sector_drawdown + benchmark_coverage,
   breadth, regime, constraint_breaches. Детерминированно, seed не используется. Не торговый сигнал (§10).
 """
 from __future__ import annotations
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 DEFAULT_SEVERITY = {"WATCH": -0.15, "STRESS": -0.25, "SHOCK": -0.40}
 DEFAULT_REGIME = {  # model_assumption v1.0
     "stress": {"portfolio_dd": -0.15, "sector_dd": -0.20, "breadth_dd": -0.25, "breadth_frac": 0.25},
@@ -84,7 +86,26 @@ def run(inputs: dict, seed: int) -> dict:
     stress = (rules["shock"]["portfolio_dd"] < portfolio_dd <= rules["stress"]["portfolio_dd"]) \
         or (sdd is not None and rules["shock"]["sector_dd"] < sdd <= rules["stress"]["sector_dd"]) \
         or frac_le_25 >= rules["stress"]["breadth_frac"]
-    regime = "Shock" if shock else ("Stress" if stress else "Normal")
+    regime_base = "Shock" if shock else ("Stress" if stress else "Normal")
+
+    # 1.1.0: concentration override — floor режима по сектору (AI_COMPUTE_Sector_Benchmark_Specification_v1.0 §8):
+    # если вес сектора в NAV >= min_weight И его просадка <= dd_threshold → режим не мягче regime_floor.
+    # Только floor: просадка второй раз в weighted_sector_dd не добавляется (no_double_count).
+    rank = {"Normal": 0, "Stress": 1, "Shock": 2}
+    floors_applied = []
+    for ov in inputs.get("sector_overrides") or []:
+        sid = ov.get("sector_id")
+        w = sector_weights.get(sid, 0.0)
+        dd = sector_dd.get(sid)
+        if dd is None:
+            continue
+        if w >= float(ov["min_weight"]) and dd <= float(ov["dd_threshold"]):
+            floors_applied.append({"sector_id": sid, "weight": round(w, 4), "drawdown": round(dd, 4), "regime_floor": ov["regime_floor"],
+                                   "provenance": ov.get("provenance", "model_assumption")})
+    regime = regime_base
+    for f in floors_applied:
+        if rank[f["regime_floor"]] > rank[regime]:
+            regime = f["regime_floor"]
 
     breaches = []
     lim = limits.get("single_name_max_weight")
@@ -113,7 +134,9 @@ def run(inputs: dict, seed: int) -> dict:
                       "weighted_sector": None if weighted_sector_dd is None else round(weighted_sector_dd, 4),
                       "benchmark_coverage": round(coverage, 4)},
         "breadth": {"fraction_positions_dd_le_stress": round(frac_le_25, 4), "fraction_positions_dd_le_shock": round(frac_le_40, 4), "n_positions_with_dd": n},
-        "regime": regime, "regime_rules_provenance": "model_assumption v1.0",
+        "regime": regime, "regime_base": regime_base, "regime_floors_applied": floors_applied,
+        "regime_rules_provenance": "model_assumption v1.0",
+        "benchmark_quality": {sid: b.get("quality", "external") for sid, b in bench.items() if isinstance(b, dict)},
         "constraint_breaches": breaches,
     }
 

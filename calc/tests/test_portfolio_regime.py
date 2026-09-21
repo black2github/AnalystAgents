@@ -55,6 +55,22 @@ def test_limits_breaches():
     assert "single_name_max_weight" in kinds and "minimum_dry_powder_weight" in kinds
 
 
+def test_sector_override_floor_without_double_count():
+    # база: Normal (портфель у максимума, бумаги без просадки); сектор AI_COMPUTE — 40% NAV с просадкой benchmark −30%
+    pos = [{"ticker": "A", "sector_id": "AI_COMPUTE", "quantity": 4, "price": 100, "price_12m_max": 100},
+           {"ticker": "B", "sector_id": "SOFTWARE", "quantity": 6, "price": 100, "price_12m_max": 100}]
+    bench = {"AI_COMPUTE": {"index": 700, "index_12m_max": 1000, "quality": "provisional_low_breadth"}, "SOFTWARE": {"index": 100, "index_12m_max": 100}}
+    ov = [{"sector_id": "AI_COMPUTE", "min_weight": 0.20, "dd_threshold": -0.25, "regime_floor": "Stress"},
+          {"sector_id": "AI_COMPUTE", "min_weight": 0.25, "dd_threshold": -0.40, "regime_floor": "Shock"}]
+    out = pr.run({"positions": pos, "cash": [], "nav_running_max": 1000.0, "sector_benchmarks": bench, "sector_overrides": ov}, 0)
+    # взвешенная секторная: 0.4*(-0.3) + 0.6*0 = -0.12 → выше порога Stress (−0.20) → база Normal; floor даёт Stress
+    assert out["drawdowns"]["weighted_sector"] == pytest.approx(-0.12)
+    assert out["regime_base"] == "Normal" and out["regime"] == "Stress"
+    assert [f["regime_floor"] for f in out["regime_floors_applied"]] == ["Stress"]   # порог Shock (−40%) не достигнут
+    assert out["benchmark_quality"]["AI_COMPUTE"] == "provisional_low_breadth"
+    assert pr.run({"positions": pos, "cash": [], "nav_running_max": 1000.0, "sector_benchmarks": bench}, 0)["regime"] == "Normal"
+
+
 def test_rejects_bad_inputs():
     with pytest.raises(ValueError):
         pr.run({"positions": [{"ticker": "A", "quantity": -1, "price": 10}], "cash": []}, 0)
