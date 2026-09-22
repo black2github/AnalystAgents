@@ -131,3 +131,12 @@ milestone_model                                # срез 3
   внутри списка вех (по id). Тесты 4 (произведение вероятностей цепочки, доли состояний/оснований, отказы и размытие,
   mapping вех/сервиса, валидация/детерминизм); всего 49/49. Схема калибровки C — в docstring milestone_mc.py.
 - Очередь: срез 4 (RelativeValue по путям для MPC/Optimizer, сходимость, перевод SPCX на v2).
+- **Срез 4 — 22.09.2026, company_mc 2.3.0 + portfolio_paths 1.0.0 + app.py.** `store_paths: true` → сайдкар подставляет
+  `_run_id`/`_runs_dir`, движок пишет `<run_id>-paths.npz` (r3/r5/r8/maxdd5 float32, b3/b5/b8 int8, path_id int64, meta JSON:
+  ticker, версия, global_seed, chunk, paths, joint, scenario, E0). `portfolio_paths`: PortfolioValue_h = Σ w_i·r_i,h + w_dp·(1+r_dp)^h
+  по совпадающим path_id; проверка выравнивания по meta (global_seed/chunk/paths), joint_layer_all как флаг качества;
+  выходы: медианный CAGR 3/5/8Y, P(2x), P(loss>30/50%), ES5, квантили, вклад компаний в медиану Y5, корреляции
+  log-стоимостей Y5. Сходимость дополнена P(loss>30%) (допуск 0.01). Тесты 3 (файл и выравнивание, отказ невыровненных,
+  сходимость); всего 52/52. Инвариант: агрегация только по одному global_seed и chunk у всех компаний.
+- Ограничение (задокументировано): без joint-слоя (mapping) пути компаний экономически не связаны — общий seed
+  синхронизирует лишь идиосинкратику; portfolio_paths выдаёт joint_layer_all=false как предупреждение.

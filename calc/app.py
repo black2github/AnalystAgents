@@ -74,8 +74,13 @@ def run(req: RunRequest) -> dict[str, Any]:
         raise HTTPException(409, f"model {req.model} has version {entry['version']}, requested {req.version}")
     seed = req.seed if req.seed is not None else int(time.time()) % 1_000_000
     t0 = time.perf_counter()
-    outputs = entry["fn"](req.inputs, seed)
     run_id = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + "-" + req.model + "-" + uuid.uuid4().hex[:6]
+    inputs = dict(req.inputs)
+    if inputs.get("store_paths"):  # модели, пишущие пути (company_mc): файл рядом с записью прогона
+        RUNS.mkdir(parents=True, exist_ok=True)
+        inputs["_run_id"] = run_id
+        inputs["_runs_dir"] = str(RUNS)
+    outputs = entry["fn"](inputs, seed)
     record = {
         "run_id": run_id,
         "model": req.model,

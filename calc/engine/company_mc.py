@@ -8,7 +8,9 @@ inputs: {"calibration": <dict v2 | SPCX v1.0 (авто-адаптер)>, "equity
          "joint_layer_spec": <dict Joint_Simulation_Layer_Schema> (нужен при driver_parameter_mapping),
          "global_seed": int (общий для всех компаний в совместном прогоне; по умолчанию = seed калибровки),
          "scenario": {"id", "driver_overrides": {DRIVER: {"mean_shift_sigma", "volatility_multiplier"}}} (BASE, если нет),
-         "knockout": [driver_id], "adverse_driver_stress": [driver_id]}
+         "knockout": [driver_id], "adverse_driver_stress": [driver_id],
+         "store_paths": bool — записать относительные стоимости по путям в <_runs_dir>/<_run_id>-paths.npz (срез 4; для
+         portfolio_paths / MPC / Optimizer); "_run_id", "_runs_dir" подставляет сайдкар}
 Интерпретация движка (срез 2): эффект драйвера на параметр — сглаженный шок (lag + half-life, в сигмах); для роста —
 по кварталам, для узлов маржи/мультипликаторов — значение сглаженного шока в квартале горизонта (Y3→q12, Y5→q20, Y8→q32).
 Целевые пути mapping, которых движок не знает (например capacity_model.*), попадают в mapping_warnings и не применяются.
@@ -26,7 +28,7 @@ from scipy.stats import beta as _beta, norm as _norm
 
 from engine import joint_layer, milestone_mc
 
-VERSION = "2.2.0"
+VERSION = "2.3.0"
 SPEC_VERSION = "MC_Calibration_Archetypes_v1.0+Rules_v1.1+Joint_Simulation_Layer_v1.0"
 QUARTERS = 32
 ARCHETYPES = ("mature_positive_margin", "capital_intensive_transition", "pre_service_or_milestone_driven")
@@ -396,7 +398,7 @@ def _summarize(E0, acc, quantiles, cal):
     }
 
 
-def _run_once(cal, E0, paths, seed, chunk, P, quantiles, joint):
+def _run_once(cal, E0, paths, seed, chunk, P, quantiles, joint, keep_paths=False):
     rng = np.random.default_rng(seed)
     acc = None
     done = 0; base_annual = None; warnings = []; ci = 0
@@ -418,6 +420,10 @@ def _run_once(cal, E0, paths, seed, chunk, P, quantiles, joint):
         done += n; ci += 1
     acc = {k: np.concatenate(v)[:paths] for k, v in acc.items()}; acc["base_annual"] = base_annual
     out = _summarize(E0, acc, quantiles, cal); out["mapping_warnings"] = sorted(set(warnings))
+    if keep_paths:
+        out["_paths"] = {"r3": (acc["E3"] / E0).astype(np.float32), "r5": (acc["E5"] / E0).astype(np.float32), "r8": (acc["E8"] / E0).astype(np.float32),
+                         "maxdd5": acc["maxdd5"].astype(np.float32), "b3": acc["b3"].astype(np.int8), "b5": acc["b5"].astype(np.int8), "b8": acc["b8"].astype(np.int8),
+                         "path_id": np.arange(paths, dtype=np.int64)}
     return out
 
 
@@ -446,8 +452,21 @@ def run(inputs: dict, seed: int) -> dict:
         joint = {"spec": spec, "drivers": drivers, "global_seed": int(inputs.get("global_seed", seed_used)), "scenario": inputs.get("scenario"), "adverse": adverse}
         if inputs.get("knockout"):
             knockout_applied = _apply_knockout(cal, list(inputs["knockout"]))
-    base = _run_once(cal, E0, paths, seed_used, chunk, P0, quantiles, joint)
-    out = {"model_version": VERSION, "spec_version": SPEC_VERSION, "ticker": cal.get("ticker"), "archetype": cal["archetype"],
+    store = bool(inputs.get("store_paths"))
+    base = _run_once(cal, E0, paths, seed_used, chunk, P0, quantiles, joint, keep_paths=store)
+    paths_file = None
+    if store:
+        import os
+        rd = inputs.get("_runs_dir"); rid = inputs.get("_run_id")
+        if not rd or not rid:
+            raise ValueError("store_paths: нужны _runs_dir и _run_id (подставляет сайдкар)")
+        arrays = base.pop("_paths")
+        meta = {"ticker": cal.get("ticker"), "model_version": VERSION, "global_seed": (joint or {}).get("global_seed", seed_used), "seed": seed_used,
+                "chunk": chunk, "paths": paths, "joint": bool(joint), "scenario": (inputs.get("scenario") or {}).get("id", "BASE"), "equity_value_0": E0,
+                "archetype": cal["archetype"], "path_id_rule": "path_id = chunk_index*chunk + i"}
+        paths_file = os.path.join(rd, f"{rid}-paths.npz")
+        np.savez_compressed(paths_file, meta=np.array(json.dumps(meta, ensure_ascii=False)), **arrays)
+    out = {"model_version": VERSION, "paths_file": paths_file, "spec_version": SPEC_VERSION, "ticker": cal.get("ticker"), "archetype": cal["archetype"],
            "margin_method": (cal.get("margin_model") or {}).get("method") or ("milestone_model" if cal["archetype"] == "pre_service_or_milestone_driven" else None), "adapted_from": cal.get("adapted_from"), "state_vector": cal.get("state_vector"),
            "inputs_hash": hashlib.sha256(json.dumps(inputs, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")).hexdigest()[:16],
            "seed": seed_used, "paths": paths, "equity_value_0": E0, "factor_correlation_psd_fixed": fixed,
@@ -460,10 +479,10 @@ def run(inputs: dict, seed: int) -> dict:
         conv = {}
         for pth in sorted({min(100_000, paths), min(250_000, paths), paths}):
             r = _run_once(cal, E0, pth, seed_used, chunk, P0, quantiles, joint)
-            conv[str(pth)] = {"median_CAGR_5Y": r["return"]["median_CAGR_5Y"], "ES5": r["downside"]["expected_shortfall_5pct_5Y"]}
+            conv[str(pth)] = {"median_CAGR_5Y": r["return"]["median_CAGR_5Y"], "ES5": r["downside"]["expected_shortfall_5pct_5Y"], "P_loss_gt_30pct_5Y": r["downside"]["P_loss_gt_30pct_5Y"]}
         vals = list(conv.values())
-        out["convergence"] = {"runs": conv, "stable": all(abs(v["median_CAGR_5Y"] - vals[-1]["median_CAGR_5Y"]) < 0.005 and abs(v["ES5"] - vals[-1]["ES5"]) < 0.01 for v in vals),
-                              "tolerance": {"median_CAGR_5Y": 0.005, "ES5": 0.01}}
+        out["convergence"] = {"runs": conv, "stable": all(abs(v["median_CAGR_5Y"] - vals[-1]["median_CAGR_5Y"]) < 0.005 and abs(v["ES5"] - vals[-1]["ES5"]) < 0.01 and abs(v["P_loss_gt_30pct_5Y"] - vals[-1]["P_loss_gt_30pct_5Y"]) < 0.01 for v in vals),
+                              "tolerance": {"median_CAGR_5Y": 0.005, "ES5": 0.01, "P_loss_gt_30pct_5Y": 0.01}}
     if inputs.get("robustness", True):
         rt = (cal.get("robustness_tests") or {}).get("Scenario_Robustness") or {}
         pert = rt.get("perturbations") or {}; tol = float(rt.get("delta_tolerance", 0.10))

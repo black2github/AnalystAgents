@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import importlib
 
-from engine import company_mc, conditional_mc, conviction_overlay, portfolio_regime, reverse_valuation, selftest, synthetic_basket, valuation_multiple
+from engine import company_mc, conditional_mc, conviction_overlay, portfolio_paths, portfolio_regime, reverse_valuation, selftest, synthetic_basket, valuation_multiple
 
 importlib.reload(selftest)
 importlib.reload(valuation_multiple)
@@ -13,6 +13,7 @@ importlib.reload(conditional_mc)
 importlib.reload(synthetic_basket)
 importlib.reload(conviction_overlay)
 importlib.reload(company_mc)
+importlib.reload(portfolio_paths)
 
 MODELS = {
     "selftest": {
@@ -54,5 +55,10 @@ MODELS = {
         "version": company_mc.VERSION,
         "fn": company_mc.run,
         "doc": company_mc.__doc__.strip().splitlines()[0],
+    },
+    "portfolio_paths": {
+        "version": portfolio_paths.VERSION,
+        "fn": portfolio_paths.run,
+        "doc": portfolio_paths.__doc__.strip().splitlines()[0],
     },
 }
