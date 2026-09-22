@@ -24,9 +24,9 @@ import numpy as np
 from scipy.special import ndtr
 from scipy.stats import beta as _beta, norm as _norm
 
-from engine import joint_layer
+from engine import joint_layer, milestone_mc
 
-VERSION = "2.1.0"
+VERSION = "2.2.0"
 SPEC_VERSION = "MC_Calibration_Archetypes_v1.0+Rules_v1.1+Joint_Simulation_Layer_v1.0"
 QUARTERS = 32
 ARCHETYPES = ("mature_positive_margin", "capital_intensive_transition", "pre_service_or_milestone_driven")
@@ -107,7 +107,11 @@ def _normalize(cal: dict) -> dict:
     if cal.get("archetype") not in ARCHETYPES:
         raise ValueError(f"archetype должен быть одним из {ARCHETYPES}")
     if cal["archetype"] == "pre_service_or_milestone_driven":
-        raise NotImplementedError("архетип C (milestone) — срез 3")
+        for k in ("milestone_model", "cash_model", "valuation"):
+            if k not in cal:
+                raise ValueError(f"архетип C: нужна секция {k}")
+        if "service_onset_milestone" not in cal["milestone_model"]:
+            raise ValueError("архетип C: milestone_model.service_onset_milestone обязателен")
     return cal
 
 
@@ -158,6 +162,11 @@ def _shift_path(cal: dict, path: str, delta: float):
     """Сдвиг параметра калибровки по пути вида revenue_model.segments.AI.initial_growth[.mode]. Распределение — сдвиг всех положений."""
     parts = path.split("."); node = cal
     for p in parts[:-1]:
+        if isinstance(node, list):
+            node = next((m for m in node if isinstance(m, dict) and m.get("id") == p), None)
+            if node is None:
+                raise KeyError(f"путь {path}: нет вехи {p}")
+            continue
         if p not in node:
             raise KeyError(f"путь {path}: нет ключа {p}")
         node = node[p]
@@ -176,7 +185,7 @@ def _shift_path(cal: dict, path: str, delta: float):
 
 def _driver_effects(cal: dict, shocks: dict | None, n: int):
     """Из driver_parameter_mapping и шоков → корректировки: growth_add[seg](n,32), growth_mul[seg](n,32), margin_add[key](n,), mult_mul[Yh](n,)."""
-    eff = {"growth_add": {}, "growth_mul": {}, "margin_add": {}, "mult_mul": {}, "warnings": []}
+    eff = {"growth_add": {}, "growth_mul": {}, "margin_add": {}, "mult_mul": {}, "milestone_prob_logit": {}, "milestone_timing": {}, "warnings": []}
     if not shocks:
         return eff
     for m in cal.get("driver_parameter_mapping") or []:
@@ -187,7 +196,7 @@ def _driver_effects(cal: dict, shocks: dict | None, n: int):
             x = joint_layer.effective_shock(shocks[d], int(t.get("lag_quarters", 0)), t.get("decay_half_life_quarters"))
             e = float(t["effect_per_plus_1sigma"]); tr = t.get("transform", "additive_pp"); path = t["path"]
             parts = path.split(".")
-            if parts[0] == "revenue_model" and parts[1] == "segments" and len(parts) >= 4 and parts[3] == "initial_growth":
+            if parts[0] == "revenue_model" and parts[1] in ("segments", "existing_segments", "service_segments") and len(parts) >= 4 and parts[3] in ("initial_growth", "post_service_growth"):
                 seg = parts[2]
                 if tr == "additive_pp":
                     eff["growth_add"][seg] = eff["growth_add"].get(seg, 0) + e * x
@@ -196,7 +205,17 @@ def _driver_effects(cal: dict, shocks: dict | None, n: int):
                     eff["growth_mul"][seg] = eff["growth_mul"].get(seg, 1) * f
                 else:
                     eff["warnings"].append(f"{d}: transform {tr} для {path} не поддерживается")
-            elif parts[0] == "margin_model":
+            elif parts[0] == "milestone_model" and len(parts) >= 4 and parts[1] == "milestones":
+                mid, what = parts[2], parts[3]
+                ms_ = next((m for m in (cal["milestone_model"]["milestones"]) if m["id"] == mid), None)
+                qm = int(min(31, max(0, round(float(((ms_ or {}).get("timing") or {}).get("mode", 4))))))
+                if what == "probability" and tr == "probability_logit_shift":
+                    eff["milestone_prob_logit"][mid] = eff["milestone_prob_logit"].get(mid, 0) + e * x[:, qm]
+                elif what == "timing" and tr == "timing_quarters_shift":
+                    eff["milestone_timing"][mid] = eff["milestone_timing"].get(mid, 0) + e * x[:, qm]
+                else:
+                    eff["warnings"].append(f"{d}: {tr} для {path} не поддерживается (нужны probability_logit_shift / timing_quarters_shift)")
+            elif parts[0] in ("margin_model", "cash_model"):
                 key = parts[-1] if parts[-1] not in ("mode",) else parts[-2]
                 q = HORIZON_Q["Y3"] if "Y3" in key else (HORIZON_Q["Y8"] if "Y8" in key else HORIZON_Q["Y5"])
                 if tr != "additive_pp":
@@ -327,6 +346,8 @@ def _simulate_chunk(rng, n, cal, E0, P, shocks):
     z = rng.standard_normal((half, 3)); z = np.vstack([z, -z])[:n] if half < n else z[:n]
     draw = _Draw(rng, n, z @ L.T, dep.get("default_loading", 0.7))
     eff = _driver_effects(cal, shocks, n)
+    if cal["archetype"] == "pre_service_or_milestone_driven":
+        return milestone_mc.simulate_chunk(draw, cal, E0, P, eff)
     rev_y, base_annual = _revenue(draw, cal, P, eff)
     margins = _margins(draw, cal, P, eff); fcf_y = rev_y * margins
     E3, b3 = _value_at(draw, cal, P, "Y3", rev_y[:, 2], fcf_y[:, 2], eff)
@@ -348,12 +369,14 @@ def _summarize(E0, acc, quantiles, cal):
     pr_class = None if pr is None else ("strong" if pr >= 0.75 else ("moderate" if pr >= 0.5 else "weak"))
     basis_share = {}
     for h, key in (("Y3", "b3"), ("Y5", "b5"), ("Y8", "b8")):
-        b = acc[key]; basis_share[h] = {"multiple": float((b == 0).mean()), "revenue_bridge": float((b == 1).mean()), "negative_fcf_fallback": float((b == 2).mean())}
-    bridge_dep = {h: (v["revenue_bridge"] + v["negative_fcf_fallback"]) > 0.0 for h, v in basis_share.items()}
-    rev_cagr5 = float(np.median(np.power(acc["rev5"] / acc["base_annual"], 0.2) - 1.0))
+        b = acc[key]; basis_share[h] = {"multiple": float((b == 0).mean()), "revenue_bridge": float((b == 1).mean()), "negative_fcf_fallback": float((b == 2).mean()),
+                                        "milestone_conditioned_EV": float((b == 3).mean()), "failure_residual": float((b == 4).mean())}
+    bridge_dep = {h: (v["revenue_bridge"] + v["negative_fcf_fallback"] + v["milestone_conditioned_EV"] + v["failure_residual"]) > 0.0 for h, v in basis_share.items()}
+    ba = acc["base_annual"]
+    rev_cagr5 = float(np.median(np.power(acc["rev5"] / ba, 0.2) - 1.0)) if (ba is not None and np.isfinite(ba) and ba > 0) else None
     gaps = {"median_revenue_CAGR_5Y": rev_cagr5, "median_fcf_margin_Y5": float(np.median(acc["m5"]))}
     rv = cal.get("reverse_valuation_ref") or {}
-    if rv.get("implied_revenue_cagr_5y") is not None:
+    if rv.get("implied_revenue_cagr_5y") is not None and rev_cagr5 is not None:
         gaps["RV_Growth_Gap"] = float(rv["implied_revenue_cagr_5y"]) - rev_cagr5
     if rv.get("discount_rate") is not None:
         r = float(rv["discount_rate"]); gaps["Price_Expectation_Gap"] = float(E0 / (np.median(E5) / (1 + r) ** 5))
@@ -369,12 +392,13 @@ def _summarize(E0, acc, quantiles, cal):
         "scenario": {"variance_within_state_CAGR_5Y": float(np.var(c5)), "variance_between_state_scenarios": None,
                      "persistence_ratio": pr, "persistence_class": pr_class, "scenario_concentration": None},
         "valuation_basis_share": basis_share, "gap_metrics": gaps, "median_equity_value_5Y_b": float(np.median(E5) / 1e9),
+        **(milestone_mc.summarize_extra(acc) if "ms5" in acc else {}),
     }
 
 
 def _run_once(cal, E0, paths, seed, chunk, P, quantiles, joint):
     rng = np.random.default_rng(seed)
-    acc = {k: [] for k in ("E3", "E5", "E8", "maxdd5", "b3", "b5", "b8", "rev5", "m5")}
+    acc = None
     done = 0; base_annual = None; warnings = []; ci = 0
     while done < paths:
         n = min(chunk, paths - done); n = n if n % 2 == 0 else n + 1
@@ -387,6 +411,8 @@ def _run_once(cal, E0, paths, seed, chunk, P, quantiles, joint):
                 if d in shocks:
                     shocks[d] = np.full_like(shocks[d], float(sig))
         r = _simulate_chunk(rng, n, cal, E0, P, shocks); base_annual = r["base_annual"]; warnings = r["warnings"]
+        if acc is None:
+            acc = {k: [] for k in r if k not in ("base_annual", "warnings")}
         for k in acc:
             acc[k].append(r[k])
         done += n; ci += 1
@@ -422,7 +448,7 @@ def run(inputs: dict, seed: int) -> dict:
             knockout_applied = _apply_knockout(cal, list(inputs["knockout"]))
     base = _run_once(cal, E0, paths, seed_used, chunk, P0, quantiles, joint)
     out = {"model_version": VERSION, "spec_version": SPEC_VERSION, "ticker": cal.get("ticker"), "archetype": cal["archetype"],
-           "margin_method": cal["margin_model"].get("method"), "adapted_from": cal.get("adapted_from"), "state_vector": cal.get("state_vector"),
+           "margin_method": (cal.get("margin_model") or {}).get("method") or ("milestone_model" if cal["archetype"] == "pre_service_or_milestone_driven" else None), "adapted_from": cal.get("adapted_from"), "state_vector": cal.get("state_vector"),
            "inputs_hash": hashlib.sha256(json.dumps(inputs, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")).hexdigest()[:16],
            "seed": seed_used, "paths": paths, "equity_value_0": E0, "factor_correlation_psd_fixed": fixed,
            "dependency_structure": "latent_factor_plus_idiosyncratic_shock (Archetypes §2.1); общий ранг не используется",

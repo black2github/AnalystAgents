@@ -116,3 +116,18 @@ milestone_model                                # срез 3
   Паритет SPCX без mapping не изменился (−14.92% / 0.964 / −0.737 / $897.5 млрд).
 - Очередь: срез 3 (архетип C — вехи, кусочная оценка с milestone_state), срез 4 (RelativeValue по путям для MPC/Optimizer,
   сходимость, перевод SPCX на v2 отдельным решением).
+- **Срез 3 — 22.09.2026, company_mc 2.2.0 + milestone_mc.** Архетип C: дерево вех в топологическом порядке (requires),
+  Bernoulli(p) через латентный фактор «исполнения» (loading), срок = max(сроков предпосылок) + задержка (распределение),
+  ветви отказа terminal_failure (веха и зависимые не достигаются) / delay_retry (повтор с retry_probability через
+  retry_delay_quarters). Выручка: existing_segments (как A/B) + service_segments от квартала запуска (initial_annual_revenue,
+  post_service_growth с mean reversion). Денежный слой: сжигание до запуска, маржа сервиса от current_margin_at_onset к
+  terminal (half-life), core_margin на ядро; дефицит кэша = привлечённый капитал, стоимость держателей − raised × (1 +
+  dilution_penalty) (интерпретация C1). Кусочная оценка по горизонтам с valuation_basis на путь: failure_residual (net cash
+  + reference × residual_on_failure) → milestone_conditioned_EV (net cash + reference × Σ uplift достигнутых) → revenue_bridge
+  (сервис запущен, маржа < fcf_maturity_margin) → FCF_multiple. Доп. выходы: milestone_state_share по горизонтам,
+  service_onset (P в 8Y, медианный квартал, P к Y3/Y5). Mapping: milestone_model.milestones.<id>.probability
+  (probability_logit_shift) и .timing (timing_quarters_shift) — шок берётся в квартале моды срока вехи;
+  revenue_model.service_segments.<S>.post_service_growth; cash_model.service_margin.terminal_margin_Y5; knockout по путям
+  внутри списка вех (по id). Тесты 4 (произведение вероятностей цепочки, доли состояний/оснований, отказы и размытие,
+  mapping вех/сервиса, валидация/детерминизм); всего 49/49. Схема калибровки C — в docstring milestone_mc.py.
+- Очередь: срез 4 (RelativeValue по путям для MPC/Optimizer, сходимость, перевод SPCX на v2).
