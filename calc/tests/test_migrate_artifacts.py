@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import migrate_artifacts_v1_0_1 as mig  # noqa: E402
 
 WS = Path(os.environ.get("INVEST_WORKSPACE", "C:/openclaw-lab/data/workspace-invest"))
-SCHEMA = WS / "methodology" / "Company_Artifact_Schema_v1.0.1.yaml"
+SCHEMA = WS / "methodology" / "Company_Artifact_Schema_v1.0.3.yaml"
 S0 = "S0"  # git-тег снимка ДО миграции (workspace-invest df6029d); живые тесты читают исходные файлы из него
 
 
@@ -82,7 +82,7 @@ def test_migrate_docs_semantics_and_idempotence():
     assert tr["meta"]["price_at_registry"] == 10.0 and tr["meta"]["source_artifact"] == "inbox/received/TST.yaml" and tr["meta"]["position"] is None
     sj = d1["state.json"]
     assert sj["notes"] == ["n"] and sj["kpi_observations"][0]["value"] == 40 and sj["conviction"]["provenance"] == "owner_judgment" and sj["scenario_state"] == {}
-    assert all(d["schema_version"] == "1.0.1" for d in d1.values())
+    assert all(d["schema_version"] == mig.SCHEMA_VERSION for d in d1.values())
     assert mig.migrate_docs(d1) == d1                                          # идемпотентность эталона
 
 
@@ -114,12 +114,11 @@ def test_live_patch_equals_reference_and_is_idempotent(tmp_path):
     reports = {r["folder"]: r for r in (mig.migrate_folder(f, apply=True) for f in mig.iter_folders(ws, None))}
     assert all(not r["errors"] for r in reports.values()), reports
     assert reports["nbis"]["profile"] == "full_model" and reports["6506"]["profile"] == "registry_only"
-    # остаток «target_weight» у legacy-реестров NET/ETN/registry_only ждёт патча схемы v1.0.2 (заказан 22.09) — допускаем только его
-    known_residual = {"Additional properties are not allowed ('target_weight' was unexpected)"}
-    for n in ["nbis", "asts", "net"]:
+    for n in ["nbis", "asts", "net", "6506"]:
         for fn, s in schema["files"].items():
-            errs = [e.message for e in V(s).iter_errors(mig.load_plain(ws / "portfolio" / n / fn))]
-            assert set(errs) <= known_residual and (n == "net" or not errs), (n, fn, errs[:3])
+            if (ws / "portfolio" / n / fn).exists():
+                errs = [e.message for e in V(s).iter_errors(mig.load_plain(ws / "portfolio" / n / fn))]
+                assert errs == [], (n, fn, errs[:3])
     # байты: переводы строк и BOM сохранены; комментарии на месте
     for n, files in before.items():
         for fn, old in files.items():

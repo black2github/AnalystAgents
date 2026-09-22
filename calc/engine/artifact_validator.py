@@ -1,10 +1,12 @@
-"""Валидатор артефактов компаний v1.0 — гейт G5 (Runtime_Quality_Gates: schema + ID + references) по Company Artifact
-Schema v1.0.1 и Company Candidate Schema v1.0.1 (принято 22.09.2026; нормативный дом схем — workspace/methodology/).
+"""Валидатор артефактов компаний v1.1 — гейт G5 (Runtime_Quality_Gates: schema + ID + references) по Company Artifact
+Schema v1.0.3 и Company Candidate Schema v1.0.1 (принято 22.09.2026; нормативный дом схем — workspace/methodology/).
 Нулевой LLM: JSON Schema Draft 2020-12 по каждому файлу + правила целостности ART-REF-* / CAND-REF-* кодом.
 Даты YAML нормализуются к ISO-строкам до проверки (MIG-111 — правило валидатора, не схемы).
 
 inputs:
-  mode: "workspace" (по умолчанию) | "candidate"
+  mode: "workspace" (по умолчанию) | "candidate" | "dozor_report" (report: dict по output_report_schema протокола дозора;
+        folders: ["<папка>"] для сверки kpi_id/ticker с kpis.yaml; правила DZR-001..005: тикер, kpi_id, runtime_verified по
+        runtime_verified_mapping, patch_required при mismatch, согласованность summary)
   workspace: путь к workspace (по умолчанию env CALC_DATA или /data/workspace-invest)
   folders: ["nbis", ...] | "all" (все папки portfolio/ с triggers.yaml, кроме `_*` и skip_folders)
   skip_folders: ["spacex"] по умолчанию (старый формат до партий)
@@ -25,8 +27,10 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.0.0"
-SCHEMA_VERSION = "1.0.1"
+VERSION = "1.1.0"
+SCHEMA_VERSION = "1.0.3"            # Company Artifact Schema (v1.0.3: paused, verification linkage)
+CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
+DOZOR_PROTOCOL_VERSION = "1.0"      # Dozor Verification Protocol (схема отчёта output_report_schema)
 ARTIFACT_FILES = ["states.yaml", "kpis.yaml", "triggers.yaml", "mpc_inputs.yaml", "state.json"]
 VALUE_TYPES = {"actual", "company_guidance", "analyst_estimate"}
 INACTIVE_STATUSES = {"paused", "dropped", "done"}
@@ -269,8 +273,8 @@ def integrity_candidate(c: dict, taxonomy_ids: set[str] | None) -> list[dict]:
         F.append(_f("CAND-REF-014", "mpc_inputs/driver_taxonomy_version", f"таксономия v{mp.get('driver_taxonomy_version')} не найдена", "warning"))
     elif keys != taxonomy_ids:
         F.append(_f("CAND-REF-014", "mpc_inputs/driver_exposure_vector", f"лишние: {sorted(keys - taxonomy_ids)}; отсутствуют: {sorted(taxonomy_ids - keys)}"))
-    if c.get("candidate_schema_version") != SCHEMA_VERSION:
-        F.append(_f("CAND-REF-017", "candidate_schema_version", f"{c.get('candidate_schema_version')!r} ≠ {SCHEMA_VERSION!r}"))
+    if c.get("candidate_schema_version") != CANDIDATE_SCHEMA_VERSION:
+        F.append(_f("CAND-REF-017", "candidate_schema_version", f"{c.get('candidate_schema_version')!r} ≠ {CANDIDATE_SCHEMA_VERSION!r}"))
     return F
 
 
@@ -309,14 +313,48 @@ def run(inputs: dict, seed: int) -> dict:
         cand = inputs.get("candidate")
         if not isinstance(cand, dict):
             raise ValueError("mode=candidate требует inputs.candidate (dict)")
-        schema = _schema(inputs, "candidate_schema_path", f"Company_Candidate_Schema_v{SCHEMA_VERSION}.yaml")
+        schema = _schema(inputs, "candidate_schema_path", f"Company_Candidate_Schema_v{CANDIDATE_SCHEMA_VERSION}.yaml")
         cand = _norm(cand)
         errs = _schema_errors(schema, cand)
         tax = _taxonomy_ids(ws, (cand.get("mpc_inputs") or {}).get("driver_taxonomy_version"))
         findings = integrity_candidate(cand, tax)
         n_err = sum(1 for f in findings if f["severity"] == "error")
-        return {"model_version": VERSION, "schema_version": SCHEMA_VERSION, "mode": mode, "ticker": cand.get("ticker"),
+        return {"model_version": VERSION, "schema_version": CANDIDATE_SCHEMA_VERSION, "mode": mode, "ticker": cand.get("ticker"),
                 "schema_errors": errs, "integrity": findings, "pass": not errs and n_err == 0, "rules": rules, "decision": "none"}
+    if mode == "dozor_report":
+        rep = inputs.get("report")
+        if not isinstance(rep, dict):
+            raise ValueError("mode=dozor_report требует inputs.report (dict)")
+        proto = _schema(inputs, "dozor_protocol_path", f"Dozor_Verification_Protocol_v{DOZOR_PROTOCOL_VERSION}.yaml")
+        rep = _norm(rep)
+        errs = _schema_errors(proto["output_report_schema"], rep)
+        findings: list[dict] = []
+        folders = inputs.get("folders") or []
+        kp = None
+        if folders:
+            kpath = ws / "portfolio" / folders[0] / "kpis.yaml"
+            kp = _load(kpath) if kpath.exists() else None
+        if kp is not None:
+            ids = {k.get("id") for k in kp.get("critical_kpis", [])}
+            if kp.get("ticker") and rep.get("ticker") and kp.get("ticker") != rep.get("ticker"):
+                findings.append(_f("DZR-001", "ticker", f"{rep.get('ticker')!r} ≠ kpis.yaml {kp.get('ticker')!r}"))
+            for i, it in enumerate(rep.get("items") or []):
+                if it.get("kpi_id") not in ids:
+                    findings.append(_f("DZR-002", f"items/{i}/kpi_id", f"{it.get('kpi_id')!r} не найден в kpis.yaml"))
+        mapping = proto.get("runtime_verified_mapping") or {}
+        for i, it in enumerate(rep.get("items") or []):
+            st = it.get("status"); exp = mapping.get(st)
+            if isinstance(exp, bool) and it.get("runtime_verified") is not exp:
+                findings.append(_f("DZR-003", f"items/{i}/runtime_verified", f"для статуса {st!r} ожидается {exp!r}, получено {it.get('runtime_verified')!r}"))
+            if st in ("mismatch_value", "mismatch_period", "mismatch_semantics", "formula_mismatch", "source_not_allowed") and it.get("patch_required") is not True:
+                findings.append(_f("DZR-004", f"items/{i}/patch_required", f"статус {st!r} требует patch_required=true"))
+        summ = rep.get("summary") or {}
+        ids_patch = {it.get("kpi_id") for it in rep.get("items") or [] if it.get("patch_required")}
+        if set(summ.get("patch_required_kpis") or []) != ids_patch:
+            findings.append(_f("DZR-005", "summary/patch_required_kpis", f"не совпадает с items: {sorted(ids_patch)}"))
+        n_err = sum(1 for f in findings if f["severity"] == "error")
+        return {"model_version": VERSION, "protocol_version": DOZOR_PROTOCOL_VERSION, "mode": mode, "ticker": rep.get("ticker"), "run_id": rep.get("run_id"),
+                "schema_errors": errs, "integrity": findings, "pass": not errs and n_err == 0, "decision": "none"}
     art = _schema(inputs, "schema_path", f"Company_Artifact_Schema_v{SCHEMA_VERSION}.yaml")
     results = {}
     if inputs.get("documents"):

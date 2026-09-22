@@ -13,7 +13,7 @@ from engine import artifact_validator as av  # noqa: E402
 from tools import migrate_artifacts_v1_0_1 as mig  # noqa: E402
 
 WS = Path(os.environ.get("INVEST_WORKSPACE", "C:/openclaw-lab/data/workspace-invest"))
-ART = WS / "methodology" / "Company_Artifact_Schema_v1.0.1.yaml"
+ART = WS / "methodology" / "Company_Artifact_Schema_v1.0.3.yaml"
 CAND = WS / "methodology" / "Company_Candidate_Schema_v1.0.1.yaml"
 needs_ws = pytest.mark.skipif(not (ART.exists() and CAND.exists() and (WS / "portfolio" / "nbis" / "kpis.yaml").exists()), reason="workspace недоступен")
 TAX = {"A", "B"}
@@ -22,14 +22,14 @@ TAX = {"A", "B"}
 # ------------------------------------------------------------------ правила целостности без схем
 def _docs():
     return {
-        "states.yaml": {"schema_version": "1.0.1", "ticker": "T", "sources": {"S1": {"source_class": "regulatory_filing", "url": "u", "as_of": "2026-01-01"}},
+        "states.yaml": {"schema_version": av.SCHEMA_VERSION, "ticker": "T", "sources": {"S1": {"source_class": "regulatory_filing", "url": "u", "as_of": "2026-01-01"}},
                         "axes": {"Ax": {"states": {"S1": {}, "S2": {}}, "current": "S1", "source_refs": ["S1"]}}},
-        "kpis.yaml": {"schema_version": "1.0.1", "ticker": "T", "critical_kpis": [
+        "kpis.yaml": {"schema_version": av.SCHEMA_VERSION, "ticker": "T", "critical_kpis": [
             {"id": "T-KPI-01", "source_class": "regulatory_filing", "source_ref": "S1", "last_value": 1.0, "value_type": "actual", "thresholds": {"green": "a", "yellow": "b", "red": "c"}}]},
-        "triggers.yaml": {"schema_version": "1.0.1", "profile": "full_model", "meta": {"ticker": "T"}, "rules": {"trigger_not_decision": True},
+        "triggers.yaml": {"schema_version": av.SCHEMA_VERSION, "profile": "full_model", "meta": {"ticker": "T"}, "rules": {"trigger_not_decision": True},
                           "triggers": [{"id": "T-E-01", "axis": "Ax", "transition": {"from": "S1", "to": "S2"}, "kpis": ["T-KPI-01"], "action": "инвестиционное действие не предопределено"}]},
-        "mpc_inputs.yaml": {"schema_version": "1.0.1", "ticker": "T", "driver_taxonomy_version": "9.9", "driver_exposure_vector": {"A": 1, "B": 0}, "failure_modes": [{"failure_id": "T-FM-01"}]},
-        "state.json": {"schema_version": "1.0.1", "scenario_state": {"Ax": {"state": "S1", "source": "u"}}, "kpi_observations": [{"kpi_id": "T-KPI-01", "value": 1.0}]},
+        "mpc_inputs.yaml": {"schema_version": av.SCHEMA_VERSION, "ticker": "T", "driver_taxonomy_version": "9.9", "driver_exposure_vector": {"A": 1, "B": 0}, "failure_modes": [{"failure_id": "T-FM-01"}]},
+        "state.json": {"schema_version": av.SCHEMA_VERSION, "scenario_state": {"Ax": {"state": "S1", "source": "u"}}, "kpi_observations": [{"kpi_id": "T-KPI-01", "value": 1.0}]},
     }
 
 
@@ -117,3 +117,30 @@ def test_candidate_example_passes_and_broken_candidate_fails():
     out = av.run({"mode": "candidate", "workspace": str(WS), "candidate": bad}, 0)
     rules = {f["rule"] for f in out["integrity"]}
     assert not out["pass"] and {"CAND-REF-015", "CAND-REF-008", "CAND-REF-009", "CAND-REF-014"} <= rules, rules
+
+
+DOZOR = WS / "methodology" / "Dozor_Verification_Protocol_v1.0.yaml"
+
+
+def _report(**over):
+    item = {"kpi_id": "NBIS-KPI-01", "status": "verified_match", "candidate": {"last_value": 5.14, "value_type": "actual", "observation_qualifier": "exact", "unit": "YoY fraction", "period": "quarterly"},
+            "source_check": {"source_ref": None, "source_class": "issuer_ir_release", "url": "https://www.sec.gov/x", "allowed_by_policy": True, "technical_status": "accessible"},
+            "found": {"value": 5.14, "value_type": "actual", "observation_qualifier": "exact", "unit": "YoY fraction", "period": "quarterly"},
+            "normalization": {"applied": False, "steps": []}, "runtime_verified": True, "patch_required": False}
+    item.update(over)
+    return {"protocol_version": "1.0.0", "run_id": "verify-NBIS-20260922T200000Z", "ticker": "NBIS", "as_of": "2026-09-22T20:00:00Z",
+            "inputs": {"kpis_ref": "portfolio/nbis/kpis.yaml", "source_registry_ref": "portfolio/nbis/states.yaml", "evidence_pack_ref": None},
+            "items": [item], "summary": {"overall_status": "PASS", "counts": {"verified_match": 1}, "patch_required_kpis": [], "technical_blocked_kpis": [], "pending_kpis": []}}
+
+
+@pytest.mark.skipif(not DOZOR.exists(), reason="протокол дозора недоступен")
+def test_dozor_report_mode():
+    ok = av.run({"mode": "dozor_report", "workspace": str(WS), "report": _report(), "folders": ["nbis"]}, 0)
+    assert ok["pass"], (ok["schema_errors"][:3], ok["integrity"])
+    bad = av.run({"mode": "dozor_report", "workspace": str(WS), "report": _report(kpi_id="NBIS-KPI-99", status="mismatch_value", runtime_verified=True, patch_required=False), "folders": ["nbis"]}, 0)
+    rules = {f["rule"] for f in bad["integrity"]}
+    assert not bad["pass"] and {"DZR-002", "DZR-003", "DZR-004"} <= rules, rules
+    incons = av.run({"mode": "dozor_report", "workspace": str(WS), "report": _report(status="mismatch_value", runtime_verified=False, patch_required=True)}, 0)
+    assert {f["rule"] for f in incons["integrity"]} == {"DZR-005"}          # patch_required у item, но summary пуст
+    broken = _report(); broken["items"][0]["status"] = "kinda_ok"
+    assert not av.run({"mode": "dozor_report", "workspace": str(WS), "report": broken}, 0)["pass"]

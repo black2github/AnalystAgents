@@ -1,4 +1,4 @@
-"""Одноразовая детерминированная миграция артефактов компаний workspace к Company Artifact Schema v1.0.1
+"""Детерминированная миграция артефактов компаний workspace к Company Artifact Schema v1.0.x (текущая цель — SCHEMA_VERSION)
 (MIG-101…111 из Company_Artifact_Schema_v1.0.1.yaml + §7 IMA_Schema_Party_1; принято владельцем 22.09.2026).
 
 Инварианты (проверяются при каждом запуске, при нарушении файл НЕ пишется):
@@ -26,7 +26,7 @@ from pathlib import Path
 
 import yaml
 
-SCHEMA_VERSION = "1.0.1"
+SCHEMA_VERSION = "1.0.3"  # цепочка патчей v1.0.1 → v1.0.2 (MIG-112/113) → v1.0.3 (MIG-114/115); bump — той же утилитой
 FILES = ["states.yaml", "kpis.yaml", "triggers.yaml", "mpc_inputs.yaml", "state.json"]
 SKIP_FOLDERS = {"spacex"}
 LEGACY_QUALIFIERS = ("lower_bound", "upper_bound", "approximate")
@@ -263,6 +263,10 @@ def patch_yaml(fn: str, raw: str, ctx: dict) -> str:
     head = []  # верхние ключи, вставляемые перед первым ключом файла
     if "schema_version" not in doc:
         head.append(f"schema_version: '{SCHEMA_VERSION}'")
+    elif str(doc["schema_version"]) != SCHEMA_VERSION:  # bump версии (MIG-112/114): та же строка, кавычки как были
+        vln, _ = _keyline(lines, doc, "schema_version")
+        q = "'" if "'" in lines[vln] else ('"' if '"' in lines[vln] else "")
+        P.replace(vln, vln + 1, [f"{' ' * _indent(lines[vln])}schema_version: {q}{SCHEMA_VERSION}{q}"])
 
     if fn == "states.yaml":
         sem = doc.get("semantics")
@@ -410,6 +414,14 @@ def patch_json(raw: str, expected: dict) -> str:
     assert lines[0].strip() == "{", "state.json должен начинаться с «{»"
     if "schema_version" not in data:
         P.insert_after(0, [f'  "schema_version": "{SCHEMA_VERSION}",'])
+    elif data["schema_version"] != SCHEMA_VERSION:
+        for i, ln in enumerate(lines):
+            m = re.match(r'^(\s*)"schema_version": "[^"]*"(,?)\s*$', ln)
+            if m:
+                P.replace(i, i + 1, [f'{m.group(1)}"schema_version": "{SCHEMA_VERSION}"{m.group(2)}'])
+                break
+        else:
+            raise AssertionError("schema_version не найден одной строкой")
     exp_obs = {o["kpi_id"]: o for o in expected.get("kpi_observations", [])}
     for i, ln in enumerate(lines):
         m = re.match(r'^(\s*)(\{"kpi_id": .*\})(,?)\s*$', ln)
