@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import importlib
 
-from engine import company_mc, conditional_mc, conviction_overlay, portfolio_paths, portfolio_regime, reverse_valuation, selftest, synthetic_basket, valuation_multiple
+from engine import artifact_validator, company_mc, conditional_mc, conviction_overlay, portfolio_paths, portfolio_regime, reverse_valuation, selftest, synthetic_basket, valuation_multiple
 
 importlib.reload(selftest)
 importlib.reload(valuation_multiple)
@@ -14,6 +14,7 @@ importlib.reload(synthetic_basket)
 importlib.reload(conviction_overlay)
 importlib.reload(company_mc)
 importlib.reload(portfolio_paths)
+importlib.reload(artifact_validator)
 
 MODELS = {
     "selftest": {
@@ -60,5 +61,10 @@ MODELS = {
         "version": portfolio_paths.VERSION,
         "fn": portfolio_paths.run,
         "doc": portfolio_paths.__doc__.strip().splitlines()[0],
+    },
+    "artifact_validator": {
+        "version": artifact_validator.VERSION,
+        "fn": artifact_validator.run,
+        "doc": artifact_validator.__doc__.strip().splitlines()[0],
     },
 }
