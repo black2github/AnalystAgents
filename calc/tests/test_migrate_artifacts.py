@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import migrate_artifacts_v1_0_1 as mig  # noqa: E402
 
 WS = Path(os.environ.get("INVEST_WORKSPACE", "C:/openclaw-lab/data/workspace-invest"))
-SCHEMA = WS / "methodology" / "Company_Artifact_Schema_v1.0.3.yaml"
+SCHEMA = WS / "methodology" / "Company_Artifact_Schema_v1.0.4.yaml"
 S0 = "S0"  # git-тег снимка ДО миграции (workspace-invest df6029d); живые тесты читают исходные файлы из него
 
 

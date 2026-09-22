@@ -26,7 +26,7 @@ from pathlib import Path
 
 import yaml
 
-SCHEMA_VERSION = "1.0.3"  # цепочка патчей v1.0.1 → v1.0.2 (MIG-112/113) → v1.0.3 (MIG-114/115); bump — той же утилитой
+SCHEMA_VERSION = "1.0.4"  # цепочка патчей v1.0.1 → v1.0.2 (MIG-112/113) → v1.0.3 (MIG-114/115) → v1.0.4 (MIG-117); bump — той же утилитой
 FILES = ["states.yaml", "kpis.yaml", "triggers.yaml", "mpc_inputs.yaml", "state.json"]
 SKIP_FOLDERS = {"spacex"}
 LEGACY_QUALIFIERS = ("lower_bound", "upper_bound", "approximate")

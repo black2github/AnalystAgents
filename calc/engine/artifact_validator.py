@@ -1,12 +1,12 @@
-"""Валидатор артефактов компаний v1.1 — гейт G5 (Runtime_Quality_Gates: schema + ID + references) по Company Artifact
-Schema v1.0.3 и Company Candidate Schema v1.0.1 (принято 22.09.2026; нормативный дом схем — workspace/methodology/).
+"""Валидатор артефактов компаний v1.2 — гейт G5 (Runtime_Quality_Gates: schema + ID + references) по Company Artifact
+Schema v1.0.4 и Company Candidate Schema v1.0.1 (принято 22.09.2026; нормативный дом схем — workspace/methodology/).
 Нулевой LLM: JSON Schema Draft 2020-12 по каждому файлу + правила целостности ART-REF-* / CAND-REF-* кодом.
 Даты YAML нормализуются к ISO-строкам до проверки (MIG-111 — правило валидатора, не схемы).
 
 inputs:
   mode: "workspace" (по умолчанию) | "candidate" | "dozor_report" (report: dict по output_report_schema протокола дозора;
-        folders: ["<папка>"] для сверки kpi_id/ticker с kpis.yaml; правила DZR-001..005: тикер, kpi_id, runtime_verified по
-        runtime_verified_mapping, patch_required при mismatch, согласованность summary)
+        "folders": ["<папка>"] для сверки с kpis/states/triggers папки; правила DZR-001..010: тикер, kpi_id, runtime_verified и
+        patch_required по status_registry протокола, согласованность summary, оси/состояния/kpi_item_refs, trigger_id, fact_only, итог)
   workspace: путь к workspace (по умолчанию env CALC_DATA или /data/workspace-invest)
   folders: ["nbis", ...] | "all" (все папки portfolio/ с triggers.yaml, кроме `_*` и skip_folders)
   skip_folders: ["spacex"] по умолчанию (старый формат до партий)
@@ -27,10 +27,10 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.1.0"
-SCHEMA_VERSION = "1.0.3"            # Company Artifact Schema (v1.0.3: paused, verification linkage)
+VERSION = "1.2.0"
+SCHEMA_VERSION = "1.0.4"            # Company Artifact Schema (v1.0.4: recorded_at, verification_run_id у осей/событий)
 CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
-DOZOR_PROTOCOL_VERSION = "1.0"      # Dozor Verification Protocol (схема отчёта output_report_schema)
+DOZOR_PROTOCOL_VERSION = "1.1"      # Dozor Verification Protocol (схема отчёта output_report_schema; отчёты v1.0 валидны)
 ARTIFACT_FILES = ["states.yaml", "kpis.yaml", "triggers.yaml", "mpc_inputs.yaml", "state.json"]
 VALUE_TYPES = {"actual", "company_guidance", "analyst_estimate"}
 INACTIVE_STATUSES = {"paused", "dropped", "done"}
@@ -330,10 +330,12 @@ def run(inputs: dict, seed: int) -> dict:
         errs = _schema_errors(proto["output_report_schema"], rep)
         findings: list[dict] = []
         folders = inputs.get("folders") or []
-        kp = None
+        kp = st_doc = tr_doc = None
         if folders:
-            kpath = ws / "portfolio" / folders[0] / "kpis.yaml"
-            kp = _load(kpath) if kpath.exists() else None
+            fd = ws / "portfolio" / folders[0]
+            kp = _load(fd / "kpis.yaml") if (fd / "kpis.yaml").exists() else None
+            st_doc = _load(fd / "states.yaml") if (fd / "states.yaml").exists() else None
+            tr_doc = _load(fd / "triggers.yaml") if (fd / "triggers.yaml").exists() else None
         if kp is not None:
             ids = {k.get("id") for k in kp.get("critical_kpis", [])}
             if kp.get("ticker") and rep.get("ticker") and kp.get("ticker") != rep.get("ticker"):
@@ -341,17 +343,59 @@ def run(inputs: dict, seed: int) -> dict:
             for i, it in enumerate(rep.get("items") or []):
                 if it.get("kpi_id") not in ids:
                     findings.append(_f("DZR-002", f"items/{i}/kpi_id", f"{it.get('kpi_id')!r} не найден в kpis.yaml"))
-        mapping = proto.get("runtime_verified_mapping") or {}
+        # реестр статусов протокола (v1.1: status_registry.<группа>.<статус>; v1.0: runtime_verified_mapping)
+        reg = proto.get("status_registry") or {}
+        legacy_map = proto.get("runtime_verified_mapping") or {}
+        patch_statuses = ("mismatch_value", "mismatch_period", "mismatch_semantics", "formula_mismatch", "source_not_allowed")
+
+        def _expect(group, status):
+            e = (reg.get(group) or {}).get(status)
+            if e is not None:
+                return e.get("runtime_verified"), bool(e.get("default_patch_required"))
+            v = legacy_map.get(status)
+            return (v if isinstance(v, bool) else None), status in patch_statuses
+
+        def _check(group, path, obj):
+            exp, need_patch = _expect(group, obj.get("status"))
+            if isinstance(exp, bool) and obj.get("runtime_verified") is not exp:
+                findings.append(_f("DZR-003", f"{path}/runtime_verified", f"для статуса {obj.get('status')!r} ожидается {exp!r}, получено {obj.get('runtime_verified')!r}"))
+            if need_patch and obj.get("patch_required") is not True:
+                findings.append(_f("DZR-004", f"{path}/patch_required", f"статус {obj.get('status')!r} требует patch_required=true"))
+
         for i, it in enumerate(rep.get("items") or []):
-            st = it.get("status"); exp = mapping.get(st)
-            if isinstance(exp, bool) and it.get("runtime_verified") is not exp:
-                findings.append(_f("DZR-003", f"items/{i}/runtime_verified", f"для статуса {st!r} ожидается {exp!r}, получено {it.get('runtime_verified')!r}"))
-            if st in ("mismatch_value", "mismatch_period", "mismatch_semantics", "formula_mismatch", "source_not_allowed") and it.get("patch_required") is not True:
-                findings.append(_f("DZR-004", f"items/{i}/patch_required", f"статус {st!r} требует patch_required=true"))
+            _check("kpi", f"items/{i}", it)
         summ = rep.get("summary") or {}
         ids_patch = {it.get("kpi_id") for it in rep.get("items") or [] if it.get("patch_required")}
         if set(summ.get("patch_required_kpis") or []) != ids_patch:
             findings.append(_f("DZR-005", "summary/patch_required_kpis", f"не совпадает с items: {sorted(ids_patch)}"))
+        # v1.1: оси и события
+        axes = ((st_doc or {}).get("axes") or {}) if st_doc else None
+        kpi_ids_rep = {it.get("kpi_id") for it in rep.get("items") or []}
+        for i, a in enumerate(rep.get("axis_items") or []):
+            ax = a.get("axis_id")
+            if axes is not None and ax not in axes:
+                findings.append(_f("DZR-006", f"axis_items/{i}/axis_id", f"ось {ax!r} не найдена в states.yaml"))
+            elif axes is not None and a.get("current_state") not in ("pending_verification", None) and a.get("current_state") not in (axes[ax].get("states") or {}):
+                findings.append(_f("DZR-006", f"axis_items/{i}/current_state", f"состояние {a.get('current_state')!r} не найдено в оси {ax!r}"))
+            for r in a.get("kpi_item_refs") or []:
+                if r not in kpi_ids_rep:
+                    findings.append(_f("DZR-007", f"axis_items/{i}/kpi_item_refs", f"{r!r} не входит в items этого отчёта"))
+            _check("axis", f"axis_items/{i}", a)
+        trig_ids = {t.get("id") for t in (tr_doc or {}).get("triggers", [])} if tr_doc else None
+        for i, ev in enumerate(rep.get("event_items") or []):
+            if trig_ids is not None and ev.get("trigger_id") not in trig_ids:
+                findings.append(_f("DZR-008", f"event_items/{i}/trigger_id", f"{ev.get('trigger_id')!r} не найден в triggers.yaml"))
+            if ev.get("fact_only") is not True:
+                findings.append(_f("DZR-009", f"event_items/{i}/fact_only", "событие подтверждает факт, не переход и не действие: fact_only должен быть true"))
+            _check("event", f"event_items/{i}", ev)
+        ax_patch = {a.get("axis_id") for a in rep.get("axis_items") or [] if a.get("patch_required")}
+        if set(summ.get("patch_required_axes") or []) != ax_patch:
+            findings.append(_f("DZR-005", "summary/patch_required_axes", f"не совпадает с axis_items: {sorted(ax_patch)}"))
+        ev_patch = {e.get("trigger_id") for e in rep.get("event_items") or [] if e.get("patch_required")}
+        if set(summ.get("patch_required_events") or []) != ev_patch:
+            findings.append(_f("DZR-005", "summary/patch_required_events", f"не совпадает с event_items: {sorted(ev_patch)}"))
+        if (ids_patch or ax_patch or ev_patch) and summ.get("overall_status") not in ("PATCH_REQUIRED", "BLOCKED_TECHNICAL", "BLOCKED_SOURCE_CONFLICT"):
+            findings.append(_f("DZR-010", "summary/overall_status", "есть patch_required, а итог не PATCH_REQUIRED/BLOCKED_*"))
         n_err = sum(1 for f in findings if f["severity"] == "error")
         return {"model_version": VERSION, "protocol_version": DOZOR_PROTOCOL_VERSION, "mode": mode, "ticker": rep.get("ticker"), "run_id": rep.get("run_id"),
                 "schema_errors": errs, "integrity": findings, "pass": not errs and n_err == 0, "decision": "none"}

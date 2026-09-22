@@ -13,7 +13,7 @@ from engine import artifact_validator as av  # noqa: E402
 from tools import migrate_artifacts_v1_0_1 as mig  # noqa: E402
 
 WS = Path(os.environ.get("INVEST_WORKSPACE", "C:/openclaw-lab/data/workspace-invest"))
-ART = WS / "methodology" / "Company_Artifact_Schema_v1.0.3.yaml"
+ART = WS / "methodology" / "Company_Artifact_Schema_v1.0.4.yaml"
 CAND = WS / "methodology" / "Company_Candidate_Schema_v1.0.1.yaml"
 needs_ws = pytest.mark.skipif(not (ART.exists() and CAND.exists() and (WS / "portfolio" / "nbis" / "kpis.yaml").exists()), reason="workspace недоступен")
 TAX = {"A", "B"}
@@ -119,7 +119,7 @@ def test_candidate_example_passes_and_broken_candidate_fails():
     assert not out["pass"] and {"CAND-REF-015", "CAND-REF-008", "CAND-REF-009", "CAND-REF-014"} <= rules, rules
 
 
-DOZOR = WS / "methodology" / "Dozor_Verification_Protocol_v1.0.yaml"
+DOZOR = WS / "methodology" / "Dozor_Verification_Protocol_v1.1.yaml"
 
 
 def _report(**over):
@@ -141,6 +141,25 @@ def test_dozor_report_mode():
     rules = {f["rule"] for f in bad["integrity"]}
     assert not bad["pass"] and {"DZR-002", "DZR-003", "DZR-004"} <= rules, rules
     incons = av.run({"mode": "dozor_report", "workspace": str(WS), "report": _report(status="mismatch_value", runtime_verified=False, patch_required=True)}, 0)
-    assert {f["rule"] for f in incons["integrity"]} == {"DZR-005"}          # patch_required у item, но summary пуст
+    assert {f["rule"] for f in incons["integrity"]} == {"DZR-005", "DZR-010"}  # patch_required у item, но summary пуст и итог PASS
     broken = _report(); broken["items"][0]["status"] = "kinda_ok"
     assert not av.run({"mode": "dozor_report", "workspace": str(WS), "report": broken}, 0)["pass"]
+
+
+@pytest.mark.skipif(not DOZOR.exists(), reason="протокол дозора недоступен")
+def test_live_v10_report_and_v11_example_pass():
+    import json
+    live = WS / "portfolio" / "nbis" / "_verify" / "verify-NBIS-20260922T201443Z.json"
+    ex = WS / "inbox" / "received" / "verify-NBIS-v1.1-example.json"
+    for p in (live, ex):
+        if not p.exists():
+            pytest.skip(f"нет {p.name}")
+        out = av.run({"mode": "dozor_report", "workspace": str(WS), "report": json.loads(p.read_text(encoding="utf-8")), "folders": ["nbis"]}, 0)
+        assert out["pass"], (p.name, out["schema_errors"][:3], out["integrity"][:5])
+    rep = json.loads(ex.read_text(encoding="utf-8"))
+    rep["axis_items"][0]["axis_id"] = "Nope"; rep["axis_items"][0]["kpi_item_refs"] = ["NBIS-KPI-99"]
+    rep["event_items"][0]["trigger_id"] = "NBIS-E-99"; rep["event_items"][0]["fact_only"] = False
+    rep["axis_items"][1]["status"] = "state_not_supported"; rep["axis_items"][1]["patch_required"] = False
+    bad = av.run({"mode": "dozor_report", "workspace": str(WS), "report": rep, "folders": ["nbis"]}, 0)
+    rules = {f["rule"] for f in bad["integrity"]}
+    assert not bad["pass"] and {"DZR-006", "DZR-007", "DZR-008", "DZR-009", "DZR-003", "DZR-004"} <= rules, rules
