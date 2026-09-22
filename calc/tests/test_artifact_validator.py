@@ -74,6 +74,8 @@ def test_registry_only_skips_cross_file_checks_and_action_warning_is_not_error()
     F = av.integrity_workspace(d, TAX, {"regulatory_filing"})
     assert not [f for f in F if f["rule"] in ("ART-REF-001", "ART-REF-003")]
     assert [f for f in F if f["rule"] == "ART-REF-015"][0]["severity"] == "warning"
+    d["triggers.yaml"]["triggers"][0]["status"] = "paused"                   # приостановленный триггер не предупреждает
+    assert not [f for f in av.integrity_workspace(d, TAX, {"regulatory_filing"}) if f["rule"] == "ART-REF-015"]
 
 
 def test_binary_kpi_without_yellow_is_ok():
@@ -86,8 +88,8 @@ def test_binary_kpi_without_yellow_is_ok():
 @needs_ws
 def test_workspace_after_migration_passes(tmp_path):
     import shutil
-    for n in ("nbis", "asts", "hood"):
-        shutil.copytree(WS / "portfolio" / n, tmp_path / "portfolio" / n)
+    from tests.test_migrate_artifacts import _copy
+    _copy(tmp_path, ["nbis", "asts", "hood"])          # снимок S0 (до миграции)
     shutil.copytree(WS / "methodology", tmp_path / "methodology")
     for f in mig.iter_folders(tmp_path, None):
         assert not mig.migrate_folder(f, apply=True)["errors"]
@@ -95,7 +97,7 @@ def test_workspace_after_migration_passes(tmp_path):
     assert out["summary"] == {"folders": 3, "pass": 3, "fail": 0, "failed": []}, {k: (v["files"], v["integrity"]) for k, v in out["folders"].items() if not v["pass"]}
     assert out["folders"]["nbis"]["profile"] == "full_model" and out["folders"]["nbis"]["integrity_warnings"] == 0
     # незамигрированная папка (S0) — не проходит, и именно по схеме
-    shutil.copytree(WS / "portfolio" / "nvda", tmp_path / "portfolio" / "nvda")
+    _copy(tmp_path, ["nvda"])
     out2 = av.run({"workspace": str(tmp_path), "folders": ["nvda"]}, 0)
     assert out2["summary"]["fail"] == 1 and out2["folders"]["nvda"]["schema_errors"] > 0
     assert av.run({"workspace": str(tmp_path), "folders": ["nope"]}, 0)["folders"]["nope"]["pass"] is False

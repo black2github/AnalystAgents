@@ -15,7 +15,16 @@ from tools import migrate_artifacts_v1_0_1 as mig  # noqa: E402
 
 WS = Path(os.environ.get("INVEST_WORKSPACE", "C:/openclaw-lab/data/workspace-invest"))
 SCHEMA = WS / "methodology" / "Company_Artifact_Schema_v1.0.1.yaml"
-needs_ws = pytest.mark.skipif(not (WS / "portfolio" / "nbis" / "kpis.yaml").exists() or not SCHEMA.exists(), reason="workspace недоступен")
+S0 = "S0"  # git-тег снимка ДО миграции (workspace-invest df6029d); живые тесты читают исходные файлы из него
+
+
+def _git_show(rel: str) -> bytes | None:
+    import subprocess
+    r = subprocess.run(["git", "-C", str(WS), "-c", "safe.directory=*", "show", f"{S0}:{rel}"], capture_output=True)
+    return r.stdout if r.returncode == 0 else None
+
+
+needs_ws = pytest.mark.skipif(not SCHEMA.exists() or _git_show("portfolio/nbis/kpis.yaml") is None, reason="workspace или тег S0 недоступны")
 
 
 # ------------------------------------------------------------------ синтетика
@@ -86,8 +95,13 @@ def test_registry_only_profile():
 
 # ------------------------------------------------------------------ живой прогон на копии workspace
 def _copy(tmp_path, names):
+    """Папки компаний из снимка S0 (до миграции) — тесты не зависят от текущего состояния workspace."""
     for n in names:
-        shutil.copytree(WS / "portfolio" / n, tmp_path / "portfolio" / n)
+        for fn in mig.FILES:
+            data = _git_show(f"portfolio/{n}/{fn}")
+            if data is not None:
+                (tmp_path / "portfolio" / n).mkdir(parents=True, exist_ok=True)
+                (tmp_path / "portfolio" / n / fn).write_bytes(data)
     return tmp_path
 
 

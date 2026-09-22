@@ -29,6 +29,7 @@ VERSION = "1.0.0"
 SCHEMA_VERSION = "1.0.1"
 ARTIFACT_FILES = ["states.yaml", "kpis.yaml", "triggers.yaml", "mpc_inputs.yaml", "state.json"]
 VALUE_TYPES = {"actual", "company_guidance", "analyst_estimate"}
+INACTIVE_STATUSES = {"paused", "dropped", "done"}
 TRADE_WORDS = re.compile(r"\b(купить|продать|докупить|продавать|покупать|buy|sell)\b", re.I)
 NOT_IMPLEMENTED = {
     "ART-REF-005": "класс источника проверяется по enum схемы; иерархия/допустимость по типу факта — Source Policy v1.0 (партия 2)",
@@ -191,6 +192,8 @@ def integrity_workspace(docs: dict, taxonomy_ids: set[str] | None, source_classe
             F.append(_f("ART-REF-015", "triggers/rules/trigger_not_decision", "должно быть true"))
         for t in tr.get("triggers", []):
             act = str(t.get("action") or "")
+            if t.get("status") in INACTIVE_STATUSES:  # приостановленные/закрытые триггеры не действуют — не предупреждаем
+                continue
             if TRADE_WORDS.search(act) and "не предопределено" not in act:
                 F.append(_f("ART-REF-015", f"triggers/{t.get('id')}/action", "действие похоже на торговую инструкцию", "warning"))
     # ART-REF-016: версия схемы во всех файлах
