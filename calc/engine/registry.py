@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import importlib
 
-from engine import conditional_mc, conviction_overlay, portfolio_regime, reverse_valuation, selftest, synthetic_basket, valuation_multiple
+from engine import company_mc, conditional_mc, conviction_overlay, portfolio_regime, reverse_valuation, selftest, synthetic_basket, valuation_multiple
 
 importlib.reload(selftest)
 importlib.reload(valuation_multiple)
@@ -12,6 +12,7 @@ importlib.reload(portfolio_regime)
 importlib.reload(conditional_mc)
 importlib.reload(synthetic_basket)
 importlib.reload(conviction_overlay)
+importlib.reload(company_mc)
 
 MODELS = {
     "selftest": {
@@ -48,5 +49,10 @@ MODELS = {
         "version": conviction_overlay.VERSION,
         "fn": conviction_overlay.run,
         "doc": conviction_overlay.__doc__.strip().splitlines()[0],
+    },
+    "company_mc": {
+        "version": company_mc.VERSION,
+        "fn": company_mc.run,
+        "doc": company_mc.__doc__.strip().splitlines()[0],
     },
 }
