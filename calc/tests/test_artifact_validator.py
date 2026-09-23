@@ -119,7 +119,7 @@ def test_candidate_example_passes_and_broken_candidate_fails():
     assert not out["pass"] and {"CAND-REF-015", "CAND-REF-008", "CAND-REF-009", "CAND-REF-014"} <= rules, rules
 
 
-DOZOR = WS / "methodology" / "Dozor_Verification_Protocol_v1.2.yaml"
+DOZOR = WS / "methodology" / "Dozor_Verification_Protocol_v1.2.1.yaml"
 
 
 def _report(**over):
@@ -191,7 +191,7 @@ def _ex12():
 def test_v12_example_passes_and_live_v11_reports_pass():
     import json
     out = av.run({"mode": "dozor_report", "workspace": str(WS), "report": _ex12(), "folders": ["asts"]}, 0)
-    assert out["pass"] and out["protocol_version"] == "1.2", (out["schema_errors"][:3], out["integrity"][:5])
+    assert out["pass"] and out["protocol_version"] == "1.2.1", (out["schema_errors"][:3], out["integrity"][:5])
     for tk, name in (("asts", "verify-ASTS-20260923T060714Z"), ("nbis", "verify-NBIS-20260922T210122Z")):
         p = WS / "portfolio" / tk / "_verify" / f"{name}.json"
         if p.exists():

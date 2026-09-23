@@ -1,5 +1,6 @@
-"""Валидатор артефактов компаний v1.2 — гейт G5 (Runtime_Quality_Gates: schema + ID + references) по Company Artifact
-Schema v1.0.4 и Company Candidate Schema v1.0.1 (принято 22.09.2026; нормативный дом схем — workspace/methodology/).
+"""Валидатор артефактов компаний — гейт G5 (Runtime_Quality_Gates: schema + ID + references) по Company Artifact
+Schema v1.0.5, Company Candidate Schema v1.0.1, Dozor Verification Protocol v1.2.1 и Company MC Calibration Schema v1.0.1
+(нормативный дом схем — workspace/methodology/; версии — константы ниже).
 Нулевой LLM: JSON Schema Draft 2020-12 по каждому файлу + правила целостности ART-REF-* / CAND-REF-* кодом.
 Даты YAML нормализуются к ISO-строкам до проверки (MIG-111 — правило валидатора, не схемы).
 
@@ -39,7 +40,7 @@ import yaml
 VERSION = "1.5.0"
 SCHEMA_VERSION = "1.0.5"            # Company Artifact Schema (v1.0.5: kpi_observations[].verification_run_ids — история прогонов дозора)
 CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
-DOZOR_PROTOCOL_VERSION = "1.2"      # Dozor Verification Protocol (схема отчёта output_report_schema; отчёты v1.0/v1.1 валидны)
+DOZOR_PROTOCOL_VERSION = "1.2.1"    # Dozor Verification Protocol (сводная редакция v1.2.1 = v1.1 + дельта v1.2; схема отчёта 1.2.0, отчёты v1.0/v1.1 валидны)
 VERIFIED_KPI_STATUSES = ("verified_match", "verified_match_with_normalization")
 CALIBRATION_SCHEMA_VERSION = "1.0.1"  # Company MC Calibration Schema (калибровки company_mc v2)
 # MC-G5-013 (Joint_Simulation_Layer_Rules_v1.1, принято 23.09 — hard gate): σ суммарного сдвига цели от всех драйверов;
