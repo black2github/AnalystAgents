@@ -37,7 +37,7 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.5.0"
+VERSION = "1.5.1"  # 1.5.1: кандидатные пороги MC-G5-013 для целей вех архетипа C (milestone_probability 0.35 логит, milestone_timing 1.0 кв.)
 SCHEMA_VERSION = "1.0.5"            # Company Artifact Schema (v1.0.5: kpi_observations[].verification_run_ids — история прогонов дозора)
 CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
 DOZOR_PROTOCOL_VERSION = "1.2.1"    # Dozor Verification Protocol (сводная редакция v1.2.1 = v1.1 + дельта v1.2; схема отчёта 1.2.0, отчёты v1.0/v1.1 валидны)
@@ -45,7 +45,10 @@ VERIFIED_KPI_STATUSES = ("verified_match", "verified_match_with_normalization")
 CALIBRATION_SCHEMA_VERSION = "1.0.1"  # Company MC Calibration Schema (калибровки company_mc v2)
 # MC-G5-013 (Joint_Simulation_Layer_Rules_v1.1, принято 23.09 — hard gate): σ суммарного сдвига цели от всех драйверов;
 # рост — q20, узлы горизонтов — нативный квартал (Y3→q12, Y5→q20, Y8→q32); мультипликатор — ln(M_shocked/M_base) ≈ Σ e·x
-AGG_SHIFT_LIMITS = {"growth": 0.15, "margin": 0.05, "multiple": 0.15, "milestone": 0.75, "other": 0.15}
+AGG_SHIFT_LIMITS = {"growth": 0.15, "margin": 0.05, "multiple": 0.15, "milestone": 0.75, "other": 0.15,
+                    # архетип C — кандидатные пороги IMMA (пакет HOOD_RKLB_Calibrations_v1, 23.09; до закрепления в Rules v1.1.2):
+                    # вероятность вехи — σ суммарного сдвига в логит-пространстве; сроки — σ сдвига в кварталах
+                    "milestone_probability": 0.35, "milestone_timing": 1.0}
 ARTIFACT_FILES = ["states.yaml", "kpis.yaml", "triggers.yaml", "mpc_inputs.yaml", "state.json"]
 VALUE_TYPES = {"actual", "company_guidance", "analyst_estimate"}
 INACTIVE_STATUSES = {"paused", "dropped", "done"}
@@ -336,6 +339,10 @@ def _target_kind(path: str) -> str:
     if "multiple" in path:
         return "multiple"
     if path.startswith("milestone_model"):
+        if path.endswith(".probability"):
+            return "milestone_probability"
+        if path.endswith(".timing"):
+            return "milestone_timing"
         return "milestone"
     return "other"
 

@@ -499,6 +499,6 @@ def run(inputs: dict, seed: int) -> dict:
         within = [abs(r["dP_2x_5Y"]) <= tol and abs(r["dP_loss_gt_30pct_5Y"]) <= tol for r in runs]
         out["robustness"] = {"runs": runs, "paths_per_run": rp, "same_sign_share": (sum(same) / len(runs)) if runs else None,
                              "within_delta_tolerance_share": (sum(within) / len(runs)) if runs else None, "delta_tolerance": tol,
-                             "pass": ((sum(same) / len(runs) >= 0.75) and (sum(within) / len(runs) >= 0.75)) if runs else None,
+                             "pass": bool((sum(same) / len(runs) >= 0.75) and (sum(within) / len(runs) >= 0.75)) if runs else None,  # bool(): numpy.bool не сериализуется FastAPI при save=false
                              "pass_rule": "v1.1: знак медианы CAGR 5Y сохранён в ≥75% прогонов И |ΔP(2x,5Y)|, |ΔP(loss>30%,5Y)| ≤ допуска в ≥75%"}
     return out
