@@ -73,11 +73,11 @@ def test_received_calibrations_flag_aggregate_shift():
         pytest.skip("нет калибровки NVDA")
     cal = yaml.safe_load(p.read_text(encoding="utf-8"))
     out = av.run({"mode": "calibration", "workspace": str(WS), "calibration": cal, "folders": ["nvda"], "dry_run_paths": 1500}, 0)
-    assert out["schema_errors"] == [] and out["pass"]                                   # по умолчанию MC-G5-013 — предупреждение
-    w = [f for f in out["integrity"] if f["rule"] == "MC-G5-013"]
-    assert w and any("initial_growth" in f["path"] for f in w) and all(f["severity"] == "warning" for f in w)
-    strict = av.run({"mode": "calibration", "workspace": str(WS), "calibration": cal, "folders": ["nvda"], "strict_aggregate": True, "engine_dry_run": False}, 0)
-    assert not strict["pass"]
+    assert out["schema_errors"] == [] and not out["pass"]                               # MC-G5-013 — hard gate (Rules v1.1)
+    w = [f for f in out["integrity"] if f["rule"] == "MC-G5-013" and f["severity"] == "error"]
+    assert w and any("initial_growth" in f["path"] for f in w)
+    soft = av.run({"mode": "calibration", "workspace": str(WS), "calibration": cal, "folders": ["nvda"], "strict_aggregate": False, "engine_dry_run": False}, 0)
+    assert soft["pass"] and all(f["severity"] != "error" for f in soft["integrity"])
     broken = copy.deepcopy(cal); broken["driver_parameter_mapping"][0]["stochastic_targets"][0]["path"] = "capacity_model.gw"
     out2 = av.run({"mode": "calibration", "workspace": str(WS), "calibration": broken, "folders": ["nvda"], "dry_run_paths": 1500}, 0)
     assert not out2["pass"] and (out2["schema_errors"] or any(f["rule"] == "MC-G5-003" for f in out2["integrity"]))

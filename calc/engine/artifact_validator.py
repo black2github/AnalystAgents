@@ -31,12 +31,13 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.3.0"
+VERSION = "1.3.1"
 SCHEMA_VERSION = "1.0.4"            # Company Artifact Schema (v1.0.4: recorded_at, verification_run_id у осей/событий)
 CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
 DOZOR_PROTOCOL_VERSION = "1.1"      # Dozor Verification Protocol (схема отчёта output_report_schema; отчёты v1.0 валидны)
 CALIBRATION_SCHEMA_VERSION = "1.0.1"  # Company MC Calibration Schema (калибровки company_mc v2)
-# MC-G5-013 (предложение 23.09, до принятия IMMA — предупреждение): порог σ суммарного сдвига цели от всех драйверов на q20
+# MC-G5-013 (Joint_Simulation_Layer_Rules_v1.1, принято 23.09 — hard gate): σ суммарного сдвига цели от всех драйверов;
+# рост — q20, узлы горизонтов — нативный квартал (Y3→q12, Y5→q20, Y8→q32); мультипликатор — ln(M_shocked/M_base) ≈ Σ e·x
 AGG_SHIFT_LIMITS = {"growth": 0.15, "margin": 0.05, "multiple": 0.15, "milestone": 0.75, "other": 0.15}
 ARTIFACT_FILES = ["states.yaml", "kpis.yaml", "triggers.yaml", "mpc_inputs.yaml", "state.json"]
 VALUE_TYPES = {"actual", "company_guidance", "analyst_estimate"}
@@ -418,10 +419,13 @@ def integrity_calibration(cal: dict, mpc: dict | None, joint_spec: dict | None, 
                     tot = e * xe if tot is None else tot + e * xe
                 if tot is None:
                     continue
-                sd = float(tot[:, min(19, tot.shape[1] - 1)].std())
+                qn = 11 if ".Y3" in path or "Y3" in path.split(".")[-1] else (31 if ".Y8" in path or "Y8" in path.split(".")[-1] else 19)
+                sd = float(tot[:, min(qn, tot.shape[1] - 1)].std())
                 kind = _target_kind(path); lim = float(limits.get(kind, limits.get("other", 0.15)))
                 if sd > lim:
-                    F.append(_f("MC-G5-013", f"driver_parameter_mapping → {path}", f"σ суммарного сдвига q20 = {sd:.3f} > {lim} ({kind}; драйверов {len(items)}, Σ|effect| {sum(abs(e) for _, e, _, _ in items):.2f})", "error" if strict_aggregate else "warning"))
+                    F.append(_f("MC-G5-013", f"driver_parameter_mapping → {path}", f"σ суммарного сдвига q{qn + 1} = {sd:.3f} > {lim} ({kind}; драйверов {len(items)}, Σ|effect| {sum(abs(e) for _, e, _, _ in items):.2f})", "warning" if not strict_aggregate else "error"))
+                else:
+                    F.append(_f("MC-G5-013", f"driver_parameter_mapping → {path}", f"σ суммарного сдвига q{qn + 1} = {sd:.3f} ≤ {lim} ({kind}; драйверов {len(items)})", "info"))
         except Exception as e:  # noqa: BLE001 — диагностика не должна ронять валидацию
             F.append(_f("MC-G5-013", "driver_parameter_mapping", f"не удалось посчитать суммарный сдвиг: {type(e).__name__}: {str(e)[:120]}", "warning"))
     return F
@@ -497,7 +501,7 @@ def run(inputs: dict, seed: int) -> dict:
         jp = Path(inputs.get("joint_layer_spec_path") or (ws / "methodology" / "Joint_Simulation_Layer_Schema_v1.0.yaml"))
         joint_spec = inputs.get("joint_layer_spec") or (yaml.safe_load(jp.read_text(encoding="utf-8")) if jp.exists() else None)
         limits = dict(AGG_SHIFT_LIMITS); limits.update(inputs.get("aggregate_shift_limits") or {})
-        findings = integrity_calibration(cal, mpc, joint_spec, limits, bool(inputs.get("strict_aggregate", False)))
+        findings = integrity_calibration(cal, mpc, joint_spec, limits, bool(inputs.get("strict_aggregate", True)))
         engine = None
         if inputs.get("engine_dry_run", True) and not errs:
             try:
@@ -511,7 +515,7 @@ def run(inputs: dict, seed: int) -> dict:
         n_err = sum(1 for f in findings if f["severity"] == "error")
         return {"model_version": VERSION, "schema_version": CALIBRATION_SCHEMA_VERSION, "mode": mode, "ticker": cal.get("ticker"), "archetype": cal.get("archetype"),
                 "schema_errors": errs, "integrity": findings, "engine_dry_run": engine, "pass": not errs and n_err == 0,
-                "note": "MC-G5-013 (σ суммарного сдвига) — предложение 23.09, до принятия IMMA выдаётся как warning; MC-G5-009 (антицикличность) и MC-G5-010 (полнота provenance сверх схемы) статически не проверяются", "decision": "none"}
+                "note": "MC-G5-013 — hard gate по Joint_Simulation_Layer_Rules_v1.1 (strict_aggregate=false → warning); MC-G5-009 (антицикличность) и MC-G5-010 (полнота provenance сверх схемы) статически не проверяются", "decision": "none"}
     if mode == "dozor_report":
         rep = inputs.get("report")
         if not isinstance(rep, dict):
