@@ -150,7 +150,7 @@ def test_dozor_report_mode():
 def test_live_v10_report_and_v11_example_pass():
     import json
     live = WS / "portfolio" / "nbis" / "_verify" / "verify-NBIS-20260922T201443Z.json"
-    ex = WS / "inbox" / "received" / "verify-NBIS-v1.1-example.json"
+    ex = WS / "from_imma" / "verify-NBIS-v1.1-example.json"
     for p in (live, ex):
         if not p.exists():
             pytest.skip(f"нет {p.name}")

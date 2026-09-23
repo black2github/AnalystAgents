@@ -52,7 +52,7 @@ def _docs():
         "states.yaml": {"version": "1.0", "as_of": "2026-09-21", "ticker": "TST", "semantics": {"thresholds_provenance": "model_assumption", "primary_only": True},
                         "sources": {"A": "https://www.sec.gov/x-20260630.htm", "B": {"url": "https://ir.test.com/q2", "type": "IR release"}},
                         "axes": {"Ax": {"states": {"S1": {}, "S2": {}}, "current": "S1"}}},
-        "kpis.yaml": {"ticker": "TST", "source_artifact": "inbox/received/TST.yaml", "critical_kpis": [
+        "kpis.yaml": {"ticker": "TST", "source_artifact": "from_imma/TST.yaml", "critical_kpis": [
             {"id": "TST-KPI-01", "source": "SEC", "last_value": ">40", "thresholds": {"green": ">=50", "yellow": ">=40", "red": "<40"}},
             {"id": "TST-KPI-02", "source": "IR", "last_value": 1, "value_type": "lower_bound", "thresholds": {"green": "=1", "red": "=0"}},
             {"id": "TST-KPI-03", "source": "IR", "last_value": [1, 2], "thresholds": {"green": "x", "red": "y"}}]},
@@ -79,7 +79,7 @@ def test_migrate_docs_semantics_and_idempotence():
     assert tr["profile"] == "full_model" and tr["automations"] == {} and tr["automations_note"] == "нет" and tr["meta"]["horizon"] == "2030"
     assert tr["triggers"][0]["condition_provenance"] == "model_assumption" and tr["triggers"][0]["fired"] == [] and "condition_provenance" not in tr["triggers"][1]
     assert tr["rules"] == {"evidence_required": True, "pending_verification_blocks_transition": True, "trigger_not_decision": True}
-    assert tr["meta"]["price_at_registry"] == 10.0 and tr["meta"]["source_artifact"] == "inbox/received/TST.yaml" and tr["meta"]["position"] is None
+    assert tr["meta"]["price_at_registry"] == 10.0 and tr["meta"]["source_artifact"] == "from_imma/TST.yaml" and tr["meta"]["position"] is None
     sj = d1["state.json"]
     assert sj["notes"] == ["n"] and sj["kpi_observations"][0]["value"] == 40 and sj["conviction"]["provenance"] == "owner_judgment" and sj["scenario_state"] == {}
     assert all(d["schema_version"] == mig.SCHEMA_VERSION for d in d1.values())
