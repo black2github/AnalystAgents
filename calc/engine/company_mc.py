@@ -420,7 +420,7 @@ def _summarize(E0, acc, quantiles, cal):
             parity[h] = None
     if mode == CROSSOVER_PARITY:
         # v1.1.3 §10: bridge_dependent — существенная доля путей на кодах 1/2/5/6 (порог 5 % — интерпретация движка)
-        bridge_dep = {h: (v["revenue_bridge"] + v["negative_fcf_fallback"] + v["crossover_bridge"] + v["basis_blend"]) > 0.05 for h, v in basis_share.items()}
+        bridge_dep = {h: (v["revenue_bridge"] + v["negative_fcf_fallback"] + v["crossover_bridge"] + v["basis_blend"]) >= 0.05 for h, v in basis_share.items()}   # порог ≥5 % зафиксирован IMMA 24.09
     else:
         bridge_dep = {h: (v["revenue_bridge"] + v["negative_fcf_fallback"] + v["milestone_conditioned_EV"] + v["failure_residual"]) > 0.0 for h, v in basis_share.items()}
     ba = acc["base_annual"]
@@ -444,7 +444,7 @@ def _summarize(E0, acc, quantiles, cal):
                      "persistence_ratio": pr, "persistence_class": pr_class, "scenario_concentration": None},
         "valuation_basis_share": basis_share, "basis_parity_margin": parity,
         "valuation_crossover": {"mode": mode, "blend_width": BLEND_WIDTH if mode == CROSSOVER_PARITY else None,
-                                "bridge_dependent_rule": "доля кодов 1/2/5/6 > 5 % (интерпретация движка; spec v1.1.3 §10)" if mode == CROSSOVER_PARITY else "любая доля кодов 1/2/3/4 (Archetypes v1.0)"},
+                                "bridge_dependent_rule": "доля кодов 1/2/5/6 ≥ 5 % (зафиксировано IMMA 24.09.2026; spec v1.1.3 §10)" if mode == CROSSOVER_PARITY else "любая доля кодов 1/2/3/4 (Archetypes v1.0)"},
         "gap_metrics": gaps, "median_equity_value_5Y_b": float(np.median(E5) / 1e9),
         **(milestone_mc.summarize_extra(acc) if "ms5" in acc else {}),
     }
