@@ -37,12 +37,15 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.5.1"  # 1.5.1: кандидатные пороги MC-G5-013 для целей вех архетипа C (milestone_probability 0.35 логит, milestone_timing 1.0 кв.)
+VERSION = "1.6.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
+#                    измерение в квартале применения — мода сроков вехи, как в движке), пример-фикстуры v1.0.2
 SCHEMA_VERSION = "1.0.5"            # Company Artifact Schema (v1.0.5: kpi_observations[].verification_run_ids — история прогонов дозора)
 CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
 DOZOR_PROTOCOL_VERSION = "1.2.1"    # Dozor Verification Protocol (сводная редакция v1.2.1 = v1.1 + дельта v1.2; схема отчёта 1.2.0, отчёты v1.0/v1.1 валидны)
 VERIFIED_KPI_STATUSES = ("verified_match", "verified_match_with_normalization")
-CALIBRATION_SCHEMA_VERSION = "1.0.1"  # Company MC Calibration Schema (калибровки company_mc v2)
+CALIBRATION_SCHEMA_VERSION = "1.0.2"  # Company MC Calibration Schema — текущая (привязка к company_mc 2.3.1)
+CALIBRATION_SCHEMA_VERSIONS = ("1.0.1", "1.0.2")  # 1.0.1 — закреплённая версия принятых калибровок SPCX/NBIS/NVDA (движок 2.3.0, hard switch);
+#                                                   схема выбирается по schema_version самой калибровки (решение 24.09.2026)
 # MC-G5-013 (Joint_Simulation_Layer_Rules_v1.1, принято 23.09 — hard gate): σ суммарного сдвига цели от всех драйверов;
 # рост — q20, узлы горизонтов — нативный квартал (Y3→q12, Y5→q20, Y8→q32); мультипликатор — ln(M_shocked/M_base) ≈ Σ e·x
 AGG_SHIFT_LIMITS = {"growth": 0.15, "margin": 0.05, "multiple": 0.15, "milestone": 0.75, "other": 0.15,
@@ -458,7 +461,13 @@ def integrity_calibration(cal: dict, mpc: dict | None, joint_spec: dict | None, 
                     tot = e * xe if tot is None else tot + e * xe
                 if tot is None:
                     continue
-                qn = 11 if ".Y3" in path or "Y3" in path.split(".")[-1] else (31 if ".Y8" in path or "Y8" in path.split(".")[-1] else 19)
+                if path.startswith("milestone_model.milestones."):
+                    # Rules v1.1.2: цели вех измеряются в момент применения движком — квартал моды сроков вехи (company_mc._driver_effects), не q20
+                    mid = path.split(".")[2]
+                    ms_ = next((m for m in ((cal.get("milestone_model") or {}).get("milestones") or []) if m.get("id") == mid), None)
+                    qn = int(min(31, max(0, round(float(((ms_ or {}).get("timing") or {}).get("mode", 4))))))
+                else:
+                    qn = 11 if ".Y3" in path or "Y3" in path.split(".")[-1] else (31 if ".Y8" in path or "Y8" in path.split(".")[-1] else 19)
                 sd = float(tot[:, min(qn, tot.shape[1] - 1)].std())
                 kind = _target_kind(path); lim = float(limits.get(kind, limits.get("other", 0.15)))
                 agg[path] = {"sigma": round(sd, 4), "cap": lim, "kind": kind, "quarter": qn + 1, "drivers": len(items), "sum_abs_effect": round(sum(abs(e) for _, e, _, _ in items), 4), "ok": sd <= lim}
@@ -571,8 +580,11 @@ def run(inputs: dict, seed: int) -> dict:
         cal = inputs.get("calibration")
         if not isinstance(cal, dict):
             raise ValueError("mode=calibration требует inputs.calibration (dict)")
-        schema = _schema(inputs, "calibration_schema_path", f"Company_MC_Calibration_Schema_v{CALIBRATION_SCHEMA_VERSION}.yaml")
         cal = _norm(cal)
+        cal_sv = str(cal.get("schema_version") or CALIBRATION_SCHEMA_VERSION)
+        if cal_sv not in CALIBRATION_SCHEMA_VERSIONS:
+            cal_sv = CALIBRATION_SCHEMA_VERSION  # неизвестная версия — проверяется текущей схемой, const schema_version даст ошибку схемы
+        schema = _schema(inputs, "calibration_schema_path", f"Company_MC_Calibration_Schema_v{cal_sv}.yaml")
         errs = _schema_errors(schema, cal)
         folders = inputs.get("folders") or []
         mpc = None
@@ -582,7 +594,7 @@ def run(inputs: dict, seed: int) -> dict:
         jp = Path(inputs.get("joint_layer_spec_path") or (ws / "methodology" / "Joint_Simulation_Layer_Schema_v1.0.yaml"))
         joint_spec = inputs.get("joint_layer_spec") or (yaml.safe_load(jp.read_text(encoding="utf-8")) if jp.exists() else None)
         limits = dict(AGG_SHIFT_LIMITS); limits.update(inputs.get("aggregate_shift_limits") or {})
-        rp = Path(inputs.get("joint_rules_path") or (ws / "methodology" / "Joint_Simulation_Layer_Rules_v1.1.yaml"))
+        rp = Path(inputs.get("joint_rules_path") or (ws / "methodology" / "Joint_Simulation_Layer_Rules_v1.1.2.yaml"))
         rules = yaml.safe_load(rp.read_text(encoding="utf-8")) if rp.exists() else None
         agg: dict = {}
         findings = integrity_calibration(cal, mpc, joint_spec, limits, bool(inputs.get("strict_aggregate", True)), agg)
@@ -608,7 +620,7 @@ def run(inputs: dict, seed: int) -> dict:
                   except Exception as e:  # noqa: BLE001
                     findings.append(_f("MC-DISP-000", "dispersion", f"диагностика дисперсии не выполнена: {type(e).__name__}: {str(e)[:160]}", "warning"))
         n_err = sum(1 for f in findings if f["severity"] == "error")
-        return {"model_version": VERSION, "schema_version": CALIBRATION_SCHEMA_VERSION, "mode": mode, "ticker": cal.get("ticker"), "archetype": cal.get("archetype"),
+        return {"model_version": VERSION, "schema_version": cal_sv, "mode": mode, "ticker": cal.get("ticker"), "archetype": cal.get("archetype"),
                 "schema_errors": errs, "integrity": findings, "engine_dry_run": engine, "aggregate_shift": agg, "dispersion": dispersion, "pass": not errs and n_err == 0,
                 "note": "MC-G5-013 — hard gate по Joint_Simulation_Layer_Rules_v1.1 (strict_aggregate=false → warning); MC-G5-009 (антицикличность) и MC-G5-010 (полнота provenance сверх схемы) статически не проверяются", "decision": "none"}
     if mode == "dozor_report":

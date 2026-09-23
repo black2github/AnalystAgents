@@ -28,12 +28,44 @@ from scipy.stats import beta as _beta, norm as _norm
 
 from engine import joint_layer, milestone_mc
 
-VERSION = "2.3.0"
-SPEC_VERSION = "MC_Calibration_Archetypes_v1.0+Rules_v1.1+Joint_Simulation_Layer_v1.0"
+VERSION = "2.3.1"
+SPEC_VERSION = "MC_Calibration_Archetypes_v1.0+Rules_v1.1+Joint_Simulation_Layer_v1.0+Conditional_MC_v1.1.3"
 QUARTERS = 32
 ARCHETYPES = ("mature_positive_margin", "capital_intensive_transition", "pre_service_or_milestone_driven")
 FACTORS = ("growth", "margin", "valuation")
 HORIZON_Q = {"Y3": 11, "Y5": 19, "Y8": 31}
+# Смена базы оценки revenue_bridge ↔ FCF_multiple (Conditional MC v1.1.3 §9/§16.6, контракт company_mc 2.3.1):
+# калибровки схемы ≥1.0.2 — parity-gated linear blend (непрерывно и монотонно по марже); схемы ≤1.0.1 остаются на
+# прежнем жёстком переключателе — так принятые нормативные прогоны SPCX/NBIS/NVDA воспроизводимы (решение 24.09.2026)
+BLEND_WIDTH = 0.04                      # ширина смеси, п.п. FCF-маржи — константа методологии, не параметр компании
+CROSSOVER_PARITY = "parity_gated_linear_blend_v1"
+CROSSOVER_HARD = "hard_switch_v1"
+BASIS_CODES = {0: "multiple", 1: "revenue_bridge", 2: "negative_fcf_fallback", 3: "milestone_conditioned_EV", 4: "failure_residual",
+               5: "crossover_bridge", 6: "basis_blend"}
+
+
+def _ver_tuple(v) -> tuple:
+    try:
+        return tuple(int(x) for x in str(v).split("."))
+    except ValueError:
+        return (0,)
+
+
+def crossover_mode(cal: dict) -> str:
+    return CROSSOVER_PARITY if _ver_tuple(cal.get("schema_version", "1.0.1")) >= (1, 0, 2) else CROSSOVER_HARD
+
+
+def crossover_value(m, v_r, v_f, m_r, m_f, m_elig: float, pre_code: int):
+    """Непрерывная смена базы (контракт 2.3.1). m — FCF-маржа на пути; v_r = R·M_R (bridge), v_f = R·m·M_F (FCF-база);
+    m_parity = M_R/M_F, m_start = max(m_elig, m_parity). m < m_elig → v_r с кодом pre_code; m < m_start → v_r (5 crossover_bridge);
+    m < m_start + Δ → линейная смесь (6 basis_blend); иначе v_f (0). Возвращает (value, code, m_parity)."""
+    m = np.asarray(m, dtype=float); v_r = np.asarray(v_r, dtype=float); v_f = np.asarray(v_f, dtype=float)
+    m_par = np.asarray(m_r, dtype=float) / np.maximum(np.asarray(m_f, dtype=float), 1e-12)
+    m_start = np.maximum(m_elig, m_par)
+    w = np.clip((m - m_start) / BLEND_WIDTH, 0.0, 1.0)
+    value = np.where(m < m_start, v_r, (1.0 - w) * v_r + w * v_f)
+    code = np.where(m < m_elig, pre_code, np.where(m < m_start, 5, np.where(m < m_start + BLEND_WIDTH, 6, 0)))
+    return value, code.astype(int), m_par
 
 
 # ---------------------------------------------------------------- распределения (ppf от u∈[0,1])
@@ -309,7 +341,7 @@ def _value_at(draw: _Draw, cal: dict, P: dict, horizon: str, rev, fcf, eff: dict
     if horizon in eff["mult_mul"]:
         mult = mult * eff["mult_mul"][horizon]
     if basis == "revenue_bridge":
-        return rev * mult, np.ones(n, dtype=int)
+        return rev * mult, np.ones(n, dtype=int), np.full(n, np.nan)
     if basis == "EBITDA_multiple":
         metric = rev * (fcf / np.where(rev != 0, rev, 1.0) + float(v.get("ebitda_margin_over_fcf", 0.0)))
     elif basis == "FCF_multiple":
@@ -317,12 +349,19 @@ def _value_at(draw: _Draw, cal: dict, P: dict, horizon: str, rev, fcf, eff: dict
     else:
         raise ValueError(f"неизвестный valuation basis: {basis}")
     E = metric * mult; fb = v.get("negative_fcf_fallback"); neg = metric <= 0; code = np.zeros(n, dtype=int)
+    pm = np.full(n, np.nan)
+    if basis == "FCF_multiple" and fb and crossover_mode(cal) == CROSSOVER_PARITY:
+        # v1.1.3 §9.3: parity-gated blend между negative_fcf_fallback (bridge) и FCF_multiple; m_elig = 0
+        fmult = dist_ppf(draw.u("valuation", ll), fb["multiple"], scale=P["mult_factor"])
+        m = np.where(rev > 0, fcf / np.where(rev > 0, rev, 1.0), -1.0)
+        E, code, pm = crossover_value(m, rev * fmult, fcf * mult, fmult, mult, 0.0, 2)
+        return E, code, pm
     if neg.any():
         if not fb:
             raise ValueError(f"{horizon}: отрицательная метрика без negative_fcf_fallback (Archetypes §4.4)")
         fmult = dist_ppf(draw.u("valuation", ll), fb["multiple"], scale=P["mult_factor"])
         E = np.where(neg, rev * fmult, E); code = np.where(neg, 2, 0)
-    return E, code
+    return E, code, pm
 
 
 def _max_drawdown(rng, n, cal, E0, E3, E5, E8):
@@ -352,12 +391,12 @@ def _simulate_chunk(rng, n, cal, E0, P, shocks):
         return milestone_mc.simulate_chunk(draw, cal, E0, P, eff)
     rev_y, base_annual = _revenue(draw, cal, P, eff)
     margins = _margins(draw, cal, P, eff); fcf_y = rev_y * margins
-    E3, b3 = _value_at(draw, cal, P, "Y3", rev_y[:, 2], fcf_y[:, 2], eff)
-    E5, b5 = _value_at(draw, cal, P, "Y5", rev_y[:, 4], fcf_y[:, 4], eff)
-    E8, b8 = _value_at(draw, cal, P, "Y8", rev_y[:, 7], fcf_y[:, 7], eff)
+    E3, b3, pm3 = _value_at(draw, cal, P, "Y3", rev_y[:, 2], fcf_y[:, 2], eff)
+    E5, b5, pm5 = _value_at(draw, cal, P, "Y5", rev_y[:, 4], fcf_y[:, 4], eff)
+    E8, b8, pm8 = _value_at(draw, cal, P, "Y8", rev_y[:, 7], fcf_y[:, 7], eff)
     dd = _max_drawdown(rng, n, cal, E0, E3, E5, E8)
     return {"E3": E3, "E5": E5, "E8": E8, "maxdd5": dd, "b3": b3, "b5": b5, "b8": b8, "rev5": rev_y[:, 4], "m5": margins[:, 4],
-            "base_annual": base_annual, "warnings": eff["warnings"]}
+            "pm3": pm3, "pm5": pm5, "pm8": pm8, "base_annual": base_annual, "warnings": eff["warnings"]}
 
 
 def _summarize(E0, acc, quantiles, cal):
@@ -369,11 +408,21 @@ def _summarize(E0, acc, quantiles, cal):
     med5, med8 = float(np.median(c5)), float(np.median(c8))
     pr = (med8 / med5) if med5 > 0 else None
     pr_class = None if pr is None else ("strong" if pr >= 0.75 else ("moderate" if pr >= 0.5 else "weak"))
-    basis_share = {}
+    basis_share = {}; parity = {}
+    mode = crossover_mode(cal)
     for h, key in (("Y3", "b3"), ("Y5", "b5"), ("Y8", "b8")):
-        b = acc[key]; basis_share[h] = {"multiple": float((b == 0).mean()), "revenue_bridge": float((b == 1).mean()), "negative_fcf_fallback": float((b == 2).mean()),
-                                        "milestone_conditioned_EV": float((b == 3).mean()), "failure_residual": float((b == 4).mean())}
-    bridge_dep = {h: (v["revenue_bridge"] + v["negative_fcf_fallback"] + v["milestone_conditioned_EV"] + v["failure_residual"]) > 0.0 for h, v in basis_share.items()}
+        b = acc[key]; basis_share[h] = {name: float((b == code).mean()) for code, name in BASIS_CODES.items()}
+        pm = acc.get("pm" + key[1:])
+        if mode == CROSSOVER_PARITY and pm is not None and np.isfinite(pm).any():
+            v = pm[np.isfinite(pm)]
+            parity[h] = {"median": float(np.median(v)), "q05": float(np.quantile(v, 0.05)), "q95": float(np.quantile(v, 0.95)), "paths_share": float(np.isfinite(pm).mean())}
+        else:
+            parity[h] = None
+    if mode == CROSSOVER_PARITY:
+        # v1.1.3 §10: bridge_dependent — существенная доля путей на кодах 1/2/5/6 (порог 5 % — интерпретация движка)
+        bridge_dep = {h: (v["revenue_bridge"] + v["negative_fcf_fallback"] + v["crossover_bridge"] + v["basis_blend"]) > 0.05 for h, v in basis_share.items()}
+    else:
+        bridge_dep = {h: (v["revenue_bridge"] + v["negative_fcf_fallback"] + v["milestone_conditioned_EV"] + v["failure_residual"]) > 0.0 for h, v in basis_share.items()}
     ba = acc["base_annual"]
     rev_cagr5 = float(np.median(np.power(acc["rev5"] / ba, 0.2) - 1.0)) if (ba is not None and np.isfinite(ba) and ba > 0) else None
     gaps = {"median_revenue_CAGR_5Y": rev_cagr5, "median_fcf_margin_Y5": float(np.median(acc["m5"]))}
@@ -393,7 +442,10 @@ def _summarize(E0, acc, quantiles, cal):
                      "max_drawdown_5Y_quantiles": {str(qq): float(np.quantile(dd, qq)) for qq in (0.05, 0.25, 0.5, 0.75, 0.95)}, "max_drawdown_model_dependent": True},
         "scenario": {"variance_within_state_CAGR_5Y": float(np.var(c5)), "variance_between_state_scenarios": None,
                      "persistence_ratio": pr, "persistence_class": pr_class, "scenario_concentration": None},
-        "valuation_basis_share": basis_share, "gap_metrics": gaps, "median_equity_value_5Y_b": float(np.median(E5) / 1e9),
+        "valuation_basis_share": basis_share, "basis_parity_margin": parity,
+        "valuation_crossover": {"mode": mode, "blend_width": BLEND_WIDTH if mode == CROSSOVER_PARITY else None,
+                                "bridge_dependent_rule": "доля кодов 1/2/5/6 > 5 % (интерпретация движка; spec v1.1.3 §10)" if mode == CROSSOVER_PARITY else "любая доля кодов 1/2/3/4 (Archetypes v1.0)"},
+        "gap_metrics": gaps, "median_equity_value_5Y_b": float(np.median(E5) / 1e9),
         **(milestone_mc.summarize_extra(acc) if "ms5" in acc else {}),
     }
 

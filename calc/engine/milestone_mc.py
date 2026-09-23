@@ -155,12 +155,14 @@ def simulate_chunk(draw, cal: dict, E0: float, P: dict, eff: dict):
     ref = dist_ppf(draw.u("valuation"), mm["reference_value"], scale=P["mult_factor"])
     resid = float(mm.get("residual_on_failure", 0.0))
     up = {m["id"]: float(m.get("value_uplift", 0.0)) for m in mm["milestones"]}
+    from engine.company_mc import crossover_mode, crossover_value, CROSSOVER_PARITY
     mult_fcf = dist_ppf(draw.u("valuation"), vm["multiple_fcf"], scale=P["mult_factor"])
     mult_rb = dist_ppf(draw.u("valuation"), vm["multiple_revenue_bridge"], scale=P["mult_factor"])
     mat = float(vm.get("fcf_maturity_margin", 0.10))
+    parity_mode = crossover_mode(cal) == CROSSOVER_PARITY   # v1.1.3 §16.6: m_elig = fcf_maturity_margin, далее parity-gated blend
     rev_y = rev_q.reshape(n, 8, 4).sum(axis=2); fcf_y = fcf_q.reshape(n, 8, 4).sum(axis=2)
     srv_y = rev_srv.reshape(n, 8, 4).sum(axis=2)
-    E, B, MS = {}, {}, {}
+    E, B, MS, PM = {}, {}, {}, {}
     for h, q in HORIZON_Q.items():
         yi = (q + 1) // 4 - 1
         achieved_up = np.zeros(n)
@@ -176,15 +178,25 @@ def simulate_chunk(draw, cal: dict, E0: float, P: dict, eff: dict):
         v_pre = net_cash[:, q] + ref * achieved_up
         v_rb = rev_y[:, yi] * mult_rb * mm_h + net_cash[:, q]
         v_fcf = fcf_y[:, yi] * mult_fcf * mm_h + net_cash[:, q]
-        mature = started & (srv_margin_ttm >= mat) & (fcf_y[:, yi] > 0)
-        basis = np.where(term_fail, BASIS["failure_residual"], np.where(~started, BASIS["milestone_conditioned_EV"], np.where(mature, BASIS["multiple"], BASIS["revenue_bridge"])))
-        val = np.where(term_fail, v_fail, np.where(~started, v_pre, np.where(mature, v_fcf, v_rb)))
+        pm = np.full(n, np.nan)
+        if parity_mode:
+            # сервис запущен: margin < m_elig → bridge (код 1); m_elig ≤ m < m_start → bridge (5); смесь (6); FCF-база (0)
+            v_x, code_x, pm_x = crossover_value(srv_margin_ttm, rev_y[:, yi] * mult_rb * mm_h, fcf_y[:, yi] * mult_fcf * mm_h, mult_rb, mult_fcf, mat, BASIS["revenue_bridge"])
+            basis = np.where(term_fail, BASIS["failure_residual"], np.where(~started, BASIS["milestone_conditioned_EV"], code_x))
+            val = np.where(term_fail, v_fail, np.where(~started, v_pre, v_x + net_cash[:, q]))
+            pm = np.where(started & ~term_fail, pm_x, np.nan)
+        else:
+            mature = started & (srv_margin_ttm >= mat) & (fcf_y[:, yi] > 0)
+            basis = np.where(term_fail, BASIS["failure_residual"], np.where(~started, BASIS["milestone_conditioned_EV"], np.where(mature, BASIS["multiple"], BASIS["revenue_bridge"])))
+            val = np.where(term_fail, v_fail, np.where(~started, v_pre, np.where(mature, v_fcf, v_rb)))
         val = np.maximum(val - raised[:, q] * (1.0 + pen), 1.0)
         E[h], B[h] = val, basis
+        PM[h] = pm
         MS[h] = np.where(term_fail, 2, np.where(started, 1, 0))   # 0 pre-service, 1 service, 2 failed
     dd = _max_drawdown(rng, n, cal, E0, E["Y3"], E["Y5"], E["Y8"])
     base_annual = 4.0 * (sum(float(s["base_revenue_quarterly"]) for s in (cal["revenue_model"].get("existing_segments") or {}).values()) or 0.0)
     return {"E3": E["Y3"], "E5": E["Y5"], "E8": E["Y8"], "maxdd5": dd, "b3": B["Y3"], "b5": B["Y5"], "b8": B["Y8"],
+            "pm3": PM["Y3"], "pm5": PM["Y5"], "pm8": PM["Y8"],
             "rev5": rev_y[:, 4], "m5": np.where(rev_y[:, 4] > 0, fcf_y[:, 4] / np.where(rev_y[:, 4] > 0, rev_y[:, 4], 1.0), 0.0),
             "base_annual": base_annual if base_annual > 0 else np.nan,
             "ms3": MS["Y3"], "ms5": MS["Y5"], "ms8": MS["Y8"], "onset_q": np.where(onset_q >= INF, -1, onset_q).astype(float),
