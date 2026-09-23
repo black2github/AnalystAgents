@@ -1,5 +1,6 @@
 """Детерминированная миграция артефактов компаний workspace к Company Artifact Schema v1.0.x (текущая цель — SCHEMA_VERSION)
-(MIG-101…111 из Company_Artifact_Schema_v1.0.1.yaml + §7 IMA_Schema_Party_1; принято владельцем 22.09.2026).
+(MIG-101…111 из Company_Artifact_Schema_v1.0.1.yaml + §7 IMA_Schema_Party_1; принято владельцем 22.09.2026;
+MIG-121/122 из Company_Artifact_Schema_v1.0.5.yaml — история прогонов дозора у наблюдений, 23.09.2026).
 
 Инварианты (проверяются при каждом запуске, при нарушении файл НЕ пишется):
   И1. Семантическая нейтральность: ни один канонический ID, состояние оси, условие триггера, значение KPI (число) не
@@ -26,7 +27,7 @@ from pathlib import Path
 
 import yaml
 
-SCHEMA_VERSION = "1.0.4"  # цепочка патчей v1.0.1 → v1.0.2 (MIG-112/113) → v1.0.3 (MIG-114/115) → v1.0.4 (MIG-117); bump — той же утилитой
+SCHEMA_VERSION = "1.0.5"  # цепочка патчей v1.0.1 → v1.0.2 (MIG-112/113) → v1.0.3 (MIG-114/115) → v1.0.4 (MIG-117) → v1.0.5 (MIG-121/122)
 FILES = ["states.yaml", "kpis.yaml", "triggers.yaml", "mpc_inputs.yaml", "state.json"]
 SKIP_FOLDERS = {"spacex"}
 LEGACY_QUALIFIERS = ("lower_bound", "upper_bound", "approximate")
@@ -102,8 +103,84 @@ def migrate_kpi_like(k: dict, val_key: str) -> None:
     k.setdefault("provenance", "verified_fact")
 
 
-def migrate_docs(docs: dict) -> dict:
-    """Эталонная миграция в памяти (словари после load_plain). Возвращает новые словари; вход не меняется."""
+def _obs_key(o: dict) -> tuple:
+    """Тождество наблюдения (Artifact Schema v1.0.5, ART-REF-031): kpi_id + period_end + нормализованные value/value_range."""
+    return (o.get("kpi_id"), o.get("period_end"), json.dumps(_num(o.get("value")), sort_keys=True), json.dumps(_num(o.get("value_range")), sort_keys=True))
+
+
+def _num(v):
+    """Числа к float (3 и 3.0 — одно наблюдение); bool и остальное — как есть."""
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, (int, float)):
+        return float(v)
+    if isinstance(v, dict):
+        return {k: _num(x) for k, x in v.items()}
+    return v
+
+
+def _run_ids(o: dict) -> list[str]:
+    ids = list(o.get("verification_run_ids") or [])
+    if o.get("verification_run_id") and o["verification_run_id"] not in ids:
+        ids.append(o["verification_run_id"])
+    return ids
+
+
+def migrate_observations(obs: list[dict], reports: list[dict] | None) -> list[dict]:
+    """MIG-122 (Company_Artifact_Schema_v1.0.5, принята 23.09.2026): история прогонов у наблюдений.
+    1) дубликаты по тождеству наблюдения схлопываются в одну строку (ART-REF-031): остаётся строка, привязанная к прогону
+       (verification_run_id), недостающие поля добираются из строки-дубликата; значение и период у них равны по построению;
+    2) verification_run_ids сеется из verification_run_id;
+    3) более ранние прогоны восстанавливаются ТОЛЬКО из иммутабельных отчётов _verify/*.json: run_id отчёта добавляется
+       наблюдению, если в отчёте есть item с тем же kpi_id, runtime_verified=true и candidate.last_value/value_range,
+       равными значению наблюдения (детерминированная связь; иначе история не выдумывается);
+    4) список упорядочен по метке времени в run_id, verification_run_id = последний (ART-REF-030)."""
+    out: list[dict] = []
+    index: dict[tuple, int] = {}
+    for o in obs:
+        k = _obs_key(o)
+        if k not in index:
+            index[k] = len(out)
+            out.append(dict(o))
+            continue
+        kept = out[index[k]]
+        winner, other = (o, kept) if (o.get("verification_run_id") and not kept.get("verification_run_id")) else (kept, o)
+        merged = dict(winner)
+        for kk, vv in other.items():
+            merged.setdefault(kk, vv)
+        ids = _run_ids(kept)
+        ids += [r for r in _run_ids(o) if r not in ids]
+        if ids:
+            merged["verification_run_ids"] = ids
+        out[index[k]] = merged
+    for o in out:
+        ids = _run_ids(o)
+        for r in reports or []:
+            rid = r.get("run_id")
+            if not rid or rid in ids:
+                continue
+            for it in r.get("items") or []:
+                c = it.get("candidate") or {}
+                if it.get("kpi_id") == o.get("kpi_id") and it.get("runtime_verified") is True \
+                        and c.get("last_value") == o.get("value") and (c.get("value_range") or None) == (o.get("value_range") or None):
+                    ids.append(rid)
+                    break
+        if ids:
+            ids.sort(key=lambda s: s.rsplit("-", 1)[-1])  # verify-<TK>-<YYYYMMDDTHHMMSSZ>: метка времени в конце
+            o["verification_run_ids"] = ids
+            o["verification_run_id"] = ids[-1]
+    return out
+
+
+def load_verify_reports(folder: Path) -> list[dict]:
+    """Иммутабельные отчёты дозора папки, по возрастанию имени файла (вход MIG-122)."""
+    d = folder / "_verify"
+    return [json.loads(p.read_text(encoding="utf-8")) for p in sorted(d.glob("*.json"))] if d.exists() else []
+
+
+def migrate_docs(docs: dict, reports: list[dict] | None = None) -> dict:
+    """Эталонная миграция в памяти (словари после load_plain). Возвращает новые словари; вход не меняется.
+    reports — отчёты _verify/*.json папки для MIG-122 (без них история сеется только из verification_run_id)."""
     docs = copy.deepcopy(docs)
     full = all(fn in docs for fn in ("states.yaml", "kpis.yaml", "mpc_inputs.yaml"))
     for d in docs.values():
@@ -162,6 +239,7 @@ def migrate_docs(docs: dict) -> dict:
     if sj:
         for o in sj.get("kpi_observations", []) or []:
             migrate_kpi_like(o, "value")
+        sj["kpi_observations"] = migrate_observations(sj.get("kpi_observations") or [], reports)  # MIG-122
         if isinstance(sj.get("conviction"), dict):
             sj["conviction"].setdefault("provenance", "owner_judgment")
         if isinstance(sj.get("notes"), str):
@@ -423,6 +501,8 @@ def patch_json(raw: str, expected: dict) -> str:
         else:
             raise AssertionError("schema_version не найден одной строкой")
     exp_obs = {o["kpi_id"]: o for o in expected.get("kpi_observations", [])}
+    if len(exp_obs) != len(expected.get("kpi_observations", [])) or any(o.get("verification_run_id") for o in data.get("kpi_observations") or []):
+        raise AssertionError("MIG-122 (история прогонов / схлопывание дубликатов) построчно не патчится: файл не дамп-идемпотентен")
     for i, ln in enumerate(lines):
         m = re.match(r'^(\s*)(\{"kpi_id": .*\})(,?)\s*$', ln)
         if m:
@@ -447,7 +527,7 @@ def patch_json(raw: str, expected: dict) -> str:
 def migrate_folder(folder: Path, apply: bool) -> dict:
     present = [fn for fn in FILES if (folder / fn).exists()]
     docs = {fn: load_plain(folder / fn) for fn in present}
-    expected = migrate_docs(docs)
+    expected = migrate_docs(docs, load_verify_reports(folder))
     full = all(fn in docs for fn in ("states.yaml", "kpis.yaml", "mpc_inputs.yaml"))
     ctx = {"full": full, "states": docs.get("states.yaml"), "kpis": docs.get("kpis.yaml"), "state": docs.get("state.json")}
     report = {"folder": folder.name, "profile": "full_model" if full else "registry_only", "changed": [], "unchanged": [], "errors": []}
