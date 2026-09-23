@@ -6,8 +6,10 @@ Schema v1.0.4 и Company Candidate Schema v1.0.1 (принято 22.09.2026; н�
 inputs:
   mode: "workspace" (по умолчанию) | "candidate" | "dozor_report" | "calibration" (calibration: dict по Company MC Calibration
         Schema; folders: ["<папка>"] для MC-G5-001 по mpc_inputs; правила MC-G5-001..013 кодом, MC-G5-013 — σ суммарного
-        сдвига цели на путях Joint Layer (по умолчанию warning; strict_aggregate: true → error); engine_dry_run: true —
-        company_mc на малом числе путей: mapping_warnings, детерминизм)
+        сдвига цели на путях Joint Layer (hard gate; strict_aggregate: false → warning), выводится в aggregate_shift;
+        engine_dry_run: true — company_mc на малом числе путей: mapping_warnings, детерминизм; dispersion_check: true —
+        intrinsic/full W = q95−q5 CAGR 5Y против ориентиров Rules v1.1 (MC-DISP-001..003, warning), вывод dispersion;
+        требует equity_value_0 — стартовую рыночную стоимость, без неё диагностика пропускается с предупреждением)
         | "dozor_report" (report: dict по output_report_schema протокола дозора;
         "folders": ["<папка>"] для сверки с kpis/states/triggers папки; правила DZR-001..010: тикер, kpi_id, runtime_verified и
         patch_required по status_registry протокола, согласованность summary, оси/состояния/kpi_item_refs, trigger_id, fact_only, итог)
@@ -31,7 +33,7 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.3.1"
+VERSION = "1.4.0"
 SCHEMA_VERSION = "1.0.4"            # Company Artifact Schema (v1.0.4: recorded_at, verification_run_id у осей/событий)
 CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
 DOZOR_PROTOCOL_VERSION = "1.1"      # Dozor Verification Protocol (схема отчёта output_report_schema; отчёты v1.0 валидны)
@@ -311,8 +313,11 @@ def _target_kind(path: str) -> str:
     return "other"
 
 
-def integrity_calibration(cal: dict, mpc: dict | None, joint_spec: dict | None, limits: dict, strict_aggregate: bool) -> list[dict]:
+def integrity_calibration(cal: dict, mpc: dict | None, joint_spec: dict | None, limits: dict, strict_aggregate: bool, agg: dict | None = None) -> list[dict]:
+    """agg — необязательный словарь-накопитель σ суммарного сдвига по целям (заполняется для вывода aggregate_shift)."""
     F: list[dict] = []
+    if agg is None:
+        agg = {}
     maps = cal.get("driver_parameter_mapping") or []
     mapped = {m.get("driver_id") for m in maps}
     active = set((cal.get("joint_simulation") or {}).get("active_drivers") or [])
@@ -422,6 +427,7 @@ def integrity_calibration(cal: dict, mpc: dict | None, joint_spec: dict | None, 
                 qn = 11 if ".Y3" in path or "Y3" in path.split(".")[-1] else (31 if ".Y8" in path or "Y8" in path.split(".")[-1] else 19)
                 sd = float(tot[:, min(qn, tot.shape[1] - 1)].std())
                 kind = _target_kind(path); lim = float(limits.get(kind, limits.get("other", 0.15)))
+                agg[path] = {"sigma": round(sd, 4), "cap": lim, "kind": kind, "quarter": qn + 1, "drivers": len(items), "sum_abs_effect": round(sum(abs(e) for _, e, _, _ in items), 4), "ok": sd <= lim}
                 if sd > lim:
                     F.append(_f("MC-G5-013", f"driver_parameter_mapping → {path}", f"σ суммарного сдвига q{qn + 1} = {sd:.3f} > {lim} ({kind}; драйверов {len(items)}, Σ|effect| {sum(abs(e) for _, e, _, _ in items):.2f})", "warning" if not strict_aggregate else "error"))
                 else:
@@ -429,6 +435,47 @@ def integrity_calibration(cal: dict, mpc: dict | None, joint_spec: dict | None, 
         except Exception as e:  # noqa: BLE001 — диагностика не должна ронять валидацию
             F.append(_f("MC-G5-013", "driver_parameter_mapping", f"не удалось посчитать суммарный сдвиг: {type(e).__name__}: {str(e)[:120]}", "warning"))
     return F
+
+
+def _dispersion_check(cal: dict, joint_spec: dict | None, rules: dict | None, paths: int, equity_value_0: float) -> tuple[dict, list[dict]]:
+    """intrinsic (mapping выключен) vs full: W = q95 − q5 CAGR equity 5Y, ориентиры по архетипу (диагностика, warning)."""
+    import copy
+
+    from engine import company_mc as cm
+
+    F: list[dict] = []
+    bands = ((rules or {}).get("dispersion_plausibility") or {}).get("reference_bands") or {}
+    band = bands.get(cal.get("archetype")) or {}
+    res = {}
+    for label in ("intrinsic", "full"):
+        d = copy.deepcopy(cal)
+        if label == "intrinsic":
+            d["driver_parameter_mapping"] = []
+            d.setdefault("joint_simulation", {})["active_drivers"] = []
+        inp = {"calibration": d, "equity_value_0": float(equity_value_0), "paths": paths, "convergence_check": False, "robustness": False}
+        if joint_spec is not None:
+            inp["joint_layer_spec"] = joint_spec
+        b = cm.run(inp, 0)["base"]
+        q = b["return"]["CAGR_5Y_quantiles"]
+        res[label] = {"W": round(q["0.95"] - q["0.05"], 4), "q05": q["0.05"], "q95": q["0.95"], "median_CAGR_5Y": b["return"]["median_CAGR_5Y"],
+                      "P_loss_gt_30pct_5Y": b["downside"]["P_loss_gt_30pct_5Y"], "P_2x_5Y": b["return"].get("P_2x_5Y")}
+    ratio = res["full"]["W"] / res["intrinsic"]["W"] if res["intrinsic"]["W"] > 0 else None
+    out = {"paths": paths, "equity_value_0": float(equity_value_0), "intrinsic": res["intrinsic"], "full": res["full"], "full_to_intrinsic_ratio": round(ratio, 3) if ratio else None, "bands": band or None}
+    if band:
+        lo, hi = band.get("intrinsic_W", [None, None])
+        if lo is not None and res["intrinsic"]["W"] < lo:
+            F.append(_f("MC-DISP-001", "dispersion/intrinsic", f"intrinsic W = {res['intrinsic']['W']:.3f} ниже ориентира {lo}–{hi}: собственная неопределённость слишком узкая", "warning"))
+        elif hi is not None and res["intrinsic"]["W"] > hi:
+            F.append(_f("MC-DISP-001", "dispersion/intrinsic", f"intrinsic W = {res['intrinsic']['W']:.3f} выше ориентира {lo}–{hi}", "warning"))
+        lo, hi = band.get("full_W", [None, None])
+        if lo is not None and res["full"]["W"] < lo:
+            F.append(_f("MC-DISP-002", "dispersion/full", f"full W = {res['full']['W']:.3f} ниже ориентира {lo}–{hi}", "warning"))
+        elif hi is not None and res["full"]["W"] > hi:
+            F.append(_f("MC-DISP-002", "dispersion/full", f"full W = {res['full']['W']:.3f} выше ориентира {lo}–{hi}: двойной счёт / невозможные хвосты", "warning"))
+        rmax = band.get("full_to_intrinsic_width_ratio_max")
+        if ratio is not None and rmax is not None and ratio > rmax:
+            F.append(_f("MC-DISP-003", "dispersion/ratio", f"W_full/W_intrinsic = {ratio:.2f} > {rmax}: Joint Layer доминирует в дисперсии", "warning"))
+    return out, F
 
 
 def _engine_dry_run(cal: dict, joint_spec: dict | None, paths: int) -> dict:
@@ -501,8 +548,12 @@ def run(inputs: dict, seed: int) -> dict:
         jp = Path(inputs.get("joint_layer_spec_path") or (ws / "methodology" / "Joint_Simulation_Layer_Schema_v1.0.yaml"))
         joint_spec = inputs.get("joint_layer_spec") or (yaml.safe_load(jp.read_text(encoding="utf-8")) if jp.exists() else None)
         limits = dict(AGG_SHIFT_LIMITS); limits.update(inputs.get("aggregate_shift_limits") or {})
-        findings = integrity_calibration(cal, mpc, joint_spec, limits, bool(inputs.get("strict_aggregate", True)))
+        rp = Path(inputs.get("joint_rules_path") or (ws / "methodology" / "Joint_Simulation_Layer_Rules_v1.1.yaml"))
+        rules = yaml.safe_load(rp.read_text(encoding="utf-8")) if rp.exists() else None
+        agg: dict = {}
+        findings = integrity_calibration(cal, mpc, joint_spec, limits, bool(inputs.get("strict_aggregate", True)), agg)
         engine = None
+        dispersion = None
         if inputs.get("engine_dry_run", True) and not errs:
             try:
                 engine = _engine_dry_run(cal, joint_spec, int(inputs.get("dry_run_paths", 2000)))
@@ -512,9 +563,19 @@ def run(inputs: dict, seed: int) -> dict:
                     findings.append(_f("MC-G5-DET", "simulation", "два прогона с одним seed дали разные результаты"))
             except Exception as e:  # noqa: BLE001
                 findings.append(_f("MC-G5-ENGINE", "calibration", f"движок не принял калибровку: {type(e).__name__}: {str(e)[:200]}"))
+            if inputs.get("dispersion_check", True) and not [f for f in findings if f["rule"] == "MC-G5-ENGINE"]:
+                eq0 = inputs.get("equity_value_0")
+                if not eq0:
+                    findings.append(_f("MC-DISP-000", "dispersion", "equity_value_0 не задан — диагностика дисперсии (W зависит от стартовой стоимости) пропущена", "warning"))
+                else:
+                  try:
+                    dispersion, dF = _dispersion_check(cal, joint_spec, rules, int(inputs.get("dispersion_paths", 20000)), eq0)
+                    findings.extend(dF)
+                  except Exception as e:  # noqa: BLE001
+                    findings.append(_f("MC-DISP-000", "dispersion", f"диагностика дисперсии не выполнена: {type(e).__name__}: {str(e)[:160]}", "warning"))
         n_err = sum(1 for f in findings if f["severity"] == "error")
         return {"model_version": VERSION, "schema_version": CALIBRATION_SCHEMA_VERSION, "mode": mode, "ticker": cal.get("ticker"), "archetype": cal.get("archetype"),
-                "schema_errors": errs, "integrity": findings, "engine_dry_run": engine, "pass": not errs and n_err == 0,
+                "schema_errors": errs, "integrity": findings, "engine_dry_run": engine, "aggregate_shift": agg, "dispersion": dispersion, "pass": not errs and n_err == 0,
                 "note": "MC-G5-013 — hard gate по Joint_Simulation_Layer_Rules_v1.1 (strict_aggregate=false → warning); MC-G5-009 (антицикличность) и MC-G5-010 (полнота provenance сверх схемы) статически не проверяются", "decision": "none"}
     if mode == "dozor_report":
         rep = inputs.get("report")

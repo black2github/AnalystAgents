@@ -81,3 +81,22 @@ def test_received_calibrations_flag_aggregate_shift():
     broken = copy.deepcopy(cal); broken["driver_parameter_mapping"][0]["stochastic_targets"][0]["path"] = "capacity_model.gw"
     out2 = av.run({"mode": "calibration", "workspace": str(WS), "calibration": broken, "folders": ["nvda"], "dry_run_paths": 1500}, 0)
     assert not out2["pass"] and (out2["schema_errors"] or any(f["rule"] == "MC-G5-003" for f in out2["integrity"]))
+
+
+@needs_ws
+def test_dispersion_diagnostics_and_sigma_report():
+    p = WS / "from_imma" / "MC_v1.1.1_reissue" / "SPCX_mc_calibration_v1.1.1.yaml"
+    if not p.exists():
+        pytest.skip("нет калибровки SPCX v1.1.1")
+    cal = yaml.safe_load(p.read_text(encoding="utf-8"))
+    out = av.run({"mode": "calibration", "workspace": str(WS), "calibration": cal, "folders": ["spacex"], "dry_run_paths": 1500, "dispersion_paths": 4000, "strict_aggregate": False, "equity_value_0": 154.72 * 13181779945}, 0)
+    agg = out["aggregate_shift"]
+    assert any("initial_growth" in k for k in agg) and all({"sigma", "cap", "kind", "quarter", "ok"} <= set(v) for v in agg.values())
+    assert any(k.endswith(".Y3") and v["quarter"] == 12 for k, v in agg.items())          # узлы горизонтов — нативный квартал
+    d = out["dispersion"]
+    assert d and d["intrinsic"]["W"] > 0 and d["full"]["W"] > 0 and d["bands"]["intrinsic_W"] == [0.4, 0.85]
+    assert any(f["rule"] == "MC-DISP-001" for f in out["integrity"])                          # SPCX intrinsic ниже ориентира
+    off = av.run({"mode": "calibration", "workspace": str(WS), "calibration": cal, "folders": ["spacex"], "dry_run_paths": 1500, "dispersion_check": False, "strict_aggregate": False}, 0)
+    assert off["dispersion"] is None
+    noeq = av.run({"mode": "calibration", "workspace": str(WS), "calibration": cal, "folders": ["spacex"], "dry_run_paths": 1500, "strict_aggregate": False}, 0)
+    assert noeq["dispersion"] is None and any(f["rule"] == "MC-DISP-000" for f in noeq["integrity"])
