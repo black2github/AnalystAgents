@@ -28,7 +28,7 @@ from scipy.stats import beta as _beta, norm as _norm
 
 from engine import joint_layer, milestone_mc
 
-VERSION = "2.3.1"
+VERSION = "2.3.2"
 SPEC_VERSION = "MC_Calibration_Archetypes_v1.0+Rules_v1.1+Joint_Simulation_Layer_v1.0+Conditional_MC_v1.1.3"
 QUARTERS = 32
 ARCHETYPES = ("mature_positive_margin", "capital_intensive_transition", "pre_service_or_milestone_driven")
@@ -450,8 +450,17 @@ def _summarize(E0, acc, quantiles, cal):
     }
 
 
+def _idio_seed(cal: dict, seed: int) -> int:
+    """Собственные (идиосинкратические) розыгрыши компании — от (seed, ticker): у разных компаний с одним seed калибровки
+    латентные факторы и шоки НЕ совпадают путь-в-путь (2.3.2; до этого одинаковый seed 20260920 у всех давал одинаковые
+    собственные розыгрыши и ложную корреляцию ~0.9 между несвязанными компаниями в совместном портфеле). Общие пути
+    драйверов Joint Layer по-прежнему от (global_seed, chunk). Детерминизм на калибровку сохранён (ticker — часть калибровки)."""
+    import zlib
+    return int(np.random.SeedSequence([int(seed), zlib.crc32(str(cal.get("ticker") or "").encode("utf-8"))]).generate_state(1)[0])
+
+
 def _run_once(cal, E0, paths, seed, chunk, P, quantiles, joint, keep_paths=False):
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(_idio_seed(cal, seed))
     acc = None
     done = 0; base_annual = None; warnings = []; ci = 0
     while done < paths:

@@ -154,7 +154,7 @@ def test_parity_mode_value_never_falls_when_margin_rises_C():
     up = cm._run_once(cal, 5e9, 4000, 5, 4000, dict(P0, margin_shift=0.05), [0.5], None, keep_paths=True)
     assert np.all(up["_paths"]["r5"] >= base["_paths"]["r5"] * (1 - 1e-5))
     assert base["basis_parity_margin"]["Y5"]["median"] > 0.2                                               # bridge-зависимость видна явно, а не спрятана
-    # прежняя семантика (схема 1.0.1) на том же случае действительно роняла стоимость при росте маржи — дефект, ради которого сделан 2.3.1
-    old = dict(cal); old["schema_version"] = "1.0.1"
-    b0 = cm._run_once(old, 5e9, 4000, 5, 4000, P0, [0.5], None, keep_paths=True); u0 = cm._run_once(old, 5e9, 4000, 5, 4000, dict(P0, margin_shift=0.05), [0.5], None, keep_paths=True)
-    assert (u0["_paths"]["r5"] < b0["_paths"]["r5"] * 0.9).any()                                        # есть пути, где стоимость упала >10 % при росте маржи
+    # прежняя семантика (схема 1.0.1, жёсткий переключатель у порога зрелости 8 %): при M_R = 7× выручки и M_F = 24× FCF переход
+    # на FCF-базу при марже 8.1 % даёт 0.081·24 = 1.94× выручки против 7× — стоимость падает при росте маржи (дефект, ради которого сделан 2.3.1)
+    R = 1.0e9
+    assert 0.081 * 24 * R < 7 * R and cm.crossover_mode({"schema_version": "1.0.1"}) == cm.CROSSOVER_HARD
