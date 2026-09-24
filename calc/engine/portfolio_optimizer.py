@@ -15,7 +15,8 @@ inputs: {"paths_files": {tk: .npz}, "weights_current": {tk: w} (все пози�
          "per_name_caps": {tk: cap} (target_cap из Conviction Overlay), "roles": {tk: "Core|Challenger|Watch"|None},
          "sectors": {tk: sector_id}, "common_cause": {cause: {tk: severity_factor}},
          "mpc_range": {"min_weight": 0, "max_weight": 0.2, "grid_step": 0.01, "local_refinement_step": 0.005},
-         "objective_tolerance_pp": 0.5, "starts": ["current","equal","empty"]}
+         "objective_tolerance_pp": 0.5, "starts": ["current","equal","empty"] (+ "given": start_weights/start_dry_powder),
+         "search_paths": 100000, "max_paths": null}
 outputs: proposed_weights, dry_powder_weight, feasible_weight_bands, portfolio_return_distribution (3/5/8Y), portfolio_downside,
   sector/common_cause/top3 concentrations, binding_constraints, constraint_gaps_vs_current, marginal_curves (MPC-сетка по бумаге),
   evaluations, infeasible (+ minimum_relaxations), decision: none. Детерминирован (перебор без случайности; seed не используется).
@@ -28,7 +29,7 @@ import numpy as np
 
 from engine import portfolio_paths
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 HORIZONS = (("Y3", "r3", 3), ("Y5", "r5", 5), ("Y8", "r8", 8))
 
 
@@ -51,18 +52,23 @@ def _fast_metrics(pv: np.ndarray, years: int) -> dict:
 
 
 class _Problem:
-    def __init__(self, inputs: dict):
+    def __init__(self, inputs: dict, data: dict | None = None):
+        """data — уже загруженные пути {ticker: load_paths(...)} (Stability Test подаёт возмущённые копии без записи на диск);
+        inputs.max_paths — усечение числа путей (первые N совместных path_id; для серий возмущений)."""
         files = inputs.get("paths_files") or {}
-        self.tick = sorted(files)
+        self.tick = sorted(data) if data is not None else sorted(files)
         if not self.tick:
             raise ValueError("paths_files пуст")
-        data = {t: portfolio_paths.load_paths(files[t]) for t in self.tick}
+        if data is None:
+            data = {t: portfolio_paths.load_paths(files[t]) for t in self.tick}
         ref = data[self.tick[0]]["meta"]
         for t, d in data.items():
             m = d["meta"]
             if (m.get("global_seed"), m.get("chunk"), m.get("paths")) != (ref.get("global_seed"), ref.get("chunk"), ref.get("paths")) or not m.get("joint"):
                 raise ValueError(f"пути {t} не выровнены с {self.tick[0]} или без Joint Layer — совместный портфель не считается")
         n = min(len(d["r5"]) for d in data.values())
+        if inputs.get("max_paths"):
+            n = min(n, int(inputs["max_paths"]))
         self.n = n
         self.R = {key: np.stack([data[t][key][:n].astype(np.float64) for t in self.tick], axis=1) for _, key, _ in HORIZONS}
         # поиск — на первых search_paths совместных путях (те же path_id у всех компаний), итог и проверка допустимости — на всех
@@ -239,14 +245,17 @@ def _search(P: _Problem, w0: np.ndarray, wdp0: float, step: float, max_iter: int
     return w, wdp, evals
 
 
-def run(inputs: dict, seed: int) -> dict:
-    P = _Problem(inputs)
+def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
+    P = _Problem(inputs, data)
     k = len(P.tick)
     starts = inputs.get("starts") or ["current", "equal", "empty"]
     cands = []
     for s in starts:
         if s == "current":
             w0, dp0 = P.cur.copy(), P.dp_cur
+        elif s == "given":                                             # тёплый старт от заданных весов (Stability Test: центральное решение)
+            gw = inputs.get("start_weights") or {}
+            w0, dp0 = np.array([float(gw.get(t, 0.0)) for t in P.tick]), float(inputs.get("start_dry_powder", P.dp_cur))
         elif s == "equal":
             w0, dp0 = np.full(k, (P.budget - P.dp_min) / k), P.dp_min
         else:

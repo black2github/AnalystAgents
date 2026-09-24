@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import importlib
 
-from engine import artifact_validator, company_mc, conditional_mc, conviction_overlay, portfolio_optimizer, portfolio_paths, portfolio_regime, reverse_valuation, selftest, synthetic_basket, valuation_multiple
+from engine import artifact_validator, company_mc, conditional_mc, conviction_overlay, portfolio_optimizer, portfolio_paths, portfolio_regime, portfolio_stability, reverse_valuation, selftest, synthetic_basket, valuation_multiple
 
 importlib.reload(selftest)
 importlib.reload(valuation_multiple)
@@ -15,9 +15,15 @@ importlib.reload(conviction_overlay)
 importlib.reload(company_mc)
 importlib.reload(portfolio_paths)
 importlib.reload(portfolio_optimizer)
+importlib.reload(portfolio_stability)
 importlib.reload(artifact_validator)
 
 MODELS = {
+    "portfolio_stability": {
+        "version": portfolio_stability.VERSION,
+        "fn": portfolio_stability.run,
+        "doc": portfolio_stability.__doc__.strip().splitlines()[0],
+    },
     "portfolio_optimizer": {
         "version": portfolio_optimizer.VERSION,
         "fn": portfolio_optimizer.run,
