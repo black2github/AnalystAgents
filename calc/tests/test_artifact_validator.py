@@ -244,11 +244,13 @@ def test_scenario_mode_on_normative_scenarios():
     if not (ws / "portfolio/_scenarios/CHIP_COLD_WAR_v1.0.yaml").exists():
         import pytest; pytest.skip("нет сценариев в workspace")
     sc = [yaml.safe_load(open(ws / f"portfolio/_scenarios/{f}", encoding="utf-8")) for f in ("TAIWAN_SEIZURE_v1.0.yaml", "CHIP_COLD_WAR_v1.0.yaml")]
-    out = av.run({"mode": "scenario", "workspace": str(ws), "scenarios": sc, "replay_paths": 1000, "calibrations": {"nvda": "mc_calibration_v1.0.2.yaml", "hood": "mc_calibration_v1.0.1.yaml"}}, 0)
+    import glob, os
+    nv = os.path.basename(sorted(glob.glob(str(ws / "portfolio/nvda/mc_calibration_v*.yaml")))[-1])           # текущая версия калибровки NVDA (после переизданий)
+    out = av.run({"mode": "scenario", "workspace": str(ws), "scenarios": sc, "replay_paths": 1000, "calibrations": {"nvda": nv, "hood": "mc_calibration_v1.0.1.yaml"}}, 0)
     assert out["mode"] == "scenario" and out["pass"] and set(out["scenarios"]) == {"TAIWAN_SEIZURE", "CHIP_COLD_WAR"}
     tw = out["scenarios"]["TAIWAN_SEIZURE"]; assert tw["replay"]["deterministic"] and set(tw["replay"]["phase_start_quantiles"]) == {"RESTRICTIONS", "BLOCKADE", "CONFLICT", "RECOVERY"}
     assert "TAIWAN_SUPPLY" in tw["coverage"]["nvda"]["scenario_drivers_applicable"] and "TAIWAN_SUPPLY" in tw["coverage"]["hood"]["scenario_drivers_unmapped"]
-    assert any(f["rule"] == "SCN-010" and f["severity"] == "info" for f in out["set_findings"])                # вероятности pending
+    assert any(f["rule"] == "SCN-010" and f["severity"] == "info" for f in out["set_findings"])                # контракт вероятностей: pending либо p_BASE = остаток (owner_judgment)
     bad = copy.deepcopy(sc[0]); bad["phases"][2]["root_correlation_overrides"] = [{"root_a": "AI_CAPEX_CYCLE", "root_b": "SEMI_SUPPLY_HEALTH", "correlation": 0.99, "meta": {"provenance": "model_assumption", "rationale": "t"}}, {"root_a": "AI_CAPEX_CYCLE", "root_b": "CHINA_MARKET_ACCESS", "correlation": 0.99, "meta": {"provenance": "model_assumption", "rationale": "t"}}, {"root_a": "SEMI_SUPPLY_HEALTH", "root_b": "CHINA_MARKET_ACCESS", "correlation": -0.99, "meta": {"provenance": "model_assumption", "rationale": "t"}}]
     out2 = av.run({"mode": "scenario", "workspace": str(ws), "scenario": bad, "replay_paths": 500}, 0)
     assert not out2["pass"] and any(f["rule"] == "SCN-006" and f["severity"] == "error" for f in out2["scenarios"]["TAIWAN_SEIZURE"]["integrity"])

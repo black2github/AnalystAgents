@@ -14,15 +14,22 @@ p_s/N на исход, §6; общие path_id), MedianImpact/ES5Impact/B_s и S
 hard >60 %).
 outputs: медианный CAGR 3/5/8Y портфеля, P(2x), P(loss>30/50%), ES5, квантили CAGR 5Y, вклад компаний в медиану Y5,
   корреляции относительных стоимостей Y5 между компаниями, alignment.
+Экспорт смеси (1.3.0, режим "mixture_export"): inputs {"mode": "mixture_export", "scenarios": [...как выше, с вероятностями...],
+  "out_dir": каталог, "tag": метка} → по каждой компании файл путей-смеси <out_dir>/<tag>-mixture-<TK>-paths.npz: разбиение
+  path_id по сценариям (BASE — [0, k_B), далее сценарии по порядку списка; k_s = round(p_s·N) с округлением вниз до чётного,
+  чтобы не резать антитетические пары; BASE — остаток), одни и те же диапазоны у всех компаний → совместная структура путей
+  сохраняется; meta — как у BASE-файла (global_seed/chunk/paths/joint) + "mixture". Файлы-смеси читаются оптимизатором и
+  Stability без изменений; их метрики — стратифицированная выборка взвешенной смеси §6 (проверяется тестом).
 """
 from __future__ import annotations
 
 import json
 import math
+import os
 
 import numpy as np
 
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 
 
 def load_paths(path: str) -> dict:
@@ -46,6 +53,8 @@ def _metrics_for(data: dict, w: dict, wdp: float, rdp: float, n: int) -> dict:
 
 
 def run(inputs: dict, seed: int) -> dict:
+    if inputs.get("mode") == "mixture_export":
+        return _export_mixture(inputs)
     if inputs.get("scenarios"):
         return _run_mixture(inputs, seed)
     files = inputs.get("paths_files") or {}
@@ -197,3 +206,81 @@ def _run_mixture(inputs: dict, seed: int) -> dict:
                 "scenario_concentration": {"value": conc, "no_adverse_scenario_burden": tot <= 0, "warning": conc > 0.50, "hard_limit_breach": conc > 0.60, "rule": "max_s B_s / Σ_s B_s по non-BASE; warning >50 %, hard >60 % (Optimizer v1.0)"},
                 "note": "медиана и ES5 нелинейны — impacts диагностические, не аддитивное разложение (§7)"})
     return out
+
+
+def mixture_ranges(n: int, probs: dict, order: list) -> dict:
+    """Разбиение N path_id по сценариям: k_s = round(p_s·N), округление вниз до чётного (антитетические пары внутри чанков идут
+    подряд), BASE — остаток; порядок: BASE, затем сценарии по списку order. Возвращает {id: (start, stop)}."""
+    ks = {}
+    for sid in order:
+        if sid == "BASE":
+            continue
+        k = int(round(float(probs[sid]) * n)); k -= k % 2
+        ks[sid] = max(0, k)
+    used = sum(ks.values())
+    if used > n:
+        raise ValueError(f"Σ k_s = {used} > N = {n}")
+    ranges = {"BASE": (0, n - used)}; pos = n - used
+    for sid in order:
+        if sid == "BASE":
+            continue
+        ranges[sid] = (pos, pos + ks[sid]); pos += ks[sid]
+    return ranges
+
+
+def _export_mixture(inputs: dict) -> dict:
+    """Режим mixture_export (1.3.0): файлы путей-смеси по компаниям — стратифицированная выборка взвешенной смеси §6 по
+    разбиению path_id (общие диапазоны у всех компаний). Требует вероятностей у всех non-BASE сценариев."""
+    scen = inputs["scenarios"]; ids = [sc["id"] for sc in scen]
+    if len(set(ids)) != len(ids) or "BASE" not in ids:
+        raise ValueError("scenarios: id уникальны и обязателен BASE")
+    pn = {}
+    for sc in scen:
+        if sc["id"] == "BASE":
+            continue
+        if sc.get("probability") is None:
+            raise ValueError(f"mixture_export: у сценария {sc['id']} нет вероятности (pending) — экспорт смеси невозможен (§2)")
+        pn[sc["id"]] = float(sc["probability"])
+    if any(v < 0 for v in pn.values()) or sum(pn.values()) > 1.0 + 1e-12:
+        raise ValueError(f"вероятности non-BASE сценариев должны быть ≥0 и в сумме ≤1: {pn}")
+    probs = {**pn, "BASE": 1.0 - sum(pn.values())}
+    base = next(sc for sc in scen if sc["id"] == "BASE")
+    tickers = list(inputs.get("tickers") or base["paths_files"].keys())
+    for sc in scen:
+        missing = [t for t in tickers if t not in (sc.get("paths_files") or {})]
+        if missing:
+            raise ValueError(f"сценарий {sc['id']}: нет файлов путей для {missing}")
+    out_dir = inputs.get("out_dir") or os.path.dirname(base["paths_files"][tickers[0]]); tag = str(inputs.get("tag") or "mixture")
+    os.makedirs(out_dir, exist_ok=True)
+    files_out = {}; ranges = None; n_ref = None; ref_meta = None
+    for t in tickers:
+        loaded = {sc["id"]: load_paths(sc["paths_files"][t]) for sc in scen}
+        z0 = np.load(base["paths_files"][t], allow_pickle=False); keys = [k for k in z0.files if k != "meta"]
+        n = min(len(d["r5"]) for d in loaded.values())
+        if n_ref is None:
+            n_ref = n; ref_meta = loaded["BASE"]["meta"]; ranges = mixture_ranges(n, probs, ids)
+        elif n != n_ref:
+            raise ValueError(f"{t}: число путей {n} ≠ {n_ref} у первой компании — смесь не выравнивается")
+        m0 = loaded["BASE"]["meta"]
+        if m0.get("global_seed") != ref_meta.get("global_seed") or m0.get("chunk") != ref_meta.get("chunk") or m0.get("paths") != ref_meta.get("paths"):
+            raise ValueError(f"{t}: BASE-пути не выровнены с первой компанией (global_seed/chunk/paths)")
+        ref_ids = loaded["BASE"]["path_id"][:n]
+        for sid, d in loaded.items():
+            if d["meta"].get("global_seed") != m0.get("global_seed") or d["meta"].get("chunk") != m0.get("chunk") or not np.array_equal(d["path_id"][:n], ref_ids):
+                raise ValueError(f"сценарий {sid}, {t}: пути не выровнены по path_id с BASE — смесь не считается")
+        arrays = {}
+        for k in keys:
+            parts = []
+            for sid in ["BASE"] + [s for s in ids if s != "BASE"]:
+                a, b = ranges[sid]
+                z = np.load(scen[ids.index(sid)]["paths_files"][t], allow_pickle=False)
+                parts.append(z[k][a:b])
+            arrays[k] = np.concatenate(parts)
+        meta = dict(m0); meta["mixture"] = {"spec": "Scenario_Engine_Specification_v1.0 §6 — stratified partition by path_id", "probabilities": probs,
+                                            "ranges": {sid: list(r) for sid, r in ranges.items()}, "source_files": {sc["id"]: sc["paths_files"][t] for sc in scen}, "exporter": f"portfolio_paths {VERSION}"}
+        fp = os.path.join(out_dir, f"{tag}-mixture-{t}-paths.npz")
+        np.savez_compressed(fp, meta=np.array(json.dumps(meta, ensure_ascii=False)), **arrays)
+        files_out[t] = fp
+    return {"model_version": VERSION, "mode": "mixture_export", "spec": "Scenario_Engine_Specification_v1.0", "paths": int(n_ref), "probabilities": probs,
+            "ranges": {sid: list(r) for sid, r in ranges.items()}, "paths_files": files_out,
+            "note": "файлы-смеси = стратифицированная выборка взвешенной смеси §6 (одни диапазоны path_id у всех компаний); читаются оптимизатором и Stability без изменений"}

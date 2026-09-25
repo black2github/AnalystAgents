@@ -82,3 +82,30 @@ def test_scenario_mixture_weighted(tmp_path):
         pp.run({"scenarios": [{"id": "BASE", "paths_files": files_b}, {"id": "DOWN", "probability": 1.2, "paths_files": files_d}], "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
     with pytest.raises(ValueError):
         pp.run({"scenarios": [{"id": "DOWN", "probability": 0.3, "paths_files": files_d}], "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
+
+
+def test_mixture_export_partition(tmp_path):
+    """mixture_export (1.3.0): разбиение path_id по сценариям — k чётные, BASE остаток, одни диапазоны у всех компаний; файлы-смеси
+    читаются обычным прогоном, их метрики ≈ взвешенная смесь §6; meta сохраняет выравнивание; pending-вероятность → ValueError."""
+    base_a = _run_store(_joint(cal_mature(), "AAA"), tmp_path); base_b = _run_store(_joint(cal_capital(), "BBB"), tmp_path)
+    down = {"scenario_id": "DOWN", "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -2.0}}}
+    mk = lambda c, rid: cm.run({"calibration": c, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 6000, "convergence_check": False, "robustness": False, "store_paths": True, "_runs_dir": str(tmp_path), "_run_id": rid, "scenario": down}, 0)
+    da = mk(_joint(cal_mature(), "AAA"), "t-AAA-DOWN"); db = mk(_joint(cal_capital(), "BBB"), "t-BBB-DOWN")
+    files_b = {"AAA": base_a["paths_file"], "BBB": base_b["paths_file"]}; files_d = {"AAA": da["paths_file"], "BBB": db["paths_file"]}
+    scen = [{"id": "BASE", "paths_files": files_b}, {"id": "DOWN", "probability": 0.3, "paths_files": files_d}]
+    assert pp.mixture_ranges(6000, {"DOWN": 0.3, "BASE": 0.7}, ["BASE", "DOWN"]) == {"BASE": (0, 4200), "DOWN": (4200, 6000)}
+    assert pp.mixture_ranges(1001, {"S": 0.333, "BASE": 0.667}, ["BASE", "S"])["S"] == (669, 1001)                     # k = round(333.3) = 333 → 332 (чётное)
+    ex = pp.run({"mode": "mixture_export", "scenarios": scen, "out_dir": str(tmp_path / "mix"), "tag": "t"}, 0)
+    assert ex["mode"] == "mixture_export" and ex["ranges"] == {"BASE": [0, 4200], "DOWN": [4200, 6000]} and set(ex["paths_files"]) == {"AAA", "BBB"}
+    ma = pp.load_paths(ex["paths_files"]["AAA"]); mb = pp.load_paths(ex["paths_files"]["BBB"])
+    assert len(ma["r5"]) == 6000 and np.array_equal(ma["path_id"], mb["path_id"]) and ma["meta"]["global_seed"] == 101 and ma["meta"]["joint"] is True
+    assert ma["meta"]["mixture"]["probabilities"] == {"DOWN": 0.3, "BASE": 0.7}
+    # состав: первые 4200 — BASE-пути, остальные — DOWN-пути тех же path_id
+    assert np.array_equal(ma["r5"][:4200], pp.load_paths(files_b["AAA"])["r5"][:4200]) and np.array_equal(ma["r5"][4200:], pp.load_paths(files_d["AAA"])["r5"][4200:])
+    w = {"AAA": 0.5, "BBB": 0.4}
+    plain = pp.run({"paths_files": ex["paths_files"], "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
+    weighted = pp.run({"scenarios": scen, "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
+    for k in ("median_CAGR", "P_loss_gt_30pct", "expected_shortfall_5pct", "P_2x"):
+        assert plain["horizons"]["Y5"][k] == pytest.approx(weighted["horizons"]["Y5"][k], abs=0.02), k                 # стратифицированная выборка ≈ взвешенная смесь
+    with pytest.raises(ValueError):
+        pp.run({"mode": "mixture_export", "scenarios": [{"id": "BASE", "paths_files": files_b}, {"id": "DOWN", "probability": None, "paths_files": files_d}], "out_dir": str(tmp_path / "mix2")}, 0)
