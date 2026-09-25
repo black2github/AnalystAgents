@@ -95,3 +95,13 @@ def test_c_validation_and_determinism():
     with pytest.raises(ValueError):
         _run(cyc)
     assert _run(cal_c())["base"] == _run(cal_c())["base"]
+
+
+def test_milestone_probability_shift_changes_onset():
+    from engine import company_mc as cm
+    c = cal_c()
+    base = cm.simulate_paths({"calibration": c, "equity_value_0": 5e9, "paths": 6000}, 0)
+    up = cm.simulate_paths({"calibration": c, "equity_value_0": 5e9, "paths": 6000, "perturbation": {"milestone_prob_shift": 0.10}}, 0)
+    down = cm.simulate_paths({"calibration": c, "equity_value_0": 5e9, "paths": 6000, "perturbation": {"milestone_prob_shift": -0.10}}, 0)
+    assert up["summary"]["median_CAGR_5Y"] >= base["summary"]["median_CAGR_5Y"] >= down["summary"]["median_CAGR_5Y"]
+    assert up["summary"]["P_loss_gt_30pct_5Y"] <= down["summary"]["P_loss_gt_30pct_5Y"]

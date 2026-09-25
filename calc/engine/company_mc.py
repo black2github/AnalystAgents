@@ -28,7 +28,7 @@ from scipy.stats import beta as _beta, norm as _norm
 
 from engine import joint_layer, milestone_mc
 
-VERSION = "2.3.2"
+VERSION = "2.4.0"
 SPEC_VERSION = "MC_Calibration_Archetypes_v1.0+Rules_v1.1+Joint_Simulation_Layer_v1.0+Conditional_MC_v1.1.3"
 QUARTERS = 32
 ARCHETYPES = ("mature_positive_margin", "capital_intensive_transition", "pre_service_or_milestone_driven")
@@ -488,7 +488,9 @@ def _run_once(cal, E0, paths, seed, chunk, P, quantiles, joint, keep_paths=False
     return out
 
 
-def run(inputs: dict, seed: int) -> dict:
+def _prepare(inputs: dict, seed: int):
+    """Общая подготовка run() и simulate_paths(): нормализованная калибровка, E0, число путей, seed, chunk, квантили, P0, корреляция
+    факторов, совместный слой (spec, драйверы, global_seed, сценарий, adverse), knockout."""
     cal = copy.deepcopy(_normalize(inputs["calibration"]))
     E0 = float(inputs["equity_value_0"]); sim = cal["simulation"]
     paths = int(inputs.get("paths") or sim["paths"]); seed_used = int(inputs.get("seed_override") or sim.get("seed", seed))
@@ -513,6 +515,25 @@ def run(inputs: dict, seed: int) -> dict:
         joint = {"spec": spec, "drivers": drivers, "global_seed": int(inputs.get("global_seed", seed_used)), "scenario": inputs.get("scenario"), "adverse": adverse}
         if inputs.get("knockout"):
             knockout_applied = _apply_knockout(cal, list(inputs["knockout"]))
+    return cal, E0, paths, seed_used, chunk, quantiles, P0, fixed, joint, knockout_applied
+
+
+def simulate_paths(inputs: dict, seed: int) -> dict:
+    """Пути компании в памяти (срез 2 Stability): те же общие шоки (global_seed, chunk → выравнивание по path_id с нормативным
+    прогоном при равных chunk), опционально inputs.perturbation {growth_shift, margin_shift, mult_factor, rho_shift,
+    milestone_prob_shift} и inputs.knockout. Возвращает {"paths": {r3, r5, r8, maxdd5, b3, b5, b8, path_id}, "meta", "summary"}."""
+    cal, E0, paths, seed_used, chunk, quantiles, P0, fixed, joint, knockout_applied = _prepare(inputs, seed)
+    P = dict(P0); P.update({k: float(v) for k, v in (inputs.get("perturbation") or {}).items()})
+    r = _run_once(cal, E0, paths, seed_used, chunk, P, quantiles, joint, keep_paths=True)
+    arrays = r.pop("_paths")
+    meta = {"ticker": cal.get("ticker"), "model_version": VERSION, "global_seed": (joint or {}).get("global_seed", seed_used), "seed": seed_used, "chunk": chunk, "paths": paths,
+            "joint": bool(joint), "scenario": (inputs.get("scenario") or {}).get("id", "BASE"), "equity_value_0": E0, "archetype": cal["archetype"],
+            "perturbation": {k: v for k, v in P.items() if v not in (0.0, 1.0)}, "knockout_applied": knockout_applied, "path_id_rule": "path_id = chunk_index*chunk + i"}
+    return {"paths": arrays, "meta": meta, "summary": {"median_CAGR_5Y": r["return"]["median_CAGR_5Y"], "P_loss_gt_30pct_5Y": r["downside"]["P_loss_gt_30pct_5Y"], "ES5": r["downside"]["expected_shortfall_5pct_5Y"]}}
+
+
+def run(inputs: dict, seed: int) -> dict:
+    cal, E0, paths, seed_used, chunk, quantiles, P0, fixed, joint, knockout_applied = _prepare(inputs, seed)
     store = bool(inputs.get("store_paths"))
     base = _run_once(cal, E0, paths, seed_used, chunk, P0, quantiles, joint, keep_paths=store)
     paths_file = None

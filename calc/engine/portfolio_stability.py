@@ -11,8 +11,11 @@
   (маргиналы сохраняются, горизонты внутри компании переставляются вместе); PSD-ремонт (обрезка собственных чисел) логируется;
   нулевое δ прогоняется отдельно как контроль шума самого метода;
 - scenario probabilities: единственный сценарий BASE → not_applicable (§3.3);
-- milestones ±10 п.п. и driver knockout (§3.5): на уровне пути не воспроизводятся → not_testable (пересимуляция — следующий срез);
-  материальные драйверы (взвешенная |экспозиция| ≥ 0.30) перечисляются по inputs.driver_exposures;
+- milestones ±10 п.п. и driver knockout (§3.5): без stability.resimulate — not_testable; с resimulate (1.2.0, срез 2) —
+  ПЕРЕСИМУЛЯЦИЯ company_mc.simulate_paths на тех же общих шоках (global_seed, chunk): маржа ±5 п.п. точно (margin_shift вместо
+  прокси), вероятность вех ±10 п.п. (milestone_prob_shift) у компаний с milestone_model, knockout материальных драйверов
+  (взвешенная |экспозиция| ≥ 0.30) — снятие structural_support (company_mc inputs.knockout) у компаний с положительной
+  экспозицией, отрицательная экспозиция бонуса не получает; критерий §7 driver_knockout_feasible_replacement оценивается;
 - leave-one-company-out: позиции с центральным весом ≥ 5 % исключаются по одной (потолок 0), optimizer заново на трёх стартах
   (given/equal/empty: одиночный тёплый старт из точки, нарушающей потолки после удаления бумаги, застревал — 1.0.1) (§3.6);
   к каждому LOO и к центру — линейная проверка ёмкости (1.0.2, scipy.linprog): максимум размещаемого Σw при потолках, общих
@@ -33,7 +36,9 @@ inputs: всё, что принимает portfolio_optimizer (paths_files, weig
                        "driver_exposures": {tk: {driver: ±2|±1}}, "milestone_companies": [tk], "central_run_ref": run_id|null,
                        "return_shift_pp": [3, 5], "multiple_pct": 0.20, "margin_pp": 0.05, "corr_delta": [0.10, 0.15],
                        "loo_min_weight": 0.05, "inclusion_threshold": 0.01, "workers": null,
-                       "families": null | ["return_shift","terminal","correlation","combined","loo"] (частичный перепрогон: partial=true)}}
+                       "families": null | ["return_shift","terminal","correlation","combined","loo","milestone","driver_knockout"] (частичный перепрогон: partial=true),
+                       "resimulate": null | {"calibrations": {tk: cal}, "equity_value_0": {tk: E0}, "joint_layer_spec": spec, "global_seed": int,
+                                             "chunk": 50000, "milestone_pp": 0.10}}
 outputs: §10 — central_weights, inclusion_frequency_by_asset, weight_p10_p50_p90, weight_spread, return/terminal/correlation/
   scenario/driver sensitivity, feasibility_rate, turnover_distribution, binding_constraint_frequency, company_stability_classification,
   portfolio_stability_classification (критерии по отдельности + not_evaluated), leave_one_out, mpc_robustness_mapping (null: нужен
@@ -49,15 +54,16 @@ from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 
+from engine import company_mc
 from engine import portfolio_optimizer as po
 from engine import portfolio_paths
 
-VERSION = "1.1.0"
+VERSION = "1.2.1"
 HKEYS = (("r3", 3), ("r5", 5), ("r8", 8))
 DEFAULTS = {"combined_runs": 500, "max_paths": 100_000, "search_paths": 100_000, "return_shift_pp": [3, 5], "multiple_pct": 0.20, "margin_pp": 0.05,
             "corr_delta": [0.10, 0.15], "loo_min_weight": 0.05, "inclusion_threshold": 0.01, "material_driver_min": 0.30, "combined_return_pp": 3,
             "combined_corr_delta": 0.10, "objective_sign_reference": "median_CAGR_5Y", "workers": None}
-FAMILIES = ("return_shift", "terminal", "correlation", "combined", "loo")
+FAMILIES = ("return_shift", "terminal", "correlation", "combined", "loo", "milestone", "driver_knockout")
 
 
 # ----------------------------------------------------------------------------------------------------------- возмущения путей
@@ -171,7 +177,36 @@ _W: dict = {}   # состояние процесса-исполнителя (и
 def _worker_init(inputs: dict, n: int, cw: dict, cdp: float) -> None:
     files = inputs["paths_files"]; tick = sorted(files)
     base = _copy({t: portfolio_paths.load_paths(files[t]) for t in tick}, n)
-    _W.update({"inp": inputs, "n": n, "tick": tick, "base": base, "cw": cw, "cdp": cdp})
+    _W.update({"inp": inputs, "n": n, "tick": tick, "base": base, "cw": cw, "cdp": cdp, "resim": ((inputs.get("stability") or {}).get("resimulate") or None)})
+
+
+def _check_chunk_alignment(paths_base: int, n: int, chunk: int) -> None:
+    """Пути выровнены по path_id только при одинаковых размерах чанков (антитетические пары формируются внутри чанка):
+    размеры чанков усечённого прогона (n) должны совпадать с первыми чанками нормативного (paths_base)."""
+    def sizes(total):
+        out, done = [], 0
+        while done < total:
+            m = min(chunk, total - done); out.append(m if m % 2 == 0 else m + 1); done += m
+        return out
+    sb, sn = sizes(paths_base), sizes(n)
+    if sn != sb[:len(sn)]:
+        raise ValueError(f"resimulate: пути не выровняются — размеры чанков {sn} против нормативных {sb[:len(sn)]} (chunk {chunk}); нужен n, кратный chunk, или chunk нормативного прогона")
+
+
+def _resimulate(t: str, perturbation: dict | None, knockout: list | None) -> dict:
+    """Пути компании t на общих шоках (global_seed/chunk из base.meta) с возмущением или knockout — срез 2."""
+    rs = _W["resim"]; n = _W["n"]; meta = _W["base"][t]["meta"]
+    chunk = int(rs.get("chunk", meta.get("chunk") or 50000))
+    _check_chunk_alignment(int(meta.get("paths") or n), n, chunk)
+    inp = {"calibration": rs["calibrations"][t], "equity_value_0": float(rs["equity_value_0"][t]), "joint_layer_spec": rs.get("joint_layer_spec"),
+           "global_seed": int(rs.get("global_seed", meta.get("global_seed"))), "chunk": chunk, "paths": n}
+    if perturbation:
+        inp["perturbation"] = perturbation
+    if knockout:
+        inp["knockout"] = list(knockout)
+    r = company_mc.simulate_paths(inp, int(meta.get("seed") or inp["global_seed"]))
+    arr = r["paths"]
+    return {k: arr[k][:n] for k in ("r3", "r5", "r8", "maxdd5")} | {"summary": r["summary"], "knockout_applied": r["meta"].get("knockout_applied")}
 
 
 def _apply_ops(d: dict, ops: list, tick: list) -> dict:
@@ -180,12 +215,18 @@ def _apply_ops(d: dict, ops: list, tick: list) -> dict:
             _scale(d, op[1], op[2])
         elif op[0] == "corr":
             _iman_conover(d, tick, np.array(op[1], dtype=float), int(op[2]))
+        elif op[0] == "resim":
+            r = _resimulate(op[1], op[2], op[3])
+            for k in ("r3", "r5", "r8", "maxdd5"):
+                d[op[1]][k] = r[k]
+            d.setdefault("_resim_info", {})[op[1]] = {"summary": r["summary"], "knockout_applied": r["knockout_applied"]}
     return d
 
 
 def _run_task(task: dict) -> dict:
     inp, n, tick, base, cw, cdp = (_W[k] for k in ("inp", "n", "tick", "base", "cw", "cdp"))
     d = _apply_ops(_copy(base, n), task["ops"], tick)
+    resim_info = d.pop("_resim_info", None)          # служебная запись пересимуляции — не компания, оптимизатору не передаётся
     if task["family"] == "loo":
         t = task["exclude"]; inp2 = dict(inp); inp2.pop("stability", None)
         caps = dict(inp2.get("per_name_caps") or {}); caps[t] = 0.0; inp2["per_name_caps"] = caps
@@ -198,6 +239,8 @@ def _run_task(task: dict) -> dict:
         res = _opt(inp, d, cw, cdp)
         if task.get("measure_corr"):
             res["achieved_C1"] = _rank_corr(d, tick).tolist()
+        if resim_info:
+            res["resim_info"] = resim_info
     res.update({"family": task["family"], "label": task["label"], "layer": task["layer"], "key": task["key"], "turnover_from_central": _turnover(res["weights"], res["dry_powder"], cw, cdp)})
     return res
 
@@ -210,8 +253,9 @@ def _execute(tasks: list, inputs: dict, n: int, cw: dict, cdp: float, workers: i
     for k in keys:
         os.environ[k] = "1"                                            # потомки (spawn) стартуют с одним потоком BLAS — без оверсабскрипшна
     try:
-        with ProcessPoolExecutor(max_workers=min(workers, len(tasks)), mp_context=mp.get_context("spawn"), initializer=_worker_init, initargs=(inputs, n, cw, cdp)) as ex:
-            return list(ex.map(_run_task, tasks, chunksize=1))
+        from engine import stability_worker                       # неперезагружаемая обёртка: устойчива к importlib.reload сайдкара
+        with ProcessPoolExecutor(max_workers=min(workers, len(tasks)), mp_context=mp.get_context("spawn"), initializer=stability_worker.init, initargs=(inputs, n, cw, cdp)) as ex:
+            return list(ex.map(stability_worker.task, tasks, chunksize=1))
     finally:
         for k, v in backup.items():
             if v is None:
@@ -233,6 +277,18 @@ def run(inputs: dict, seed: int) -> dict:
     inp = dict(inputs); inp["max_paths"] = n; inp["search_paths"] = min(int(cfg["search_paths"]), n)
     margins = {t: float(m) for t, m in (cfg.get("terminal_margins") or {}).items() if m is not None}
     incl_thr = float(cfg["inclusion_threshold"])
+    resim = cfg.get("resimulate") or None
+    resim_check = None
+    if resim:
+        miss = [t for t in tick if t not in (resim.get("calibrations") or {}) or t not in (resim.get("equity_value_0") or {})]
+        if miss:
+            raise ValueError(f"resimulate: нет калибровки/equity_value_0 для {miss}")
+        # сторож: пересимуляция BASE первой компании должна побитно совпасть с нормативными путями (общие шоки, chunk, seed)
+        _worker_init(inp, n, {}, 0.0)
+        chk = _resimulate(tick[0], None, None)
+        if not np.array_equal(chk["r5"], base[tick[0]]["r5"]):
+            raise ValueError(f"resimulate: пересимуляция BASE {tick[0]} не воспроизводит нормативные пути (проверьте калибровку, equity_value_0, global_seed, chunk)")
+        resim_check = {"company": tick[0], "reproduced": True}
 
     # --- центральный прогон
     central = _opt(inp, _copy(base, n), None, None)
@@ -267,6 +323,12 @@ def run(inputs: dict, seed: int) -> dict:
         for sgn in (-1, 1):
             f = 1.0 + sgn * float(cfg["multiple_pct"])
             add("terminal_multiple", f"{t}:x{f:.2f}", [("scale", t, {kk: f for kk, _ in HKEYS})], {"company": t, "multiple_factor": f}, ("mult", t, f"{sgn * cfg['multiple_pct'] * 100:+.0f}%"))
+        if resim:
+            # точная маржа: пересимуляция с margin_shift (для C — сервисная маржа через тот же P.margin_shift)
+            for sgn in (-1, 1):
+                delta = sgn * float(cfg["margin_pp"])
+                add("terminal_margin", f"{t}:{delta * 100:+.0f}pp", [("resim", t, {"margin_shift": delta}, None)], {"company": t, "margin_pp": delta, "method": "resimulation"}, ("margin", t, f"{delta * 100:+.0f}pp", "resimulation"))
+            continue
         m = margins.get(t)
         if m is None or m <= 0.02:
             term_sens[t]["margin"] = "not_testable" + ("" if m is None else "_margin_near_zero")
@@ -274,6 +336,12 @@ def run(inputs: dict, seed: int) -> dict:
         for sgn in (-1, 1):
             delta = sgn * float(cfg["margin_pp"]); f = float(np.clip((m + delta) / m, 0.1, 3.0))
             add("terminal_margin", f"{t}:{delta * 100:+.0f}pp", [("scale", t, {"r5": f, "r8": f})], {"company": t, "margin_pp": delta, "proxy_factor": f, "terminal_margin": m}, ("margin", t, f"{delta * 100:+.0f}pp", round(f, 4)))
+    # --- 3.4 вехи ±10 п.п. (только с пересимуляцией)
+    ms_companies = [t for t in tick if t in (cfg.get("milestone_companies") or [])]
+    for t in (ms_companies if (resim and "milestone" in fam) else []):
+        for sgn in (-1, 1):
+            delta = sgn * float(cfg.get("milestone_pp", 0.10))
+            add("milestone", f"{t}:ms{delta * 100:+.0f}pp", [("resim", t, {"milestone_prob_shift": delta}, None)], {"company": t, "milestone_pp": delta, "method": "resimulation"}, ("milestone", t, f"{delta * 100:+.0f}pp"))
     # --- 3.2 корреляции
     corr_sens = {"rank_corr_Y5_base_max_offdiag": float(np.max(np.abs(C0 - np.eye(k)))), "runs": {}}
     for delta in ([0.0] + [sg * d_ for d_ in cfg["corr_delta"] for sg in (-1, 1)]) if "correlation" in fam else []:
@@ -292,8 +360,18 @@ def run(inputs: dict, seed: int) -> dict:
             wabs = sum(abs(float(expo.get(t, {}).get(dname, 0.0))) / 2.0 * float(cw.get(t, 0.0)) for t in tick)
             if wabs >= float(cfg["material_driver_min"]) * sum(float(cw.get(t, 0.0)) for t in tick):
                 material.append({"driver": dname, "weighted_abs_exposure_share": round(wabs / max(sum(float(cw.get(t, 0.0)) for t in tick), 1e-9), 3)})
-    driver_sens = {"status": "not_testable_path_level", "reason": "выбивание драйвера требует пересимуляции company_mc с обнулённым положительным вкладом mapping — следующий срез",
-                   "material_drivers": material, "material_rule": "Σ_i w_i·|exposure_i|/2 ≥ 0.30 × Σ w_i (экспозиция ±2 → 1.0, ±1 → 0.5)"}
+    if resim and "driver_knockout" in fam and material:
+        for md in material:
+            dname = md["driver"]
+            hit = [t for t in tick if float(expo.get(t, {}).get(dname, 0.0)) > 0]        # только положительная экспозиция — без искусственного бонуса
+            if not hit:
+                continue
+            add("driver_knockout", f"ko:{dname}", [("resim", t, None, [dname]) for t in hit], {"driver": dname, "companies": hit}, ("ko", dname, hit))
+        driver_sens = {"status": "resimulated", "method": "company_mc knockout (снятие structural_support) у компаний с положительной экспозицией; отрицательная экспозиция без бонуса",
+                       "material_drivers": material, "material_rule": "Σ_i w_i·|exposure_i|/2 ≥ 0.30 × Σ w_i (экспозиция ±2 → 1.0, ±1 → 0.5)", "runs": {}}
+    else:
+        driver_sens = {"status": "not_testable_path_level" if not resim else "not_run", "reason": "выбивание драйвера требует пересимуляции (stability.resimulate)" if not resim else "семейство driver_knockout не запрошено",
+                       "material_drivers": material, "material_rule": "Σ_i w_i·|exposure_i|/2 ≥ 0.30 × Σ w_i (экспозиция ±2 → 1.0, ±1 → 0.5)"}
     # --- 3.6 leave-one-company-out
     for t in (tick if "loo" in fam else []):
         if float(cw.get(t, 0.0)) < float(cfg["loo_min_weight"]):
@@ -324,18 +402,31 @@ def run(inputs: dict, seed: int) -> dict:
 
     # --- исполнение
     results = _execute(tasks, inp, n, cw, cdp, workers)
-    runs = [r for r in results if r["family"] != "loo"]   # популяция §5–6 (LOO — отдельно)
+    runs = [r for r in results if r["family"] != "loo"]   # популяция §5–6 (LOO — отдельно); knockout и вехи — тоже возмущения предпосылок
     ret_sens: dict = {}
     loo: dict = {}
     combined: list = []
     for r in results:
         key = r["key"]
+        if key[0] == "milestone":
+            term_sens.setdefault(key[1], {"multiple": {}, "margin": {}, "milestone_probability": {}})
+            if not isinstance(term_sens[key[1]].get("milestone_probability"), dict):
+                term_sens[key[1]]["milestone_probability"] = {}
+            term_sens[key[1]]["milestone_probability"][key[2]] = {"weight": r["weights"].get(key[1]), "feasible": r["feasible"], "median_CAGR_5Y": r["median_CAGR_5Y"], "method": "resimulation",
+                                                                   "company_summary": (r.get("resim_info") or {}).get(key[1], {}).get("summary")}
+            continue
+        if key[0] == "ko":
+            driver_sens["runs"][key[1]] = {"companies": key[2], "feasible": r["feasible"], "weights": r["weights"], "median_CAGR_5Y": r["median_CAGR_5Y"], "ES5": r["ES5"],
+                                           "turnover_from_central": r["turnover_from_central"], "violations": r["violations"],
+                                           "company_summaries": {t: v.get("summary") for t, v in (r.get("resim_info") or {}).items()}, "knockout_applied": {t: v.get("knockout_applied") for t, v in (r.get("resim_info") or {}).items()}}
+            continue
         if key[0] == "ret":
             ret_sens.setdefault(key[1], {})[key[2]] = {"weight": r["weights"].get(key[1]), "feasible": r["feasible"], "median_CAGR_5Y": r["median_CAGR_5Y"], "turnover_from_central": r["turnover_from_central"]}
         elif key[0] == "mult":
             term_sens[key[1]]["multiple"][key[2]] = {"weight": r["weights"].get(key[1]), "feasible": r["feasible"], "median_CAGR_5Y": r["median_CAGR_5Y"]}
         elif key[0] == "margin":
-            term_sens[key[1]]["margin"][key[2]] = {"weight": r["weights"].get(key[1]), "feasible": r["feasible"], "median_CAGR_5Y": r["median_CAGR_5Y"], "proxy_factor": key[3]}
+            term_sens[key[1]]["margin"][key[2]] = {"weight": r["weights"].get(key[1]), "feasible": r["feasible"], "median_CAGR_5Y": r["median_CAGR_5Y"],
+                                                   **({"method": "resimulation", "company_summary": (r.get("resim_info") or {}).get(key[1], {}).get("summary")} if key[3] == "resimulation" else {"proxy_factor": key[3]})}
         elif key[0] == "corr":
             C1 = np.array(r.pop("achieved_C1"))
             corr_sens["runs"][key[1]] = {"weights": r["weights"], "feasible": r["feasible"], "median_CAGR_5Y": r["median_CAGR_5Y"], "ES5": r["ES5"], "psd_repaired": key[2],
@@ -390,11 +481,14 @@ def run(inputs: dict, seed: int) -> dict:
     criteria = {"hard_constraint_feasibility": crit(feas_rate, 0.95, lambda v: v >= 0.95),
                 "median_turnover_from_central": crit(t50, 0.25, lambda v: v <= 0.25),
                 "p90_turnover_from_central": crit(t90, 0.50, lambda v: v <= 0.50),
-                "driver_knockout_feasible_replacement": {"value": None, "pass": None, "status": "not_evaluated (driver knockout not testable at path level)"},
+                "driver_knockout_feasible_replacement": ({"value": round(float(np.mean([v["feasible"] for v in driver_sens["runs"].values()])), 4), "limit": 1.0,
+                                                          "pass": bool(all(v["feasible"] for v in driver_sens["runs"].values())), "infeasible_drivers": [d for d, v in driver_sens["runs"].items() if not v["feasible"]]}
+                                                         if driver_sens.get("status") == "resimulated" and driver_sens.get("runs") else
+                                                         {"value": None, "pass": None, "status": "not_evaluated (driver knockout requires stability.resimulate)"}),
                 "median_5y_cagr_sign_flip_fraction": crit(flips, 0.20, lambda v: v <= 0.20)}
     evaluated = [c for c in criteria.values() if c["pass"] is not None]
     port_class = ("structurally_stable" if all(c["pass"] for c in evaluated) else "not_structurally_stable") if evaluated else "not_evaluated"
-    ah = hashlib.sha256(json.dumps({"inputs": {k: v for k, v in inputs.items() if k != "paths_files"}, "paths_meta": {t: base[t]["meta"] for t in tick}, "n": n, "cfg": cfg, "seed": seed, "version": VERSION},
+    ah = hashlib.sha256(json.dumps({"inputs": {k: v for k, v in inputs.items() if k not in ("paths_files", "stability")}, "paths_meta": {t: base[t]["meta"] for t in tick}, "n": n, "cfg": {k: v for k, v in cfg.items() if k != "resimulate"}, "resimulate": bool(resim), "seed": seed, "version": VERSION},
                                    sort_keys=True, ensure_ascii=False, default=str).encode()).hexdigest()
     fam_counts: dict = {}
     for r in runs:
@@ -414,10 +508,10 @@ def run(inputs: dict, seed: int) -> dict:
             "binding_constraint_frequency": bind_freq, "company_stability_classification": cls,
             "portfolio_stability_classification": {"class": port_class, "criteria": criteria, "criteria_not_evaluated": [k for k, c in criteria.items() if c["pass"] is None]},
             "mpc_robustness_mapping": None, "mpc_note": "сравнение без/с кандидатом (§8) — отдельный вызов с кандидатом; здесь не применимо",
-            "perturbation_config": {k: v for k, v in cfg.items() if k not in ("driver_exposures",)}, "assumptions_hash": ah,
+            "perturbation_config": {k: v for k, v in cfg.items() if k not in ("driver_exposures", "resimulate")}, "resimulate": bool(resim), "resimulate_check": resim_check, "assumptions_hash": ah,
             "assumptions": ["серия на первых max_paths совместных путях (скорость); центральный прогон внутри теста — на той же выборке",
                             "valid_runs = допустимые прогоны; недопустимые входят только в feasibility_rate",
-                            "terminal margin — прокси на уровне пути ((m+δ)/m на Y5/Y8), не пересимуляция", "terminal multiple — лог-множитель ко всем горизонтам (точно для базы FCF_multiple)",
+                            ("terminal margin — пересимуляция company_mc (margin_shift) на общих шоках" if resim else "terminal margin — прокси на уровне пути ((m+δ)/m на Y5/Y8), не пересимуляция"), "terminal multiple — лог-множитель ко всем горизонтам (точно для базы FCF_multiple)",
                             "корреляции — Иман–Коновер по рангам стоимости Y5; контроль нулевого δ показывает шум переспаривания",
-                            "LOO-прогоны не входят в статистику включения/весов", "milestones и driver knockout — not_testable до пересимуляции"],
+                            "LOO-прогоны не входят в статистику включения/весов", ("milestones ±10 п.п. и driver knockout — пересимуляция (срез 2)" if resim else "milestones и driver knockout — not_testable до пересимуляции")],
             "decision": "none"}

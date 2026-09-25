@@ -92,3 +92,29 @@ def test_mapping_requires_layer_spec_and_is_deterministic():
         cm.run({"calibration": _cal(), "equity_value_0": 30e9, "convergence_check": False, "robustness": False, "paths": 2000}, 0)
     inp = {"calibration": _cal(), "equity_value_0": 30e9, "joint_layer_spec": SPEC, "convergence_check": False, "robustness": False, "paths": 4000, "global_seed": 777}
     assert cm.run(inp, 0)["base"] == cm.run(inp, 0)["base"]
+
+
+def test_scenario_phases_profile_and_legacy_equivalence():
+    n, T = 4000, 32
+    # legacy driver_overrides == одна фаза с t0 до конца
+    legacy = jl.driver_shocks(SPEC, ["AI_COMPUTE_DEMAND"], n, T, 1, scenario={"driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -1.5, "volatility_multiplier": 1.2}}})
+    one = jl.driver_shocks(SPEC, ["AI_COMPUTE_DEMAND"], n, T, 1, scenario={"phases": [{"phase_id": "p", "effective_from": 0, "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -1.5, "volatility_multiplier": 1.2}}}]})
+    assert np.allclose(legacy["AI_COMPUTE_DEMAND"], one["AI_COMPUTE_DEMAND"])
+    # профиль: старт по распределению, подъём 4 кв., плато 8 кв., спад 4 кв.
+    prof = jl.scenario_profiles({"phases": [{"phase_id": "a", "effective_from": {"distribution": "uniform", "min": 4, "max": 8}, "ramp_quarters": 4, "duration_quarters": 8, "decay_quarters": 4, "driver_overrides": {"X": {"mean_shift_sigma": 1}}},
+                                            {"phase_id": "b", "after_phase": "a", "offset": 2, "driver_overrides": {"X": {"mean_shift_sigma": -1}}}]}, n, T, 7)
+    a, b = prof[0], prof[1]
+    assert a["m"].shape == (n, T) and a["m"].min() >= 0 and a["m"].max() <= 1
+    assert (a["start"] >= 4).all() and (a["start"] <= 8).all()
+    i = 0; st = a["start"][i]
+    assert a["m"][i, int(np.floor(st))] <= 1e-9 or st == np.floor(st)                 # до старта — 0
+    assert abs(a["m"][i, int(np.ceil(st)) + 5] - 1.0) < 1e-9                             # плато
+    assert a["m"][i, min(T - 1, int(np.ceil(st)) + 4 + 8 + 4)] <= 1e-9 or int(np.ceil(st)) + 16 >= T   # после спада — 0
+    assert (b["start"] >= a["start"] + 4 + 8 + 2 - 1e-9).all()                            # after_phase: старт после плато a + offset
+    # сдвиг действует только после старта: средний шок до 4-го квартала ≈ 0, на плато ≈ +1
+    sh = jl.driver_shocks(SPEC, ["AI_COMPUTE_DEMAND"], n, T, 1, scenario={"phases": [{"phase_id": "a", "effective_from": 8, "ramp_quarters": 0, "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": 1.0}}}]})["AI_COMPUTE_DEMAND"]
+    assert abs(sh[:, :8].mean()) < 0.1 and abs(sh[:, 8:].mean() - 1.0) < 0.1
+    # детерминизм
+    again = jl.driver_shocks(SPEC, ["AI_COMPUTE_DEMAND"], n, T, 1, scenario={"phases": [{"phase_id": "a", "effective_from": {"distribution": "triangular", "min": 2, "mode": 6, "max": 10}, "ramp_quarters": 2, "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -1.0}}}]})
+    again2 = jl.driver_shocks(SPEC, ["AI_COMPUTE_DEMAND"], n, T, 1, scenario={"phases": [{"phase_id": "a", "effective_from": {"distribution": "triangular", "min": 2, "mode": 6, "max": 10}, "ramp_quarters": 2, "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -1.0}}}]})
+    assert np.array_equal(again["AI_COMPUTE_DEMAND"], again2["AI_COMPUTE_DEMAND"])

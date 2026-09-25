@@ -54,3 +54,28 @@ def test_convergence_includes_loss_probability():
     out = cm.run({"calibration": cal_mature(), "equity_value_0": 30e9, "paths": 4000, "convergence_check": True, "robustness": False}, 0)
     conv = out["convergence"]
     assert "P_loss_gt_30pct_5Y" in next(iter(conv["runs"].values())) and "P_loss_gt_30pct_5Y" in conv["tolerance"]
+
+
+def test_scenario_mixture_draft(tmp_path):
+    base_a = _run_store(_joint(cal_mature(), "AAA"), tmp_path); base_b = _run_store(_joint(cal_capital(), "BBB"), tmp_path)
+    down = {"id": "DOWN", "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -2.0}}}
+    ca = dict(_joint(cal_mature(), "AAA")); cb = dict(_joint(cal_capital(), "BBB"))
+    da = cm.run({"calibration": ca, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 6000, "convergence_check": False, "robustness": False, "store_paths": True, "_runs_dir": str(tmp_path), "_run_id": "t-AAA-DOWN", "scenario": down}, 0)
+    db = cm.run({"calibration": cb, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 6000, "convergence_check": False, "robustness": False, "store_paths": True, "_runs_dir": str(tmp_path), "_run_id": "t-BBB-DOWN", "scenario": down}, 0)
+    scen = [{"id": "BASE", "probability": 0.7, "paths_files": {"AAA": base_a["paths_file"], "BBB": base_b["paths_file"]}},
+            {"id": "DOWN", "probability": 0.3, "paths_files": {"AAA": da["paths_file"], "BBB": db["paths_file"]}}]
+    inp = {"scenarios": scen, "weights": {"AAA": 0.5, "BBB": 0.4}, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}
+    out = pp.run(inp, 5)
+    assert out["mode"] == "scenario_mixture_draft" and out["decision"] == "none" and out["scenario_concentration"] is None
+    sh = {s["id"]: s["realized_share"] for s in out["scenarios"]}; assert abs(sh["BASE"] - 0.7) < 0.03 and abs(sh["DOWN"] - 0.3) < 0.03
+    b, d, m = out["by_scenario"]["BASE"]["Y5"], out["by_scenario"]["DOWN"]["Y5"], out["horizons"]["Y5"]
+    assert d["median_CAGR"] < b["median_CAGR"] and out["scenario_delta_vs_first"]["DOWN"]["Y5"]["median_CAGR"] < 0
+    assert min(b["median_CAGR"], d["median_CAGR"]) - 1e-9 <= m["median_CAGR"] <= max(b["median_CAGR"], d["median_CAGR"]) + 1e-9   # смесь между сценариями
+    # вероятность 1.0 у BASE воспроизводит обычный прогон
+    single = pp.run({"paths_files": scen[0]["paths_files"], "weights": {"AAA": 0.5, "BBB": 0.4}, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
+    only = pp.run({**inp, "scenarios": [{**scen[0], "probability": 1.0}, {**scen[1], "probability": 0.0}]}, 5)
+    assert abs(only["horizons"]["Y5"]["median_CAGR"] - single["horizons"]["Y5"]["median_CAGR"]) < 1e-12
+    assert pp.run(inp, 5)["horizons"] == out["horizons"]                                                     # детерминизм
+    import pytest
+    with pytest.raises(ValueError):
+        pp.run({**inp, "scenarios": [{**scen[0], "probability": 0.5}, {**scen[1], "probability": 0.3}]}, 5)

@@ -118,3 +118,28 @@ def test_partial_run_loo_only(paths):
     import pytest
     with pytest.raises(ValueError):
         ps.run({**inp, "stability": {**inp["stability"], "families": ["nope"]}}, 11)
+
+
+def test_resimulation_families(paths):
+    """Срез 2: точная маржа, вехи и knockout через пересимуляцию (workers=1 — в процессе; синтетика на 3000 путях)."""
+    from tests.test_company_mc import cal_mature, cal_capital
+    from tests.test_portfolio_paths import _joint, SPEC
+    cals = {"AAA": _joint(cal_mature(), "AAA"), "BBB": _joint(cal_mature(), "BBB"), "CCC": _joint(cal_capital(), "CCC")}
+    cals["AAA"]["revenue_model"]["segments"]["Core"]["initial_growth"] = {"distribution": "triangular", "min": 0.20, "mode": 0.30, "max": 0.40}
+    cals["BBB"]["revenue_model"]["segments"]["Core"]["initial_growth"] = {"distribution": "triangular", "min": -0.10, "mode": 0.02, "max": 0.10}; cals["BBB"]["valuation"]["Y5"]["multiple"] = {"distribution": "triangular", "min": 10, "mode": 14, "max": 18}
+    inp = _inputs(paths)
+    inp["stability"] = {**inp["stability"], "workers": 1, "max_paths": 4000, "search_paths": 4000, "families": ["terminal", "milestone", "driver_knockout"],
+                        "resimulate": {"calibrations": cals, "equity_value_0": {"AAA": 30e9, "BBB": 30e9, "CCC": 30e9}, "joint_layer_spec": SPEC, "global_seed": 101, "chunk": 4000}}
+    out = ps.run(inp, 11)
+    assert out["resimulate"] is True and out["resimulate_check"]["reproduced"] and out["runs_by_family"]["terminal_margin"] == 6 and "terminal_multiple" in out["runs_by_family"]
+    import pytest
+    with pytest.raises(ValueError):                                                                                          # другой chunk → сторож выравнивания
+        ps.run({**inp, "stability": {**inp["stability"], "resimulate": {**inp["stability"]["resimulate"], "chunk": 1000}}}, 11)
+    m = out["terminal_sensitivity"]["AAA"]["margin"]
+    assert m["+5pp"]["method"] == "resimulation" and m["+5pp"]["company_summary"]["median_CAGR_5Y"] > m["-5pp"]["company_summary"]["median_CAGR_5Y"]
+    assert out["terminal_sensitivity"]["CCC"]["margin"]["+5pp"]["method"] == "resimulation"                                # B без прокси — теперь тестируется
+    ds = out["driver_sensitivity"]; assert ds["status"] == "resimulated" and "AI_COMPUTE_DEMAND" in ds["runs"]
+    ko = ds["runs"]["AI_COMPUTE_DEMAND"]; assert set(ko["companies"]) == {"AAA", "BBB"} and all(ko["knockout_applied"][t] for t in ("AAA", "BBB"))   # CCC без экспозиции — не трогаем
+    crit = out["portfolio_stability_classification"]["criteria"]["driver_knockout_feasible_replacement"]; assert crit["pass"] in (True, False) and crit["value"] is not None
+    assert out["runs_by_family"].get("milestone") is None                                                                    # milestone_companies пуст — вех нет
+    assert all(fam in out["families"] for fam in ("terminal", "milestone", "driver_knockout")) and out["partial"] is True

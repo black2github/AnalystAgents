@@ -158,3 +158,22 @@ def test_parity_mode_value_never_falls_when_margin_rises_C():
     # на FCF-базу при марже 8.1 % даёт 0.081·24 = 1.94× выручки против 7× — стоимость падает при росте маржи (дефект, ради которого сделан 2.3.1)
     R = 1.0e9
     assert 0.081 * 24 * R < 7 * R and cm.crossover_mode({"schema_version": "1.0.1"}) == cm.CROSSOVER_HARD
+
+
+def test_simulate_paths_matches_run_and_supports_perturbation(tmp_path):
+    from tests.test_portfolio_paths import _joint, SPEC
+    import numpy as np
+    from engine import portfolio_paths as pp
+    c = _joint(cal_mature(), "AAA")
+    stored = cm.run({"calibration": c, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 6000, "chunk": 2000, "convergence_check": False, "robustness": False, "store_paths": True, "_runs_dir": str(tmp_path), "_run_id": "t-AAA-sp"}, 0)
+    disk = pp.load_paths(stored["paths_file"])
+    mem = cm.simulate_paths({"calibration": c, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 6000, "chunk": 2000}, 0)
+    assert np.array_equal(mem["paths"]["r5"], disk["r5"]) and np.array_equal(mem["paths"]["path_id"], disk["path_id"])     # память = диск
+    sub = cm.simulate_paths({"calibration": c, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 2000, "chunk": 2000}, 0)
+    assert np.array_equal(sub["paths"]["r5"], disk["r5"][:2000])                                                            # усечённый прогон = первые пути при том же chunk (антитетические пары внутри чанка)
+    other = cm.simulate_paths({"calibration": c, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 3000, "chunk": 50000}, 0)
+    assert not np.array_equal(other["paths"]["r5"][:2000], disk["r5"][:2000])                                               # фактический чанк 3000 против 2000 — другие антитетические пары → НЕ выровнено
+    up = cm.simulate_paths({"calibration": c, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 6000, "chunk": 2000, "perturbation": {"margin_shift": 0.05}}, 0)
+    assert np.median(up["paths"]["r5"]) > np.median(disk["r5"]) and up["meta"]["perturbation"] == {"margin_shift": 0.05}   # маржа +5 п.п. → стоимость выше
+    ko = cm.simulate_paths({"calibration": c, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 6000, "chunk": 2000, "knockout": ["AI_COMPUTE_DEMAND"]}, 0)
+    assert ko["meta"]["knockout_applied"] and np.median(ko["paths"]["r5"]) < np.median(disk["r5"])                        # снятие поддержки → ниже

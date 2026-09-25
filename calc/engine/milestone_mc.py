@@ -61,7 +61,7 @@ def _order(milestones: list[dict]) -> list[dict]:
     return out
 
 
-def simulate_milestones(draw, cal: dict, eff: dict):
+def simulate_milestones(draw, cal: dict, eff: dict, prob_shift: float = 0.0):
     """Возвращает (achieved_q: dict id→(n,) квартал достижения или INF, failed: dict id→(n,) bool терминального отказа)."""
     from engine.company_mc import dist_ppf  # локальный импорт — избегаем циклического
     mm = cal["milestone_model"]; n = draw.n; rng = draw.rng
@@ -75,7 +75,7 @@ def simulate_milestones(draw, cal: dict, eff: dict):
         prereq_fail = np.zeros(n, dtype=bool)
         for r in req:
             prereq_q = np.maximum(prereq_q, ach[r]); prereq_fail |= failed[r]
-        p = float(m["probability"])
+        p = min(1.0, max(0.0, float(m["probability"]) + float(prob_shift)))   # prob_shift — возмущение Stability (срез 2), по умолчанию 0
         logit = math.log(p / (1 - p)) if 0 < p < 1 else (30.0 if p >= 1 else -30.0)
         if mid in padj:
             pv = 1 / (1 + np.exp(-(logit + padj[mid])))
@@ -105,7 +105,7 @@ def simulate_chunk(draw, cal: dict, E0: float, P: dict, eff: dict):
     from engine.company_mc import dist_ppf, _max_drawdown
     n = draw.n; rng = draw.rng; INF = 10 ** 6
     mm = cal["milestone_model"]; cm_ = cal["cash_model"]; vm = cal["valuation"]
-    ach, failed = simulate_milestones(draw, cal, eff)
+    ach, failed = simulate_milestones(draw, cal, eff, float(P.get("milestone_prob_shift", 0.0)))
     onset_id = mm["service_onset_milestone"]
     onset_q = ach[onset_id]                      # квартал запуска сервиса (INF — не запущен)
     term_fail = failed[onset_id]                 # терминальный отказ по цепочке до сервиса
