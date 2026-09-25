@@ -79,7 +79,8 @@ def test_received_calibrations_flag_aggregate_shift():
     assert out["schema_errors"] == [] and not out["pass"]                               # MC-G5-013 — hard gate (Rules v1.1)
     w = [f for f in out["integrity"] if f["rule"] == "MC-G5-013" and f["severity"] == "error"]
     assert w and any("initial_growth" in f["path"] for f in w)
-    soft = av.run({"mode": "calibration", "workspace": str(WS), "calibration": cal, "folders": ["nvda"], "strict_aggregate": False, "engine_dry_run": False}, 0)
+    # без папки: mpc_inputs nvda с 25.09 на таксономии 1.2.1 (ACCELERATOR_PRICE_COMPETITION −2) — у калибровки v1.0 этого драйвера нет → MC-G5-001 error по праву
+    soft = av.run({"mode": "calibration", "workspace": str(WS), "calibration": cal, "folders": [], "strict_aggregate": False, "engine_dry_run": False}, 0)
     assert soft["pass"] and all(f["severity"] != "error" for f in soft["integrity"])
     broken = copy.deepcopy(cal); broken["driver_parameter_mapping"][0]["stochastic_targets"][0]["path"] = "capacity_model.gw"
     out2 = av.run({"mode": "calibration", "workspace": str(WS), "calibration": broken, "folders": ["nvda"], "dry_run_paths": 1500}, 0)

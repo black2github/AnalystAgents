@@ -28,7 +28,7 @@ from scipy.stats import beta as _beta, norm as _norm
 
 from engine import joint_layer, milestone_mc
 
-VERSION = "2.4.1"
+VERSION = "2.4.2"
 SPEC_VERSION = "MC_Calibration_Archetypes_v1.0+Rules_v1.1+Joint_Simulation_Layer_v1.0+Conditional_MC_v1.1.3"
 QUARTERS = 32
 ARCHETYPES = ("mature_positive_margin", "capital_intensive_transition", "pre_service_or_milestone_driven")
@@ -396,6 +396,7 @@ def _simulate_chunk(rng, n, cal, E0, P, shocks):
     E8, b8, pm8 = _value_at(draw, cal, P, "Y8", rev_y[:, 7], fcf_y[:, 7], eff)
     dd = _max_drawdown(rng, n, cal, E0, E3, E5, E8)
     return {"E3": E3, "E5": E5, "E8": E8, "maxdd5": dd, "b3": b3, "b5": b5, "b8": b8, "rev5": rev_y[:, 4], "m5": margins[:, 4],
+            "m3": margins[:, 2], "m8": margins[:, 7],                                                            # 2.4.2: для positive_fcf_bridge_share
             "pm3": pm3, "pm5": pm5, "pm8": pm8, "base_annual": base_annual, "warnings": eff["warnings"]}
 
 
@@ -418,6 +419,16 @@ def _summarize(E0, acc, quantiles, cal):
             parity[h] = {"median": float(np.median(v)), "q05": float(np.quantile(v, 0.05)), "q95": float(np.quantile(v, 0.95)), "paths_share": float(np.isfinite(pm).mean())}
         else:
             parity[h] = None
+    # 2.4.2 (ответ IMMA 25.09 на 3.2): диагностика positive_fcf_bridge_share — crossover_bridge при FCF ≤ 0 (нет права на FCF-базу)
+    # и при FCF > 0, но ниже parity-маржи (continuity valuation region); доли от всех путей + доля positive среди bridge-путей.
+    pos_bridge = {}
+    for h, key, mk in (("Y3", "b3", "m3"), ("Y5", "b5", "m5"), ("Y8", "b8", "m8")):
+        m = acc.get(mk)
+        if m is None:
+            pos_bridge[h] = None; continue
+        br = acc[key] == 5; pos = m > 0
+        pos_bridge[h] = {"bridge_with_positive_fcf": float((br & pos).mean()), "bridge_with_nonpositive_fcf": float((br & ~pos).mean()),
+                         "positive_share_of_bridge_paths": (float(pos[br].mean()) if br.any() else None)}
     if mode == CROSSOVER_PARITY:
         # v1.1.3 §10: bridge_dependent — существенная доля путей на кодах 1/2/5/6 (порог 5 % — интерпретация движка)
         bridge_dep = {h: (v["revenue_bridge"] + v["negative_fcf_fallback"] + v["crossover_bridge"] + v["basis_blend"]) >= 0.05 for h, v in basis_share.items()}   # порог ≥5 % зафиксирован IMMA 24.09
@@ -442,7 +453,7 @@ def _summarize(E0, acc, quantiles, cal):
                      "max_drawdown_5Y_quantiles": {str(qq): float(np.quantile(dd, qq)) for qq in (0.05, 0.25, 0.5, 0.75, 0.95)}, "max_drawdown_model_dependent": True},
         "scenario": {"variance_within_state_CAGR_5Y": float(np.var(c5)), "variance_between_state_scenarios": None,
                      "persistence_ratio": pr, "persistence_class": pr_class, "scenario_concentration": None},
-        "valuation_basis_share": basis_share, "basis_parity_margin": parity,
+        "valuation_basis_share": basis_share, "basis_parity_margin": parity, "positive_fcf_bridge_share": pos_bridge,
         "valuation_crossover": {"mode": mode, "blend_width": BLEND_WIDTH if mode == CROSSOVER_PARITY else None,
                                 "bridge_dependent_rule": "доля кодов 1/2/5/6 ≥ 5 % (зафиксировано IMMA 24.09.2026; spec v1.1.3 §10)" if mode == CROSSOVER_PARITY else "любая доля кодов 1/2/3/4 (Archetypes v1.0)"},
         "gap_metrics": gaps, "median_equity_value_5Y_b": float(np.median(E5) / 1e9),

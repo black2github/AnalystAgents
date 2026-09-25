@@ -177,3 +177,15 @@ def test_simulate_paths_matches_run_and_supports_perturbation(tmp_path):
     assert np.median(up["paths"]["r5"]) > np.median(disk["r5"]) and up["meta"]["perturbation"] == {"margin_shift": 0.05}   # маржа +5 п.п. → стоимость выше
     ko = cm.simulate_paths({"calibration": c, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 6000, "chunk": 2000, "knockout": ["AI_COMPUTE_DEMAND"]}, 0)
     assert ko["meta"]["knockout_applied"] and np.median(ko["paths"]["r5"]) < np.median(disk["r5"])                        # снятие поддержки → ниже
+
+
+def test_positive_fcf_bridge_share_diagnostic():
+    """2.4.2 (ответ IMMA 25.09, 3.2): positive_fcf_bridge_share — bridge при FCF ≤ 0 и при FCF > 0 ниже parity; доли согласованы с
+    valuation_basis_share (сумма двух долей = доля crossover_bridge), positive_share_of_bridge_paths ∈ [0, 1] или None."""
+    out = cm.run({"calibration": cal_capital(), "equity_value_0": 30e9, "paths": 4000, "convergence_check": False, "robustness": False}, 0)
+    pb = out["base"]["positive_fcf_bridge_share"]
+    assert set(pb) == {"Y3", "Y5", "Y8"}
+    for h in ("Y3", "Y5", "Y8"):
+        d = pb[h]; assert d is not None
+        assert d["bridge_with_positive_fcf"] + d["bridge_with_nonpositive_fcf"] == pytest.approx(out["base"]["valuation_basis_share"][h]["crossover_bridge"], abs=1e-9)
+        assert d["positive_share_of_bridge_paths"] is None or 0.0 <= d["positive_share_of_bridge_paths"] <= 1.0

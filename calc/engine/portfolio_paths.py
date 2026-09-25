@@ -200,12 +200,24 @@ def _run_mixture(inputs: dict, seed: int) -> dict:
         p_s = probs[sid]; b = per["BASE"]["Y5"]; m = per[sid]["Y5"]
         impacts[sid] = {"probability": p_s, "MedianImpact_Y5": p_s * (m["median_CAGR"] - b["median_CAGR"]), "ES5Impact_Y5": p_s * (m["expected_shortfall_5pct"] - b["expected_shortfall_5pct"]),
                         "adverse_ES_burden_B": p_s * max(0.0, b["expected_shortfall_5pct"] - m["expected_shortfall_5pct"])}
-    tot = sum(v["adverse_ES_burden_B"] for v in impacts.values())
-    conc = (max(v["adverse_ES_burden_B"] for v in impacts.values()) / tot) if tot > 0 else 0.0
     out.update({"probability_status": "owner_judgment", "horizons": mix, "scenario_impacts": impacts,
-                "scenario_concentration": {"value": conc, "no_adverse_scenario_burden": tot <= 0, "warning": conc > 0.50, "hard_limit_breach": conc > 0.60, "rule": "max_s B_s / Σ_s B_s по non-BASE; warning >50 %, hard >60 % (Optimizer v1.0)"},
+                "scenario_concentration": scenario_concentration({sid: v["adverse_ES_burden_B"] for sid, v in impacts.items()}),
                 "note": "медиана и ES5 нелинейны — impacts диагностические, не аддитивное разложение (§7)"})
     return out
+
+
+def scenario_concentration(burdens: dict) -> dict:
+    """ScenarioConcentration по правилу IMMA (ответ 25.09 на вопрос 3.4, вариант «а»): A = {s: B_s > 0} среди non-BASE;
+    |A| = 0 → not_applicable_no_adverse_scenario; |A| = 1 → raw = 1.0 (тавтология), лимит not_applicable_single_adverse_scenario;
+    |A| ≥ 2 → max B_s / Σ B_s по A, warning > 50 %, hard > 60 % (Optimizer v1.0 §3). BASE в знаменатель не входит."""
+    A = {sid: float(b) for sid, b in burdens.items() if float(b) > 0.0}
+    rule = "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+    if not A:
+        return {"value": None, "raw_value": None, "adverse_scenarios": [], "applicable": False, "status": "not_applicable_no_adverse_scenario", "warning": False, "hard_limit_breach": False, "rule": rule}
+    raw = max(A.values()) / sum(A.values())
+    if len(A) == 1:
+        return {"value": None, "raw_value": raw, "adverse_scenarios": sorted(A), "applicable": False, "status": "not_applicable_single_adverse_scenario", "warning": False, "hard_limit_breach": False, "rule": rule}
+    return {"value": raw, "raw_value": raw, "adverse_scenarios": sorted(A), "applicable": True, "status": "applicable", "warning": raw > 0.50, "hard_limit_breach": raw > 0.60, "rule": rule}
 
 
 def mixture_ranges(n: int, probs: dict, order: list) -> dict:

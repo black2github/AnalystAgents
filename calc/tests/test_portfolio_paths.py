@@ -73,7 +73,7 @@ def test_scenario_mixture_weighted(tmp_path):
     b, d, m = out["by_scenario"]["BASE"]["Y5"], out["by_scenario"]["DOWN"]["Y5"], out["horizons"]["Y5"]
     assert d["median_CAGR"] < b["median_CAGR"] and min(b["median_CAGR"], d["median_CAGR"]) - 1e-9 <= m["median_CAGR"] <= max(b["median_CAGR"], d["median_CAGR"]) + 1e-9
     imp = out["scenario_impacts"]["DOWN"]; assert imp["probability"] == 0.3 and imp["MedianImpact_Y5"] < 0 and imp["adverse_ES_burden_B"] >= 0
-    assert out["scenario_concentration"]["value"] in (0.0, 1.0)                                                # один non-BASE сценарий
+    sc_ = out["scenario_concentration"]; assert sc_["applicable"] is False and sc_["status"] in ("not_applicable_single_adverse_scenario", "not_applicable_no_adverse_scenario")   # один non-BASE сценарий → лимит не применяется (вариант «а»)
     single = pp.run({"paths_files": files_b, "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
     only = pp.run({"scenarios": [{"id": "BASE", "paths_files": files_b}, {"id": "DOWN", "probability": 0.0, "paths_files": files_d}], "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
     assert abs(only["horizons"]["Y5"]["median_CAGR"] - single["horizons"]["Y5"]["median_CAGR"]) < 1e-9 and abs(only["horizons"]["Y5"]["expected_shortfall_5pct"] - single["horizons"]["Y5"]["expected_shortfall_5pct"]) < 1e-6
@@ -109,3 +109,16 @@ def test_mixture_export_partition(tmp_path):
         assert plain["horizons"]["Y5"][k] == pytest.approx(weighted["horizons"]["Y5"][k], abs=0.02), k                 # стратифицированная выборка ≈ взвешенная смесь
     with pytest.raises(ValueError):
         pp.run({"mode": "mixture_export", "scenarios": [{"id": "BASE", "paths_files": files_b}, {"id": "DOWN", "probability": None, "paths_files": files_d}], "out_dir": str(tmp_path / "mix2")}, 0)
+
+
+def test_scenario_concentration_rule_a():
+    """ScenarioConcentration по варианту «а» (IMMA 25.09): 0 adverse → not_applicable; 1 adverse → raw 1.0, лимит не применяется;
+    ≥2 adverse → max/Σ по A с warning > 0.50 и hard > 0.60; BASE вне знаменателя."""
+    c0 = pp.scenario_concentration({"TS": 0.0, "CW": 0.0})
+    assert c0["applicable"] is False and c0["status"] == "not_applicable_no_adverse_scenario" and c0["value"] is None and not c0["hard_limit_breach"]
+    c1 = pp.scenario_concentration({"TS": 0.05, "CW": 0.0})
+    assert c1["applicable"] is False and c1["status"] == "not_applicable_single_adverse_scenario" and c1["raw_value"] == 1.0 and c1["value"] is None and not c1["hard_limit_breach"]
+    c2 = pp.scenario_concentration({"TS": 0.07, "CW": 0.03, "BASE": 0.0})
+    assert c2["applicable"] and c2["value"] == pytest.approx(0.7) and c2["warning"] and c2["hard_limit_breach"] and c2["adverse_scenarios"] == ["CW", "TS"]
+    c3 = pp.scenario_concentration({"A": 0.05, "B": 0.05, "C": 0.04})
+    assert c3["value"] == pytest.approx(5 / 14) and not c3["warning"] and not c3["hard_limit_breach"]
