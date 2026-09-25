@@ -37,7 +37,7 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.6.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
+VERSION = "1.7.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
 #                    измерение в квартале применения — мода сроков вехи, как в движке), пример-фикстуры v1.0.2
 SCHEMA_VERSION = "1.0.5"            # Company Artifact Schema (v1.0.5: kpi_observations[].verification_run_ids — история прогонов дозора)
 CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
@@ -99,7 +99,8 @@ def _taxonomy_ids(ws: Path, version) -> set[str] | None:
     d = yaml.safe_load(p.read_text(encoding="utf-8"))
     drivers = d.get("drivers") or {}
     ids: set[str] = set()
-    for v in (drivers.values() if isinstance(drivers, dict) else [drivers]):
+    extra = [v for k, v in d.items() if str(k).startswith("added_v") and k not in drivers]   # v1.2: added_v1_2 на верхнем уровне (не под drivers)
+    for v in (list(drivers.values()) if isinstance(drivers, dict) else [drivers]) + extra:
         if isinstance(v, list):
             ids |= {x if isinstance(x, str) else x.get("id") for x in v}
         elif isinstance(v, dict):
@@ -558,6 +559,106 @@ def validate_documents(docs: dict, art_schema: dict, ws: Path) -> dict:
             "schema_errors": n_schema, "integrity_errors": n_err, "integrity_warnings": len(findings) - n_err, "pass": n_schema == 0 and n_err == 0}
 
 
+SCENARIO_SCHEMA_VERSION = "1.0"
+
+
+def _validate_scenario(inputs: dict, ws: Path, rules: dict) -> dict:
+    """Режим scenario (Scenario_Engine_Specification_v1.0 §12): JSON-схема, уникальные id, ацикличность anchor'ов, драйверы в
+    таксономии, корни в Joint-схеме, PSD фазовых матриц без ремонта, монотонность стартов (replay), детерминизм, контракт
+    вероятностей набора, coverage по компаниям (§9: applicable / unmapped / explicitly_immaterial)."""
+    import numpy as np
+    from engine import joint_layer as jl
+    scen = inputs.get("scenarios") or ([inputs["scenario"]] if inputs.get("scenario") else None)
+    if not scen:
+        raise ValueError("mode=scenario требует inputs.scenario (dict) или inputs.scenarios (list)")
+    schema = _schema(inputs, "scenario_schema_path", f"Scenario_Engine_Schema_v{SCENARIO_SCHEMA_VERSION}.yaml")
+    jspec = inputs.get("joint_layer_spec") or _schema(inputs, "joint_layer_spec_path", "Joint_Simulation_Layer_Schema_v1.0.yaml")
+    tax_ver = inputs.get("taxonomy_version") or "1.2"
+    tax = _taxonomy_ids(ws, tax_ver) or set()
+    audit = inputs.get("coverage_audit") or {}
+    n_chk = int(inputs.get("replay_paths", 4000)); Q = int(inputs.get("quarters", 32)); seed = int(inputs.get("global_seed", 20260920))
+    per = {}; ids_seen = set(); mx_sets = set(); n_err = 0
+    for sc in scen:
+        sc = _norm(sc); sid = sc.get("scenario_id") or "?"
+        errs = _schema_errors(schema, sc); findings: list[dict] = []
+        if sid in ids_seen:
+            findings.append(_f("SCN-001", "scenario_id", f"дубликат scenario_id {sid}"))
+        ids_seen.add(sid); mx_sets.add(sc.get("mutual_exclusion_set"))
+        phases = sc.get("phases") or []; pids = [p.get("phase_id") for p in phases]
+        if len(set(pids)) != len(pids):
+            findings.append(_f("SCN-002", "phases", "phase_id не уникальны"))
+        for i, ph in enumerate(phases):
+            anc = str((ph.get("effective_from") or {}).get("anchor", "t0"))
+            if anc.startswith("phase:") and anc[6:] not in pids[:i]:
+                findings.append(_f("SCN-003", f"phases/{i}/effective_from/anchor", f"{anc}: ссылка на фазу не раньше по списку (ацикличность/порядок)"))
+            for d, o in (ph.get("driver_overrides") or {}).items():
+                if tax and d not in tax:
+                    findings.append(_f("SCN-004", f"phases/{i}/driver_overrides/{d}", f"драйвер {d} не в таксономии v{tax_ver}"))
+                if float(o.get("volatility_multiplier", 1.0)) <= 0:
+                    findings.append(_f("SCN-005", f"phases/{i}/driver_overrides/{d}", "volatility_multiplier ≤ 0"))
+                po = o.get("persistence_override")
+                if po is not None and not (0.0 <= float(po) <= 0.99):
+                    findings.append(_f("SCN-005", f"phases/{i}/driver_overrides/{d}", "persistence_override вне [0, 0.99]"))
+            try:
+                T = jl.phase_correlation(jspec, ph); me = float(np.linalg.eigvalsh(T).min())
+                findings.append(_f("SCN-006", f"phases/{i}/root_correlation_overrides", f"PSD ok, min eig {me:.4f}", "info"))
+            except ValueError as e:
+                findings.append(_f("SCN-006", f"phases/{i}/root_correlation_overrides", str(e)))
+        # replay: монотонность стартов и детерминизм (малый n)
+        replay = None
+        if phases and not any(f["severity"] == "error" for f in findings) and not errs:
+            try:
+                drv = sorted({d for ph in phases for d in (ph.get("driver_overrides") or {})})
+                drv_known = [d for d in drv if d in ((jspec.get("driver_generation") or {}).get("mappings") or {})] or drv[:1]
+                a = jl.driver_shocks(jspec, drv_known, n_chk, Q, seed, scenario=sc); b = jl.driver_shocks(jspec, drv_known, n_chk, Q, seed, scenario=sc)
+                det = all(np.array_equal(a[d], b[d]) for d in drv_known)
+                diag = jl.scenario_diagnostics(jspec, sc, drv_known, n_chk, Q, seed)
+                replay = {"deterministic": det, "phase_start_quantiles": diag["phase_start_quantiles"], "phase_active_share": diag["phase_active_share"], "n_corr_states": diag["n_corr_states"]}
+                if not det:
+                    findings.append(_f("SCN-007", "phases", "повторный прогон дал другие шоки — недетерминизм"))
+                pers = jl.persistence_diagnostics(jspec, sc, drv_known, n_chk, Q, seed)
+                replay["persistence"] = pers
+                bad_p = [k for k, v in pers.items() if v.get("ok") is False]
+                if bad_p:
+                    findings.append(_f("SCN-011", "phases", f"persistence_override: Var(y) или lag-1 corr вне допуска на плато у {bad_p[:6]}", "warning"))
+                unmapped_joint = [d for d in drv if d not in ((jspec.get("driver_generation") or {}).get("mappings") or {})]
+                if unmapped_joint:
+                    findings.append(_f("SCN-008", "phases", f"драйверы без root-mapping в Joint-схеме (идиосинкратические, без корреляции): {unmapped_joint}", "warning"))
+            except ValueError as e:
+                findings.append(_f("SCN-007", "phases", f"replay: {e}"))
+        # coverage §9 по компаниям (калибровки из workspace)
+        coverage = {}
+        sdrv = sorted({d for ph in phases for d in (ph.get("driver_overrides") or {})})
+        for folder, calname in (inputs.get("calibrations") or {}).items():
+            cp = ws / "portfolio" / folder / calname
+            if not cp.exists():
+                coverage[folder] = {"error": f"нет файла {cp.name}"}; continue
+            cal = _load(cp); active = set((cal.get("joint_simulation") or {}).get("active_drivers") or [])
+            imm = set(((audit.get("decisions") or {}).get(cal.get("ticker") or folder.upper()) or {}).get("explicitly_immaterial") or [])
+            excl = set(((audit.get("excluded_semantic_mismatch") or {}).get(cal.get("ticker") or folder.upper()) or []))
+            coverage[folder] = {"ticker": cal.get("ticker"), "scenario_drivers_applicable": [d for d in sdrv if d in active and d not in excl],
+                                "scenario_drivers_unmapped": [d for d in sdrv if d not in active and d not in imm],
+                                "scenario_drivers_explicitly_immaterial": [d for d in sdrv if d in imm], "excluded_semantic_mismatch": sorted(excl & set(sdrv))}
+        n_err += len(errs) + sum(1 for f in findings if f["severity"] == "error")
+        per[sid] = {"schema_errors": errs, "integrity": findings, "replay": replay, "coverage": coverage,
+                    "probability": sc.get("probability"), "probability_status": sc.get("probability_status"), "pass": not errs and not any(f["severity"] == "error" for f in findings)}
+    # контракт вероятностей набора (§2)
+    prob_findings = []
+    if len(mx_sets) > 1:
+        prob_findings.append(_f("SCN-009", "mutual_exclusion_set", f"сценарии из разных наборов: {sorted(str(x) for x in mx_sets)}"))
+    pn = [sc.get("probability") for sc in scen if (sc.get("scenario_id") != "BASE")]
+    if all(p is not None for p in pn) and pn:
+        if any(float(p) < 0 for p in pn) or sum(float(p) for p in pn) > 1.0 + 1e-12:
+            prob_findings.append(_f("SCN-010", "probability", f"Σ non-BASE = {sum(float(p) for p in pn):.4f} > 1 или отрицательная"))
+        else:
+            prob_findings.append(_f("SCN-010", "probability", f"p_BASE = {1.0 - sum(float(p) for p in pn):.4f} (остаток)", "info"))
+    else:
+        prob_findings.append(_f("SCN-010", "probability", "pending_owner_judgment: смесь/ScenarioConcentration/§3.3 not_testable", "info"))
+    n_err += sum(1 for f in prob_findings if f["severity"] == "error")
+    return {"model_version": VERSION, "mode": "scenario", "scenario_schema_version": SCENARIO_SCHEMA_VERSION, "taxonomy_version": tax_ver, "scenarios": per,
+            "set_findings": prob_findings, "pass": n_err == 0, "rules": rules, "decision": "none"}
+
+
 def run(inputs: dict, seed: int) -> dict:
     mode = inputs.get("mode", "workspace")
     ws = _workspace(inputs)
@@ -623,6 +724,8 @@ def run(inputs: dict, seed: int) -> dict:
         return {"model_version": VERSION, "schema_version": cal_sv, "mode": mode, "ticker": cal.get("ticker"), "archetype": cal.get("archetype"),
                 "schema_errors": errs, "integrity": findings, "engine_dry_run": engine, "aggregate_shift": agg, "dispersion": dispersion, "pass": not errs and n_err == 0,
                 "note": "MC-G5-013 — hard gate по Joint_Simulation_Layer_Rules_v1.1 (strict_aggregate=false → warning); MC-G5-009 (антицикличность) и MC-G5-010 (полнота provenance сверх схемы) статически не проверяются", "decision": "none"}
+    if mode == "scenario":
+        return _validate_scenario(inputs, ws, rules)
     if mode == "dozor_report":
         rep = inputs.get("report")
         if not isinstance(rep, dict):

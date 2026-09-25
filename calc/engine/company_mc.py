@@ -28,7 +28,7 @@ from scipy.stats import beta as _beta, norm as _norm
 
 from engine import joint_layer, milestone_mc
 
-VERSION = "2.4.0"
+VERSION = "2.4.1"
 SPEC_VERSION = "MC_Calibration_Archetypes_v1.0+Rules_v1.1+Joint_Simulation_Layer_v1.0+Conditional_MC_v1.1.3"
 QUARTERS = 32
 ARCHETYPES = ("mature_positive_margin", "capital_intensive_transition", "pre_service_or_milestone_driven")
@@ -488,6 +488,10 @@ def _run_once(cal, E0, paths, seed, chunk, P, quantiles, joint, keep_paths=False
     return out
 
 
+def _scenario_id(sc: dict | None) -> str:
+    return str((sc or {}).get("scenario_id") or (sc or {}).get("id") or "BASE")
+
+
 def _prepare(inputs: dict, seed: int):
     """Общая подготовка run() и simulate_paths(): нормализованная калибровка, E0, число путей, seed, chunk, квантили, P0, корреляция
     факторов, совместный слой (spec, драйверы, global_seed, сценарий, adverse), knockout."""
@@ -527,7 +531,7 @@ def simulate_paths(inputs: dict, seed: int) -> dict:
     r = _run_once(cal, E0, paths, seed_used, chunk, P, quantiles, joint, keep_paths=True)
     arrays = r.pop("_paths")
     meta = {"ticker": cal.get("ticker"), "model_version": VERSION, "global_seed": (joint or {}).get("global_seed", seed_used), "seed": seed_used, "chunk": chunk, "paths": paths,
-            "joint": bool(joint), "scenario": (inputs.get("scenario") or {}).get("id", "BASE"), "equity_value_0": E0, "archetype": cal["archetype"],
+            "joint": bool(joint), "scenario": _scenario_id(inputs.get("scenario")), "equity_value_0": E0, "archetype": cal["archetype"],
             "perturbation": {k: v for k, v in P.items() if v not in (0.0, 1.0)}, "knockout_applied": knockout_applied, "path_id_rule": "path_id = chunk_index*chunk + i"}
     return {"paths": arrays, "meta": meta, "summary": {"median_CAGR_5Y": r["return"]["median_CAGR_5Y"], "P_loss_gt_30pct_5Y": r["downside"]["P_loss_gt_30pct_5Y"], "ES5": r["downside"]["expected_shortfall_5pct_5Y"]}}
 
@@ -544,7 +548,7 @@ def run(inputs: dict, seed: int) -> dict:
             raise ValueError("store_paths: нужны _runs_dir и _run_id (подставляет сайдкар)")
         arrays = base.pop("_paths")
         meta = {"ticker": cal.get("ticker"), "model_version": VERSION, "global_seed": (joint or {}).get("global_seed", seed_used), "seed": seed_used,
-                "chunk": chunk, "paths": paths, "joint": bool(joint), "scenario": (inputs.get("scenario") or {}).get("id", "BASE"), "equity_value_0": E0,
+                "chunk": chunk, "paths": paths, "joint": bool(joint), "scenario": _scenario_id(inputs.get("scenario")), "equity_value_0": E0,
                 "archetype": cal["archetype"], "path_id_rule": "path_id = chunk_index*chunk + i"}
         paths_file = os.path.join(rd, f"{rid}-paths.npz")
         np.savez_compressed(paths_file, meta=np.array(json.dumps(meta, ensure_ascii=False)), **arrays)
@@ -554,7 +558,11 @@ def run(inputs: dict, seed: int) -> dict:
            "seed": seed_used, "paths": paths, "equity_value_0": E0, "factor_correlation_psd_fixed": fixed,
            "dependency_structure": "latent_factor_plus_idiosyncratic_shock (Archetypes §2.1); общий ранг не используется",
            "joint_simulation": None if not joint else {"layer_version": joint_layer.VERSION, "global_seed": joint["global_seed"], "active_drivers": joint["drivers"],
-                                                        "scenario": (inputs.get("scenario") or {}).get("id", "BASE"), "adverse_driver_stress": sorted(joint["adverse"]),
+                                                        "scenario": _scenario_id(inputs.get("scenario")), "adverse_driver_stress": sorted(joint["adverse"]),
+                                                        "scenario_phases": (joint_layer.scenario_diagnostics(joint["spec"], joint["scenario"], joint["drivers"], min(chunk, paths), QUARTERS,
+                                                                                                             int(np.random.SeedSequence([joint["global_seed"], 0]).generate_state(1)[0]))
+                                                                            if joint_layer.is_phased(joint.get("scenario")) else None),
+                                                        "scenario_mode": ("phased" if joint_layer.is_phased(joint.get("scenario")) else ("constant_legacy_non_normative" if (joint.get("scenario") or {}).get("driver_overrides") else "BASE")),
                                                         "knockout_applied": knockout_applied, "path_id_rule": "path_id = chunk_index*chunk + i; шоки по SeedSequence([global_seed, chunk_index])"},
            "base": base}
     if inputs.get("convergence_check", True):

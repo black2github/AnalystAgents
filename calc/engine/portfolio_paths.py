@@ -7,11 +7,11 @@ joint). Совместимость путей проверяется по meta: 
 
 inputs: {"paths_files": {ticker: путь .npz}, "weights": {ticker: w}, "dry_powder_weight": w_dp,
          "dry_powder_return_annual": r_dp (model_assumption; например доходность T-bills), "allow_unaligned": false}
-Смешивание сценариев (1.1.0, ЧЕРНОВИК до Scenario Engine v1.0): вместо paths_files — "scenarios": [{"id", "probability",
-"paths_files": {ticker: .npz}}] (сумма вероятностей 1; пути всех сценариев выровнены по path_id — общий global_seed);
-по каждому path_id сценарий выбирается детерминированно (mixture_seed) по вероятностям → смесь; в выходе — метрики смеси,
-по каждому сценарию отдельно и scenario_delta (медиана/ES5/P(loss) к первому сценарию в списке, обычно BASE);
-scenario_concentration — None до определения IMMA.
+Смесь сценариев (1.2.0, Scenario_Engine_Specification_v1.0): вместо paths_files — "scenarios": [{"id", "probability",
+"paths_files": {ticker: .npz}}]; обязателен BASE (вероятность — остаток 1 − Σp, §2); non-BASE с probability null →
+pending_owner_judgment: только метрики по сценариям и дельты к BASE. При вероятностях — взвешенная эмпирическая смесь (вес
+p_s/N на исход, §6; общие path_id), MedianImpact/ES5Impact/B_s и ScenarioConcentration = max B_s / Σ B_s (§7; warning >50 %,
+hard >60 %).
 outputs: медианный CAGR 3/5/8Y портфеля, P(2x), P(loss>30/50%), ES5, квантили CAGR 5Y, вклад компаний в медиану Y5,
   корреляции относительных стоимостей Y5 между компаниями, alignment.
 """
@@ -22,7 +22,7 @@ import math
 
 import numpy as np
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 
 def load_paths(path: str) -> dict:
@@ -102,40 +102,98 @@ def run(inputs: dict, seed: int) -> dict:
             "decision": "none", "note": "не торговый сигнал; вход для MPC (P0 vs P1(w)) и Optimizer; без joint-слоя корреляции между компаниями — только через общий seed идиосинкратики (диагностика)"}
 
 
+def _wquantile(x: np.ndarray, w: np.ndarray, q: float) -> float:
+    """Взвешенный эмпирический квантиль: первый исход с накопленной массой ≥ q; при точном попадании массы в q — среднее с
+    следующим исходом положительного веса (при равных весах совпадает с np.median/np.quantile для медианы)."""
+    o = np.argsort(x, kind="stable"); xs = x[o]; ws = w[o]; cw = np.cumsum(ws); cw /= cw[-1]
+    k = int(np.searchsorted(cw, q - 1e-12, side="left").clip(0, len(xs) - 1))
+    if abs(cw[k] - q) < 1e-12:
+        nxt = k + 1
+        while nxt < len(xs) and ws[nxt] <= 0:
+            nxt += 1
+        if nxt < len(xs):
+            return float(0.5 * (xs[k] + xs[nxt]))
+    return float(xs[k])
+
+
+def _wmetrics(pv: np.ndarray, w: np.ndarray, years: int) -> dict:
+    """Метрики по взвешенной эмпирической распределённости (Scenario Engine §6): медиана/квантили, P(loss), ES5 — по массе 5 %."""
+    cagr = np.power(np.clip(pv, 1e-12, None), 1.0 / years) - 1.0; ret = pv - 1.0
+    o = np.argsort(ret, kind="stable"); cw = np.cumsum(w[o]); tail = cw <= 0.05 * cw[-1] * (1.0 + 1e-9)   # допуск на границу массы (float)
+    if not tail.any():
+        tail[0] = True
+    es5 = float(np.average(ret[o][tail], weights=w[o][tail]))
+    return {"median_CAGR": _wquantile(cagr, w, 0.5), "P_2x": float(np.average(pv >= 2, weights=w)), "P_loss_gt_30pct": float(np.average(pv < 0.7, weights=w)),
+            "P_loss_gt_50pct": float(np.average(pv < 0.5, weights=w)), "expected_shortfall_5pct": es5,
+            "CAGR_quantiles": {str(q): _wquantile(cagr, w, q) for q in (0.05, 0.25, 0.5, 0.75, 0.95)}}
+
+
 def _run_mixture(inputs: dict, seed: int) -> dict:
-    """Смесь сценариев по path_id (черновик): выбор сценария на путь по вероятностям, метрики смеси и по сценариям."""
+    """Смесь сценариев (Scenario_Engine_Specification_v1.0 §2, §6, §7): scenario-specific пути с общими path_id объединяются как
+    взвешенная эмпирическая распределённость (вес p_s/N на исход); BASE = остаток 1 − Σp; при pending-вероятностях — только
+    метрики по сценариям (смесь, impacts и ScenarioConcentration — not_testable_pending_owner_probability)."""
     scen = inputs["scenarios"]
     w = {k: float(v) for k, v in (inputs.get("weights") or {}).items()}
     wdp = float(inputs.get("dry_powder_weight", 0.0)); rdp = float(inputs.get("dry_powder_return_annual", 0.0))
-    probs = np.array([float(sc.get("probability", 0.0)) for sc in scen])
-    if abs(probs.sum() - 1.0) > 1e-6 or (probs < 0).any():
-        raise ValueError(f"вероятности сценариев должны быть ≥0 и давать 1.0, получено {probs.tolist()}")
     if abs(sum(w.values()) + wdp - 1.0) > 1e-6:
         raise ValueError("веса + dry powder должны давать 1.0")
+    ids = [sc["id"] for sc in scen]
+    if len(set(ids)) != len(ids) or "BASE" not in ids:
+        raise ValueError("scenarios: id уникальны и обязателен BASE")
+    base_i = ids.index("BASE")
+    pend = [sc["id"] for sc in scen if sc["id"] != "BASE" and sc.get("probability") is None]
+    probs = None
+    if not pend:
+        pn = {sc["id"]: float(sc["probability"]) for sc in scen if sc["id"] != "BASE"}
+        if any(v < 0 for v in pn.values()) or sum(pn.values()) > 1.0 + 1e-12:
+            raise ValueError(f"вероятности non-BASE сценариев должны быть ≥0 и в сумме ≤1: {pn}")
+        probs = {**pn, "BASE": 1.0 - sum(pn.values())}
+        if scen[base_i].get("probability") is not None and abs(float(scen[base_i]["probability"]) - probs["BASE"]) > 1e-12:
+            raise ValueError("probability BASE задана и не равна остатку 1 − Σp")
     loaded = []
     for sc in scen:
         files = sc.get("paths_files") or {}
         missing = [t for t in w if t not in files]
         if missing:
-            raise ValueError(f"сценарий {sc.get('id')}: нет файлов путей для {missing}")
+            raise ValueError(f"сценарий {sc['id']}: нет файлов путей для {missing}")
         loaded.append({t: load_paths(files[t]) for t in w})
     n = min(len(d[t]["r5"]) for d in loaded for t in w)
-    ref_ids = loaded[0][next(iter(w))]["path_id"][:n]; ref_meta = loaded[0][next(iter(w))]["meta"]
+    ref_ids = loaded[base_i][next(iter(w))]["path_id"][:n]; ref_meta = loaded[base_i][next(iter(w))]["meta"]
     for sc, d in zip(scen, loaded):
         for t in w:
             m = d[t]["meta"]
             if m.get("global_seed") != ref_meta.get("global_seed") or m.get("chunk") != ref_meta.get("chunk") or not np.array_equal(d[t]["path_id"][:n], ref_ids):
-                raise ValueError(f"сценарий {sc.get('id')}, {t}: пути не выровнены по path_id с {scen[0].get('id')} — смесь не считается")
-    rng = np.random.default_rng(int(inputs.get("mixture_seed", seed)) + 424_243)
-    choice = rng.choice(len(scen), size=n, p=probs)          # сценарий на путь (детерминировано)
-    mixed = {t: {key: np.select([choice == j for j in range(len(scen))], [loaded[j][t][key][:n] for j in range(len(scen))]) for key in ("r3", "r5", "r8")} for t in w}
-    mix = _metrics_for(mixed, w, wdp, rdp, n)
+                raise ValueError(f"сценарий {sc['id']}, {t}: пути не выровнены по path_id с BASE — смесь не считается")
     per = {sc["id"]: _metrics_for(loaded[j], w, wdp, rdp, n) for j, sc in enumerate(scen)}
-    base_id = scen[0]["id"]
-    delta = {sc["id"]: {h: {k: per[sc["id"]][h][k] - per[base_id][h][k] for k in ("median_CAGR", "P_loss_gt_30pct", "P_loss_gt_50pct", "expected_shortfall_5pct", "P_2x")} for h in ("Y3", "Y5", "Y8")} for sc in scen[1:]}
-    shares = {sc["id"]: float((choice == j).mean()) for j, sc in enumerate(scen)}
-    return {"model_version": VERSION, "mode": "scenario_mixture_draft", "paths": int(n), "weights": w, "dry_powder_weight": wdp, "dry_powder_return_annual": rdp,
-            "scenarios": [{"id": sc["id"], "probability": float(sc["probability"]), "realized_share": shares[sc["id"]]} for sc in scen], "mixture_seed": int(inputs.get("mixture_seed", seed)),
-            "horizons": mix, "by_scenario": per, "scenario_delta_vs_first": delta, "scenario_concentration": None,
-            "note": "ЧЕРНОВИК до Scenario Engine v1.0: смесь по path_id (общие случайные числа), дельта сценария = разность метрик сценария и первого в списке; определение Scenario Concentration и вклада смеси — по спецификации IMMA; decision: none",
-            "decision": "none"}
+    delta = {sid: {h: {k: per[sid][h][k] - per["BASE"][h][k] for k in ("median_CAGR", "P_loss_gt_30pct", "P_loss_gt_50pct", "expected_shortfall_5pct", "P_2x")} for h in ("Y3", "Y5", "Y8")} for sid in ids if sid != "BASE"}
+    out = {"model_version": VERSION, "mode": "scenario_mixture", "spec": "Scenario_Engine_Specification_v1.0", "paths": int(n), "weights": w, "dry_powder_weight": wdp, "dry_powder_return_annual": rdp,
+           "scenarios": [{"id": sc["id"], "probability": (probs or {}).get(sc["id"], sc.get("probability"))} for sc in scen],
+           "by_scenario": per, "scenario_delta_vs_BASE": delta, "decision": "none"}
+    if probs is None:
+        out.update({"probability_status": "pending_owner_judgment", "pending": pend, "horizons": None, "scenario_impacts": None, "scenario_concentration": None,
+                    "note": "смесь, MedianImpact/ES5Impact/B_s и ScenarioConcentration — not_testable_pending_owner_probability (§2); scenario-specific метрики и дельты к BASE доступны"})
+        return out
+    # взвешенная эмпирическая смесь: каждый исход сценария s с весом p_s/N
+    mix = {}
+    for h, key, yrs in (("Y3", "r3", 3), ("Y5", "r5", 5), ("Y8", "r8", 8)):
+        pvs, ws = [], []
+        for j, sc in enumerate(scen):
+            pv = np.zeros(n)
+            for t, wt in w.items():
+                pv += wt * loaded[j][t][key][:n].astype(float)
+            pv += wdp * (1.0 + rdp) ** yrs
+            pvs.append(pv); ws.append(np.full(n, probs[sc["id"]] / n))
+        mix[h] = _wmetrics(np.concatenate(pvs), np.concatenate(ws), yrs)
+    impacts = {}
+    for sid in ids:
+        if sid == "BASE":
+            continue
+        p_s = probs[sid]; b = per["BASE"]["Y5"]; m = per[sid]["Y5"]
+        impacts[sid] = {"probability": p_s, "MedianImpact_Y5": p_s * (m["median_CAGR"] - b["median_CAGR"]), "ES5Impact_Y5": p_s * (m["expected_shortfall_5pct"] - b["expected_shortfall_5pct"]),
+                        "adverse_ES_burden_B": p_s * max(0.0, b["expected_shortfall_5pct"] - m["expected_shortfall_5pct"])}
+    tot = sum(v["adverse_ES_burden_B"] for v in impacts.values())
+    conc = (max(v["adverse_ES_burden_B"] for v in impacts.values()) / tot) if tot > 0 else 0.0
+    out.update({"probability_status": "owner_judgment", "horizons": mix, "scenario_impacts": impacts,
+                "scenario_concentration": {"value": conc, "no_adverse_scenario_burden": tot <= 0, "warning": conc > 0.50, "hard_limit_breach": conc > 0.60, "rule": "max_s B_s / Σ_s B_s по non-BASE; warning >50 %, hard >60 % (Optimizer v1.0)"},
+                "note": "медиана и ES5 нелинейны — impacts диагностические, не аддитивное разложение (§7)"})
+    return out

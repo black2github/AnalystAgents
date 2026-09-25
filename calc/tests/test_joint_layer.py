@@ -94,27 +94,84 @@ def test_mapping_requires_layer_spec_and_is_deterministic():
     assert cm.run(inp, 0)["base"] == cm.run(inp, 0)["base"]
 
 
-def test_scenario_phases_profile_and_legacy_equivalence():
-    n, T = 4000, 32
-    # legacy driver_overrides == одна фаза с t0 до конца
-    legacy = jl.driver_shocks(SPEC, ["AI_COMPUTE_DEMAND"], n, T, 1, scenario={"driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -1.5, "volatility_multiplier": 1.2}}})
-    one = jl.driver_shocks(SPEC, ["AI_COMPUTE_DEMAND"], n, T, 1, scenario={"phases": [{"phase_id": "p", "effective_from": 0, "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -1.5, "volatility_multiplier": 1.2}}}]})
-    assert np.allclose(legacy["AI_COMPUTE_DEMAND"], one["AI_COMPUTE_DEMAND"])
-    # профиль: старт по распределению, подъём 4 кв., плато 8 кв., спад 4 кв.
-    prof = jl.scenario_profiles({"phases": [{"phase_id": "a", "effective_from": {"distribution": "uniform", "min": 4, "max": 8}, "ramp_quarters": 4, "duration_quarters": 8, "decay_quarters": 4, "driver_overrides": {"X": {"mean_shift_sigma": 1}}},
-                                            {"phase_id": "b", "after_phase": "a", "offset": 2, "driver_overrides": {"X": {"mean_shift_sigma": -1}}}]}, n, T, 7)
-    a, b = prof[0], prof[1]
-    assert a["m"].shape == (n, T) and a["m"].min() >= 0 and a["m"].max() <= 1
-    assert (a["start"] >= 4).all() and (a["start"] <= 8).all()
-    i = 0; st = a["start"][i]
-    assert a["m"][i, int(np.floor(st))] <= 1e-9 or st == np.floor(st)                 # до старта — 0
-    assert abs(a["m"][i, int(np.ceil(st)) + 5] - 1.0) < 1e-9                             # плато
-    assert a["m"][i, min(T - 1, int(np.ceil(st)) + 4 + 8 + 4)] <= 1e-9 or int(np.ceil(st)) + 16 >= T   # после спада — 0
-    assert (b["start"] >= a["start"] + 4 + 8 + 2 - 1e-9).all()                            # after_phase: старт после плато a + offset
-    # сдвиг действует только после старта: средний шок до 4-го квартала ≈ 0, на плато ≈ +1
-    sh = jl.driver_shocks(SPEC, ["AI_COMPUTE_DEMAND"], n, T, 1, scenario={"phases": [{"phase_id": "a", "effective_from": 8, "ramp_quarters": 0, "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": 1.0}}}]})["AI_COMPUTE_DEMAND"]
-    assert abs(sh[:, :8].mean()) < 0.1 and abs(sh[:, 8:].mean() - 1.0) < 0.1
-    # детерминизм
-    again = jl.driver_shocks(SPEC, ["AI_COMPUTE_DEMAND"], n, T, 1, scenario={"phases": [{"phase_id": "a", "effective_from": {"distribution": "triangular", "min": 2, "mode": 6, "max": 10}, "ramp_quarters": 2, "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -1.0}}}]})
-    again2 = jl.driver_shocks(SPEC, ["AI_COMPUTE_DEMAND"], n, T, 1, scenario={"phases": [{"phase_id": "a", "effective_from": {"distribution": "triangular", "min": 2, "mode": 6, "max": 10}, "ramp_quarters": 2, "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -1.0}}}]})
-    assert np.array_equal(again["AI_COMPUTE_DEMAND"], again2["AI_COMPUTE_DEMAND"])
+def _ph(pid, quarter=None, tri=None, anchor="t0", ramp=0, dur="until_end", decay=0, ov=None, corr=None):
+    ef = {"kind": "fixed_quarter", "anchor": anchor, "quarter": quarter} if tri is None else {"kind": "triangular_quarter", "anchor": anchor, "min": tri[0], "mode": tri[1], "max": tri[2]}
+    return {"phase_id": pid, "name": pid, "effective_from": ef, "ramp_quarters": ramp, "duration_quarters": dur, "decay_quarters": decay,
+            "driver_overrides": {d: {"mean_shift_sigma": m, "volatility_multiplier": v, "persistence_override": None} for d, (m, v) in (ov or {}).items()},
+            "root_correlation_overrides": corr or [], "meta": {"provenance": "model_assumption", "rationale": "test"}}
+
+
+def test_scenario_phases_spec_semantics():
+    """Scenario Engine v1.0: фаза = целевое состояние относительно BASE; ramp линейно (сдвиг) и геометрически (волатильность);
+    целочисленная длительность возвращает к BASE через decay; until_next_phase — плато до следующей фазы; legacy — прежний путь."""
+    n, T, d = 2000, 32, "AI_COMPUTE_DEMAND"
+    # пример из Scenario_Engine_Examples: шок 4 кв. −1.0σ ×1.5 → восстановление с ramp 4 к −0.2σ ×1.1 до конца
+    sc = {"scenario_id": "EX", "phases": [_ph("SHOCK", quarter=0, dur=4, ov={d: (-1.0, 1.5)}), _ph("RECOVERY", quarter=4, ramp=4, ov={d: (-0.2, 1.1)})]}
+    sch = jl.scenario_schedule(SPEC, sc, [d], n, T, 1)
+    mu, lv = sch["mu"][d][0], sch["logvol"][d][0]
+    assert np.allclose(mu[:4], -1.0) and np.allclose(np.exp(lv[:4]), 1.5)
+    assert np.allclose(mu[4:8], [-0.8, -0.6, -0.4, -0.2]) and np.allclose(mu[8:], -0.2)                       # линейный ramp от предыдущего состояния к целевому
+    assert np.allclose(np.exp(lv[4:8]), 1.5 * (1.1 / 1.5) ** np.array([0.25, 0.5, 0.75, 1.0])) and np.allclose(np.exp(lv[8:]), 1.1)   # геометрически
+    # целочисленная длительность + decay → возврат к BASE ступенями, потом 0
+    sc2 = {"scenario_id": "D", "phases": [_ph("A", quarter=2, ramp=2, dur=3, decay=2, ov={d: (1.0, 1.0)})]}
+    m2 = jl.scenario_schedule(SPEC, sc2, [d], n, T, 1)["mu"][d][0]
+    assert np.allclose(m2[:2], 0) and np.allclose(m2[2:4], [0.5, 1.0]) and np.allclose(m2[4:7], 1.0) and np.allclose(m2[7:9], [0.5, 0.0]) and np.allclose(m2[9:], 0)
+    # until_next_phase: плато до старта следующей; следующая фаза стартует от предыдущего состояния
+    sc3 = {"scenario_id": "U", "phases": [_ph("A", quarter=0, dur="until_next_phase", ov={d: (1.0, 1.0)}), _ph("B", quarter=6, ramp=2, ov={d: (-1.0, 1.0)})]}
+    m3 = jl.scenario_schedule(SPEC, sc3, [d], n, T, 1)["mu"][d][0]
+    assert np.allclose(m3[:6], 1.0) and np.allclose(m3[6:8], [0.0, -1.0]) and np.allclose(m3[8:], -1.0)
+    # применение к шокам: ScenarioDriver = mu + vol·Base; legacy-формат без фаз — прежний путь
+    base = jl.driver_shocks(SPEC, [d], n, T, 1)[d]
+    x = jl.driver_shocks(SPEC, [d], n, T, 1, scenario=sc)[d]
+    assert np.allclose(x[:, :4], -1.0 + 1.5 * base[:, :4]) and np.allclose(x[:, 8:], -0.2 + 1.1 * base[:, 8:])
+    legacy = jl.driver_shocks(SPEC, [d], n, T, 1, scenario={"driver_overrides": {d: {"mean_shift_sigma": -1.5, "volatility_multiplier": 1.2}}})[d]
+    assert np.allclose(legacy, -1.5 + 1.2 * base)
+
+
+def test_scenario_phase_timing_anchor_and_determinism():
+    n, T, d = 4000, 32, "AI_COMPUTE_DEMAND"
+    sc = {"scenario_id": "TIM", "phases": [_ph("A", tri=(4, 8, 12), ramp=1, dur="until_next_phase", ov={d: (1.0, 1.0)}), _ph("B", tri=(2, 3, 4), anchor="phase:A", ov={d: (-1.0, 1.0)})]}
+    st = jl.phase_starts(sc, n, T, 7)
+    assert st["A"].min() >= 4 and st["A"].max() <= 12 and (st["B"] - st["A"]).min() >= 2 and (st["B"] - st["A"]).max() <= 4 and st["A"].dtype.kind == "i"
+    assert np.array_equal(st["A"], jl.phase_starts(sc, n, T, 7)["A"]) and not np.array_equal(st["A"], jl.phase_starts(sc, n, T, 8)["A"])   # детерминизм по seed
+    x1 = jl.driver_shocks(SPEC, [d], n, T, 1, scenario=sc)[d]; x2 = jl.driver_shocks(SPEC, [d], n, T, 1, scenario=sc)[d]
+    assert np.array_equal(x1, x2)
+    diag = jl.scenario_diagnostics(SPEC, sc, [d, "INTEREST_RATES"], n, T, 1)
+    assert diag["phased"] and set(diag["phase_start_quantiles"]) == {"A", "B"} and diag["scenario_drivers_applicable"] == [d] and diag["scenario_drivers_unmapped"] == []
+    import pytest
+    with pytest.raises(ValueError):
+        jl.phase_starts({"scenario_id": "BAD", "phases": [_ph("B", tri=(1, 2, 3), anchor="phase:A")]}, n, T, 1)
+    # persistence_override (вариант «б», предварительно): AR(1)-перепостоянство пути на плато; вне [0,0.99] → ValueError; null = базовый путь
+    pers = {"scenario_id": "P", "phases": [_ph("A", quarter=4, ramp=2, ov={d: (0.0, 1.0)})]}; pers["phases"][0]["driver_overrides"][d]["persistence_override"] = 0.9
+    sch = jl.scenario_schedule(SPEC, pers, [d], n, T, 1); r = sch["rho"][d][0]
+    assert np.isnan(r[:4]).all() and np.isnan(r[4]) and r[5] == 0.9 and (r[6:] == 0.9).all()               # один конец null: до середины ramp старое (null), после — новое
+    xb = jl.driver_shocks(SPEC, [d], n, T, 1)[d]; xp = jl.driver_shocks(SPEC, [d], n, T, 1, scenario=pers)[d]
+    assert np.array_equal(xp[:, :5], xb[:, :5])
+    ac_b = np.mean(xb[:, 10:] * xb[:, 9:-1]); ac_p = np.mean(xp[:, 10:] * xp[:, 9:-1])
+    assert ac_p > ac_b + 0.2 and abs(np.var(xp[:, 20:]) - 1.0) < 0.15                                        # автокорреляция выросла, дисперсия ≈ 1 (инновационная семантика IMMA)
+    diag = jl.persistence_diagnostics(SPEC, pers, [d], n, T, 1)
+    k = f"A/{d}"; assert diag[k]["ok"] and abs(diag[k]["lag1_corr"] - 0.9) < 0.1 and abs(diag[k]["var_y"] - 1.0) < 0.15   # SCN-011: Var(y) ≈ 1, lag-1 ≈ ρ
+    with pytest.raises(ValueError):
+        bad = {"scenario_id": "P2", "phases": [_ph("A", quarter=0, ov={d: (0.0, 1.0)})]}; bad["phases"][0]["driver_overrides"][d]["persistence_override"] = 1.5
+        jl.scenario_schedule(SPEC, bad, [d], n, T, 1)
+
+
+def test_scenario_phase_correlation_overrides():
+    """Переопределение корреляции корней в фазе: инновации корней коррелируют по целевой матрице на плато, по базовой — до старта;
+    матрица не PSD → ValueError без ремонта; общие iid-инновации (до старта пути совпадают с BASE)."""
+    n, T = 20000, 16
+    roots = list(SPEC["root_factors"]["factors"].keys()); a, b = roots[0], roots[1]
+    _, R0, _ = jl.root_correlation(SPEC); base_rho = R0[0, 1]
+    target = 0.9 if base_rho < 0.5 else -0.5
+    sc = {"scenario_id": "C", "phases": [_ph("A", quarter=8, ov={}, corr=[{"root_a": a, "root_b": b, "correlation": target}])]}
+    sch = jl.scenario_schedule(SPEC, sc, ["AI_COMPUTE_DEMAND"], n, T, 3)
+    assert sch["n_corr_states"] == 2 and (sch["corr_idx"][:, :8] == 0).all() and (sch["corr_idx"][:, 8:] == 1).all()
+    ids, F = jl.root_paths(SPEC, n, T, 3, corr_schedule=(sch["corr_mats"], sch["corr_idx"]))
+    ids0, F0 = jl.root_paths(SPEC, n, T, 3)
+    assert np.array_equal(F[:, :, :8], F0[:, :, :8])                                                       # до старта — те же пути (общие инновации)
+    phi = np.array([float(SPEC["root_factors"]["factors"][k].get("phi", 0.0)) for k in ids])
+    u = (F[:, :, 12] - phi * F[:, :, 11]) / np.sqrt(1 - phi ** 2)                                          # восстановленные инновации на плато
+    assert abs(np.corrcoef(u[:, 0], u[:, 1])[0, 1] - target) < 0.03
+    import pytest
+    with pytest.raises(ValueError):
+        jl.phase_correlation(SPEC, _ph("X", quarter=0, corr=[{"root_a": a, "root_b": b, "correlation": 0.99}, {"root_a": a, "root_b": roots[2], "correlation": 0.99}, {"root_a": b, "root_b": roots[2], "correlation": -0.99}]))

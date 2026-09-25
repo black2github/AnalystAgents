@@ -56,26 +56,29 @@ def test_convergence_includes_loss_probability():
     assert "P_loss_gt_30pct_5Y" in next(iter(conv["runs"].values())) and "P_loss_gt_30pct_5Y" in conv["tolerance"]
 
 
-def test_scenario_mixture_draft(tmp_path):
-    base_a = _run_store(_joint(cal_mature(), "AAA"), tmp_path); base_b = _run_store(_joint(cal_capital(), "BBB"), tmp_path)
-    down = {"id": "DOWN", "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -2.0}}}
-    ca = dict(_joint(cal_mature(), "AAA")); cb = dict(_joint(cal_capital(), "BBB"))
-    da = cm.run({"calibration": ca, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 6000, "convergence_check": False, "robustness": False, "store_paths": True, "_runs_dir": str(tmp_path), "_run_id": "t-AAA-DOWN", "scenario": down}, 0)
-    db = cm.run({"calibration": cb, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 6000, "convergence_check": False, "robustness": False, "store_paths": True, "_runs_dir": str(tmp_path), "_run_id": "t-BBB-DOWN", "scenario": down}, 0)
-    scen = [{"id": "BASE", "probability": 0.7, "paths_files": {"AAA": base_a["paths_file"], "BBB": base_b["paths_file"]}},
-            {"id": "DOWN", "probability": 0.3, "paths_files": {"AAA": da["paths_file"], "BBB": db["paths_file"]}}]
-    inp = {"scenarios": scen, "weights": {"AAA": 0.5, "BBB": 0.4}, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}
-    out = pp.run(inp, 5)
-    assert out["mode"] == "scenario_mixture_draft" and out["decision"] == "none" and out["scenario_concentration"] is None
-    sh = {s["id"]: s["realized_share"] for s in out["scenarios"]}; assert abs(sh["BASE"] - 0.7) < 0.03 and abs(sh["DOWN"] - 0.3) < 0.03
-    b, d, m = out["by_scenario"]["BASE"]["Y5"], out["by_scenario"]["DOWN"]["Y5"], out["horizons"]["Y5"]
-    assert d["median_CAGR"] < b["median_CAGR"] and out["scenario_delta_vs_first"]["DOWN"]["Y5"]["median_CAGR"] < 0
-    assert min(b["median_CAGR"], d["median_CAGR"]) - 1e-9 <= m["median_CAGR"] <= max(b["median_CAGR"], d["median_CAGR"]) + 1e-9   # смесь между сценариями
-    # вероятность 1.0 у BASE воспроизводит обычный прогон
-    single = pp.run({"paths_files": scen[0]["paths_files"], "weights": {"AAA": 0.5, "BBB": 0.4}, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
-    only = pp.run({**inp, "scenarios": [{**scen[0], "probability": 1.0}, {**scen[1], "probability": 0.0}]}, 5)
-    assert abs(only["horizons"]["Y5"]["median_CAGR"] - single["horizons"]["Y5"]["median_CAGR"]) < 1e-12
-    assert pp.run(inp, 5)["horizons"] == out["horizons"]                                                     # детерминизм
+def test_scenario_mixture_weighted(tmp_path):
+    """Scenario Engine §2/§6/§7: BASE — остаток; pending-вероятность → только по-сценарные метрики; при вероятностях — взвешенная
+    эмпирическая смесь (p=1 у BASE воспроизводит обычный прогон), impacts, ScenarioConcentration; детерминизм; контракт."""
     import pytest
+    base_a = _run_store(_joint(cal_mature(), "AAA"), tmp_path); base_b = _run_store(_joint(cal_capital(), "BBB"), tmp_path)
+    down = {"scenario_id": "DOWN", "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -2.0}}}
+    mk = lambda tk, c, rid: cm.run({"calibration": c, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 6000, "convergence_check": False, "robustness": False, "store_paths": True, "_runs_dir": str(tmp_path), "_run_id": rid, "scenario": down}, 0)
+    da = mk("AAA", _joint(cal_mature(), "AAA"), "t-AAA-DOWN"); db = mk("BBB", _joint(cal_capital(), "BBB"), "t-BBB-DOWN")
+    files_b = {"AAA": base_a["paths_file"], "BBB": base_b["paths_file"]}; files_d = {"AAA": da["paths_file"], "BBB": db["paths_file"]}
+    w = {"AAA": 0.5, "BBB": 0.4}
+    pend = pp.run({"scenarios": [{"id": "BASE", "paths_files": files_b}, {"id": "DOWN", "probability": None, "paths_files": files_d}], "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
+    assert pend["probability_status"] == "pending_owner_judgment" and pend["horizons"] is None and pend["scenario_concentration"] is None and pend["scenario_delta_vs_BASE"]["DOWN"]["Y5"]["median_CAGR"] < 0
+    out = pp.run({"scenarios": [{"id": "BASE", "paths_files": files_b}, {"id": "DOWN", "probability": 0.3, "paths_files": files_d}], "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
+    assert out["mode"] == "scenario_mixture" and out["scenarios"][0]["probability"] == 0.7 and out["decision"] == "none"
+    b, d, m = out["by_scenario"]["BASE"]["Y5"], out["by_scenario"]["DOWN"]["Y5"], out["horizons"]["Y5"]
+    assert d["median_CAGR"] < b["median_CAGR"] and min(b["median_CAGR"], d["median_CAGR"]) - 1e-9 <= m["median_CAGR"] <= max(b["median_CAGR"], d["median_CAGR"]) + 1e-9
+    imp = out["scenario_impacts"]["DOWN"]; assert imp["probability"] == 0.3 and imp["MedianImpact_Y5"] < 0 and imp["adverse_ES_burden_B"] >= 0
+    assert out["scenario_concentration"]["value"] in (0.0, 1.0)                                                # один non-BASE сценарий
+    single = pp.run({"paths_files": files_b, "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
+    only = pp.run({"scenarios": [{"id": "BASE", "paths_files": files_b}, {"id": "DOWN", "probability": 0.0, "paths_files": files_d}], "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
+    assert abs(only["horizons"]["Y5"]["median_CAGR"] - single["horizons"]["Y5"]["median_CAGR"]) < 1e-9 and abs(only["horizons"]["Y5"]["expected_shortfall_5pct"] - single["horizons"]["Y5"]["expected_shortfall_5pct"]) < 1e-6
+    assert pp.run({"scenarios": out and [{"id": "BASE", "paths_files": files_b}, {"id": "DOWN", "probability": 0.3, "paths_files": files_d}], "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)["horizons"] == out["horizons"]
     with pytest.raises(ValueError):
-        pp.run({**inp, "scenarios": [{**scen[0], "probability": 0.5}, {**scen[1], "probability": 0.3}]}, 5)
+        pp.run({"scenarios": [{"id": "BASE", "paths_files": files_b}, {"id": "DOWN", "probability": 1.2, "paths_files": files_d}], "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)
+    with pytest.raises(ValueError):
+        pp.run({"scenarios": [{"id": "DOWN", "probability": 0.3, "paths_files": files_d}], "weights": w, "dry_powder_weight": 0.1, "dry_powder_return_annual": 0.04}, 0)

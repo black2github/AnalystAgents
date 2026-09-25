@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import importlib
 
-from engine import artifact_validator, company_mc, conditional_mc, conviction_overlay, portfolio_optimizer, portfolio_paths, portfolio_regime, portfolio_stability, reverse_valuation, selftest, synthetic_basket, valuation_multiple
+from engine import artifact_validator, company_mc, conditional_mc, conviction_overlay, joint_layer, milestone_mc, portfolio_optimizer, portfolio_paths, portfolio_regime, portfolio_stability, reverse_valuation, selftest, synthetic_basket, valuation_multiple
 
 importlib.reload(selftest)
 importlib.reload(valuation_multiple)
@@ -12,6 +12,8 @@ importlib.reload(portfolio_regime)
 importlib.reload(conditional_mc)
 importlib.reload(synthetic_basket)
 importlib.reload(conviction_overlay)
+importlib.reload(joint_layer)   # зависимости company_mc — тоже перезагружать, иначе в процессе сайдкара остаётся старый модуль
+importlib.reload(milestone_mc)
 importlib.reload(company_mc)
 importlib.reload(portfolio_paths)
 importlib.reload(portfolio_optimizer)
