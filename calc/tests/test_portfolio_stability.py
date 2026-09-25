@@ -19,7 +19,7 @@ def _inputs(paths, **over):
          "sectors": {"AAA": "S1", "BBB": "S1", "CCC": "S2", "ZZZ": "S3"}, "common_cause": {"CAUSE": {"AAA": 1.0, "CCC": 0.75}},
          "stability": {"combined_runs": 6, "max_paths": 3000, "search_paths": 3000, "terminal_margins": {"AAA": 0.30, "BBB": 0.30, "CCC": None},
                        "milestone_companies": [], "driver_exposures": {"AAA": {"AI_COMPUTE_DEMAND": 2}, "BBB": {"AI_COMPUTE_DEMAND": 1}, "CCC": {"INTEREST_RATES": -1}},
-                       "central_run_ref": "ref-run"}}
+                       "central_run_ref": "ref-run", "workers": 2}}
     d.update(over); return d
 
 
@@ -78,6 +78,11 @@ def test_stability_run_structure_and_classification(paths):
     # детерминизм
     again = ps.run(_inputs(paths), 11)
     assert again["assumptions_hash"] == out["assumptions_hash"] and again["inclusion_frequency_by_asset"] == out["inclusion_frequency_by_asset"] and again["combined"]["runs_detail"] == out["combined"]["runs_detail"]
+    # последовательный режим (workers=1) даёт тот же результат, что пул из 2 процессов
+    seq = ps.run(_inputs(paths, stability={**_inputs(paths)["stability"], "workers": 1}), 11)
+    assert seq["workers"] == 1 and out["workers"] == 2
+    assert seq["inclusion_frequency_by_asset"] == out["inclusion_frequency_by_asset"] and seq["weight_p10_p50_p90"] == out["weight_p10_p50_p90"]
+    assert seq["combined"]["runs_detail"] == out["combined"]["runs_detail"] and seq["leave_one_out"] == out["leave_one_out"] and seq["correlation_sensitivity"] == out["correlation_sensitivity"]
 
 
 def test_optimizer_given_start_and_max_paths(paths):

@@ -29,7 +29,7 @@ import numpy as np
 
 from engine import portfolio_paths
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 HORIZONS = (("Y3", "r3", 3), ("Y5", "r5", 5), ("Y8", "r8", 8))
 
 
@@ -43,12 +43,12 @@ def _metrics(pv: np.ndarray, years: int) -> dict:
 
 
 def _fast_metrics(pv: np.ndarray, years: int) -> dict:
-    """Метрики поиска без сортировки квантилей: медиана CAGR (partition), P(loss), ES5 (partition)."""
-    med = float(np.median(pv))
-    ret = pv - 1.0
-    k = max(1, int(math.ceil(0.05 * len(ret))))
+    """Метрики поиска без сортировки квантилей: медиана CAGR и ES5 из ОДНОЙ partition (порядковые статистики k−1, n//2−1, n//2), P(loss)."""
+    n = len(pv); k = max(1, int(math.ceil(0.05 * n))); mid = n // 2
+    part = np.partition(pv, [k - 1, mid - 1, mid] if n % 2 == 0 else [k - 1, mid])
+    med = float(0.5 * (part[mid - 1] + part[mid])) if n % 2 == 0 else float(part[mid])
     return {"median_CAGR": float(np.power(max(med, 1e-12), 1.0 / years) - 1.0), "P_2x": float((pv >= 2).mean()), "P_loss_gt_30pct": float((pv < 0.7).mean()),
-            "P_loss_gt_50pct": float((pv < 0.5).mean()), "expected_shortfall_5pct": float(np.partition(ret, k - 1)[:k].mean())}
+            "P_loss_gt_50pct": float((pv < 0.5).mean()), "expected_shortfall_5pct": float(part[:k].mean() - 1.0)}
 
 
 class _Problem:
@@ -104,6 +104,19 @@ class _Problem:
         self.cap = np.array([0.0 if self.roles.get(t) == "Watch" else c for t, c in zip(self.tick, self.cap)])
         self.sectors = inputs.get("sectors") or {}
         self.cc = inputs.get("common_cause") or {}
+        # матричная форма концентраций (1.0.2): секторы, общие причины, Challenger — без словарных циклов на каждую оценку
+        kk = len(self.tick); sec_of = lambda t: self.sectors.get(t, "UNMAPPED")  # noqa: E731
+        self._sec_ids = sorted({sec_of(t) for t in list(self.tick) + list(self.fixed)})
+        self._S = np.zeros((len(self._sec_ids), kk))
+        for i, t in enumerate(self.tick):
+            self._S[self._sec_ids.index(sec_of(t)), i] = 1.0
+        self._sec_fixed = np.array([sum(float(x) for t, x in self.fixed.items() if sec_of(t) == sct) for sct in self._sec_ids])
+        self._cc_ids = list(self.cc)
+        self._CC = np.array([[float(m.get(t, 0.0)) for t in self.tick] for m in self.cc.values()]).reshape(len(self._cc_ids), kk)
+        self._cc_fixed = np.array([sum(float(self.fixed.get(t, 0.0)) * float(f) for t, f in m.items() if t in self.fixed) for m in self.cc.values()])
+        self._chal = np.array([1.0 if self.roles.get(t) == "Challenger" else 0.0 for t in self.tick])
+        self._chal_fixed = float(sum(float(x) for t, x in self.fixed.items() if self.roles.get(t) == "Challenger"))
+        self._fixed_vals = np.array([float(x) for x in self.fixed.values()])
         self.tol = float(inputs.get("objective_tolerance_pp", 0.5)) / 100.0
         self._cache: dict = {}
 
@@ -126,13 +139,12 @@ class _Problem:
         return res
 
     def concentrations(self, w: np.ndarray, wdp: float) -> dict:
-        full = {t: float(x) for t, x in zip(self.tick, w)}; full.update(self.fixed)
-        sec: dict = {}
-        for t, x in full.items():
-            s = self.sectors.get(t, "UNMAPPED"); sec[s] = sec.get(s, 0.0) + x
-        top3 = float(sum(sorted(full.values(), reverse=True)[:3]))
-        cc = {c: float(sum(full.get(t, 0.0) * float(f) for t, f in m.items())) for c, m in self.cc.items()}
-        chal = float(sum(x for t, x in full.items() if self.roles.get(t) == "Challenger"))
+        w = np.asarray(w, dtype=float)
+        sec = dict(zip(self._sec_ids, (self._S @ w + self._sec_fixed).tolist()))
+        allw = np.concatenate([w, self._fixed_vals]) if len(self._fixed_vals) else w
+        top3 = float(np.sort(allw)[-3:].sum())
+        cc = dict(zip(self._cc_ids, (self._CC @ w + self._cc_fixed).tolist())) if self._cc_ids else {}
+        chal = float(self._chal @ w + self._chal_fixed)
         return {"sector": sec, "top3": top3, "common_cause": cc, "challenger_aggregate": chal, "dry_powder": wdp}
 
     def violations(self, w: np.ndarray, wdp: float, ev: dict | None = None) -> list[dict]:
