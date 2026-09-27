@@ -254,3 +254,31 @@ def test_scenario_mode_on_normative_scenarios():
     bad = copy.deepcopy(sc[0]); bad["phases"][2]["root_correlation_overrides"] = [{"root_a": "AI_CAPEX_CYCLE", "root_b": "SEMI_SUPPLY_HEALTH", "correlation": 0.99, "meta": {"provenance": "model_assumption", "rationale": "t"}}, {"root_a": "AI_CAPEX_CYCLE", "root_b": "CHINA_MARKET_ACCESS", "correlation": 0.99, "meta": {"provenance": "model_assumption", "rationale": "t"}}, {"root_a": "SEMI_SUPPLY_HEALTH", "root_b": "CHINA_MARKET_ACCESS", "correlation": -0.99, "meta": {"provenance": "model_assumption", "rationale": "t"}}]
     out2 = av.run({"mode": "scenario", "workspace": str(ws), "scenario": bad, "replay_paths": 500}, 0)
     assert not out2["pass"] and any(f["rule"] == "SCN-006" and f["severity"] == "error" for f in out2["scenarios"]["TAIWAN_SEIZURE"]["integrity"])
+
+
+def test_scenario_semantics_v11_scn012_015():
+    """Scenario Engine v1.1 §14–19 (1.8.0): схема по schema_version файла; каталог событий; SCN-012 (уникальность includes в наборе),
+    SCN-013 (принадлежность событий), SCN-014 (критерии фаз), SCN-015 (includes ∩ excludes, покрытие); v1.0-файлы — без семантики."""
+    import copy, glob, yaml
+    from pathlib import Path
+    ws = Path("C:/openclaw-lab/data/workspace-invest")
+    files = sorted(glob.glob(str(ws / "portfolio/_scenarios/*_v1.1.yaml"))) or sorted(glob.glob(str(ws / "from_imma/Party8_Scenario_Engine_v1.1/*_v1.1.yaml")))
+    if len(files) < 3 or not (ws / "methodology/Scenario_Event_Catalog_v1.0.yaml").exists():
+        import pytest; pytest.skip("нет калибровок v1.1 / каталога событий")
+    sc = [d for d in (yaml.safe_load(open(f, encoding="utf-8")) for f in files) if isinstance(d, dict) and d.get("scenario_id")]   # без файла схемы
+    spec = str(ws / "methodology/Joint_Simulation_Layer_Schema_v1.1.yaml")
+    out = av.run({"mode": "scenario", "workspace": str(ws), "scenarios": sc, "joint_layer_spec_path": spec, "taxonomy_version": "1.2.1", "replay_paths": 800}, 0)
+    assert out["pass"] and all(v["pass"] and not v["schema_errors"] for v in out["scenarios"].values())
+    assert any(f["rule"] == "SCN-012" and f["severity"] == "info" and "pass" in f["message"] for f in out["set_findings"])
+    q = next(s for s in sc if s["scenario_id"] == "TAIWAN_QUARANTINE"); ts = next(s for s in sc if s["scenario_id"] == "TAIWAN_SEIZURE")
+    bad = copy.deepcopy(sc)
+    bq = next(s for s in bad if s["scenario_id"] == "TAIWAN_QUARANTINE"); bt = next(s for s in bad if s["scenario_id"] == "TAIWAN_SEIZURE")
+    bq["scope"]["includes"].append({"event_id": "EV-TW-ARMED-CONFLICT", "phase_id": "QUARANTINE", "role": "defining"})   # дубликат include (SCN-012) + пересечение с excludes (SCN-015)
+    bt["phases"][1]["exit_criteria"] = [{"event_id": "EV-NOPE", "condition": "x"}]; bt["phases"][0]["entry_criteria"] = []    # SCN-014
+    o2 = av.run({"mode": "scenario", "workspace": str(ws), "scenarios": bad, "joint_layer_spec_path": spec, "taxonomy_version": "1.2.1", "replay_paths": 500}, 0)
+    rules = {f["rule"] for f in o2["set_findings"] if f["severity"] == "error"}
+    assert not o2["pass"] and {"SCN-012", "SCN-014", "SCN-015"} <= rules
+    old = [d for d in (yaml.safe_load(open(f, encoding="utf-8")) for f in sorted(glob.glob(str(ws / "from_imma/Scenario_Engine_v1.0/*_v1.0.yaml")))) if isinstance(d, dict) and d.get("scenario_id")][:2]
+    if old:
+        o3 = av.run({"mode": "scenario", "workspace": str(ws), "scenarios": old, "joint_layer_spec_path": spec, "taxonomy_version": "1.2.1", "replay_paths": 500}, 0)
+        assert o3["pass"] and not any(f["rule"] in ("SCN-012", "SCN-013", "SCN-014", "SCN-015") for f in o3["set_findings"])

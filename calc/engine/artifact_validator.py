@@ -37,7 +37,7 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.7.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
+VERSION = "1.8.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
 #                    измерение в квартале применения — мода сроков вехи, как в движке), пример-фикстуры v1.0.2
 SCHEMA_VERSION = "1.0.5"            # Company Artifact Schema (v1.0.5: kpi_observations[].verification_run_ids — история прогонов дозора)
 CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
@@ -571,7 +571,15 @@ def _validate_scenario(inputs: dict, ws: Path, rules: dict) -> dict:
     scen = inputs.get("scenarios") or ([inputs["scenario"]] if inputs.get("scenario") else None)
     if not scen:
         raise ValueError("mode=scenario требует inputs.scenario (dict) или inputs.scenarios (list)")
-    schema = _schema(inputs, "scenario_schema_path", f"Scenario_Engine_Schema_v{SCENARIO_SCHEMA_VERSION}.yaml")
+    schemas: dict = {}   # 1.8.0: схема по schema_version файла (v1.0 и v1.1 сосуществуют; v1.1 = v1.0 + семантический слой)
+
+    def _schema_for(sc_):
+        ver = str(sc_.get("schema_version") or SCENARIO_SCHEMA_VERSION)
+        if ver not in schemas:
+            # явный scenario_schema_path применяется только к файлам версии по умолчанию; иные версии — по имени из methodology
+            src = inputs if ver == SCENARIO_SCHEMA_VERSION else {"workspace": inputs.get("workspace")}
+            schemas[ver] = _schema(src, "scenario_schema_path", f"Scenario_Engine_Schema_v{ver}.yaml")
+        return schemas[ver]
     jspec = inputs.get("joint_layer_spec") or _schema(inputs, "joint_layer_spec_path", "Joint_Simulation_Layer_Schema_v1.0.yaml")
     tax_ver = inputs.get("taxonomy_version") or "1.2"
     tax = _taxonomy_ids(ws, tax_ver) or set()
@@ -580,7 +588,7 @@ def _validate_scenario(inputs: dict, ws: Path, rules: dict) -> dict:
     per = {}; ids_seen = set(); mx_sets = set(); n_err = 0
     for sc in scen:
         sc = _norm(sc); sid = sc.get("scenario_id") or "?"
-        errs = _schema_errors(schema, sc); findings: list[dict] = []
+        errs = _schema_errors(_schema_for(sc), sc); findings: list[dict] = []
         if sid in ids_seen:
             findings.append(_f("SCN-001", "scenario_id", f"дубликат scenario_id {sid}"))
         ids_seen.add(sid); mx_sets.add(sc.get("mutual_exclusion_set"))
@@ -644,6 +652,9 @@ def _validate_scenario(inputs: dict, ws: Path, rules: dict) -> dict:
                     "probability": sc.get("probability"), "probability_status": sc.get("probability_status"), "pass": not errs and not any(f["severity"] == "error" for f in findings)}
     # контракт вероятностей набора (§2)
     prob_findings = []
+    # 1.8.0: семантический слой v1.1 (§14–19) — каталог событий, scope, критерии фаз, таблица исходов: SCN-012…015
+    sem = _scenario_semantics([_norm(sc) for sc in scen], ws, per)
+    prob_findings.extend(sem)
     if len(mx_sets) > 1:
         prob_findings.append(_f("SCN-009", "mutual_exclusion_set", f"сценарии из разных наборов: {sorted(str(x) for x in mx_sets)}"))
     pn = [sc.get("probability") for sc in scen if (sc.get("scenario_id") != "BASE")]
@@ -657,6 +668,102 @@ def _validate_scenario(inputs: dict, ws: Path, rules: dict) -> dict:
     n_err += sum(1 for f in prob_findings if f["severity"] == "error")
     return {"model_version": VERSION, "mode": "scenario", "scenario_schema_version": SCENARIO_SCHEMA_VERSION, "taxonomy_version": tax_ver, "scenarios": per,
             "set_findings": prob_findings, "pass": n_err == 0, "rules": rules, "decision": "none"}
+
+
+def _scenario_semantics(scen: list, ws: Path, per: dict) -> list:
+    """Scenario Engine v1.1 §14–19 (семантический слой; численная семантика не затрагивается). Применяется, если хотя бы один
+    сценарий несёт scope. Каталог событий — из scope.event_catalog_ref (methodology/), проверяется по
+    Scenario_Event_Catalog_Schema_v1.0.yaml. Правила: SCN-012 — event_id не повторяется в includes разных членов одного набора;
+    SCN-013 — у каждого modeled-события ровно один assigned_member ∈ {BASE} ∪ members, non-BASE → ровно один раз в includes этого
+    сценария (если сценарий передан), external_events — только OUTSIDE_SET в outcome_mapping; SCN-014 — у каждой фазы непустые
+    entry/exit_criteria, event_id есть в каталоге (events ∪ external), fact_id — в fact_catalog сценариев набора, иначе
+    system_condition; SCN-015 — includes ∩ excludes = ∅; modeled-событие, не упомянутое ни в scope (includes/excludes/base_when) ни в
+    outcome_mapping → warning scenario_event_coverage_gap. Файл состояния portfolio/_scenarios/state.json (если есть) — по
+    Scenario_State_Schema_v1.0.yaml (info/error)."""
+    with_scope = [sc for sc in scen if isinstance(sc.get("scope"), dict)]
+    if not with_scope:
+        return []
+    F: list[dict] = []
+    refs = {sc["scope"].get("event_catalog_ref") for sc in with_scope}
+    if len(refs) != 1:
+        F.append(_f("SCN-013", "scope/event_catalog_ref", f"сценарии ссылаются на разные каталоги событий: {sorted(str(r) for r in refs)}")); return F
+    cat_name = next(iter(refs)) or "Scenario_Event_Catalog_v1.0.yaml"; cp = ws / "methodology" / str(cat_name)
+    if not cp.exists():
+        F.append(_f("SCN-013", "scope/event_catalog_ref", f"каталог событий не найден: {cp}")); return F
+    cat = _load(cp)
+    cs = ws / "methodology" / "Scenario_Event_Catalog_Schema_v1.0.yaml"
+    if cs.exists():
+        for e in _schema_errors(_load(cs), cat)[:10]:
+            F.append(_f("SCN-013", f"catalog/{e['path']}", f"каталог не по схеме: {e['message'][:160]}"))
+    events = {e["event_id"]: e for e in (cat.get("events") or [])}
+    external = {e["event_id"]: e for e in (cat.get("external_events") or [])}
+    sets = {s.get("set_id"): s for s in (cat.get("mutual_exclusion_sets") or [])}
+    set_ids = {sc.get("mutual_exclusion_set") for sc in with_scope}
+    members_by_set = {sid: set(sets.get(sid, {}).get("members") or []) for sid in set_ids}
+    # SCN-012: уникальность includes внутри набора
+    seen: dict = {}
+    for sc in with_scope:
+        for inc in (sc["scope"].get("includes") or []):
+            key = (sc.get("mutual_exclusion_set"), inc.get("event_id"))
+            if key in seen and seen[key] != sc.get("scenario_id"):
+                F.append(_f("SCN-012", f"{sc.get('scenario_id')}/scope/includes/{inc.get('event_id')}", f"событие уже в includes у {seen[key]} (один набор {key[0]})"))
+            seen.setdefault(key, sc.get("scenario_id"))
+    # SCN-013: принадлежность событий
+    present = {sc.get("scenario_id"): sc for sc in with_scope}
+    for eid, e in events.items():
+        am = e.get("assigned_member")
+        set_id = next((sid for sid in set_ids if am == "BASE" or am in members_by_set.get(sid, set())), None)
+        if am is None or (am != "BASE" and not any(am in m for m in members_by_set.values())):
+            F.append(_f("SCN-013", f"catalog/events/{eid}", f"assigned_member {am!r} не BASE и не член набора(ов) {sorted(str(s) for s in set_ids)}"))
+        elif am != "BASE" and am in present:
+            n_inc = sum(1 for inc in (present[am]["scope"].get("includes") or []) if inc.get("event_id") == eid)
+            if n_inc != 1:
+                F.append(_f("SCN-013", f"{am}/scope/includes/{eid}", f"событие приписано {am}, но в includes встречается {n_inc} раз (нужно ровно 1)"))
+        elif am != "BASE":
+            F.append(_f("SCN-013", f"catalog/events/{eid}", f"assigned_member {am} не передан в этот прогон валидатора — includes не проверены", "warning"))
+    for sid, s in sets.items():
+        for om in (s.get("outcome_mapping") or []):
+            for de in (om.get("defining_event_ids") or []):
+                if de in external and om.get("assigned_member") != "OUTSIDE_SET":
+                    F.append(_f("SCN-013", f"catalog/mutual_exclusion_sets/{sid}/outcome_mapping/{om.get('outcome_id')}", f"внешнее событие {de} отображено в {om.get('assigned_member')}, допустим только OUTSIDE_SET"))
+    # SCN-014: критерии фаз
+    facts_all = {fi.get("fact_id") for sc in scen for fi in (sc.get("fact_catalog") or [])}
+    for sc in with_scope:
+        sid = sc.get("scenario_id")
+        for i, ph in enumerate(sc.get("phases") or []):
+            for kind in ("entry_criteria", "exit_criteria"):
+                crit = ph.get(kind) or []
+                if not crit:
+                    F.append(_f("SCN-014", f"{sid}/phases/{i}/{kind}", "пусто")); continue
+                for c in crit:
+                    if c.get("event_id") is not None and c["event_id"] not in events and c["event_id"] not in external:
+                        F.append(_f("SCN-014", f"{sid}/phases/{i}/{kind}", f"event_id {c['event_id']} не в каталоге"))
+                    if c.get("fact_id") is not None and c["fact_id"] not in facts_all:
+                        F.append(_f("SCN-014", f"{sid}/phases/{i}/{kind}", f"fact_id {c['fact_id']} не в каталогах фактов набора"))
+                    if c.get("event_id") is None and c.get("fact_id") is None and not c.get("system_condition"):
+                        F.append(_f("SCN-014", f"{sid}/phases/{i}/{kind}", "критерий без event_id / fact_id / system_condition"))
+    # SCN-015: includes ∩ excludes, покрытие каталога
+    mentioned = set()
+    for sc in with_scope:
+        inc = {x.get("event_id") for x in (sc["scope"].get("includes") or [])}; exc = {x.get("event_id") for x in (sc["scope"].get("excludes") or [])}
+        both = sorted(inc & exc)
+        if both:
+            F.append(_f("SCN-015", f"{sc.get('scenario_id')}/scope", f"события и в includes, и в excludes: {both}"))
+        mentioned |= inc | exc | {c.get("event_id") for c in ((sc["scope"].get("base_when") or {}).get("conditions") or [])}
+    for s in sets.values():
+        for om in (s.get("outcome_mapping") or []):
+            mentioned |= set(om.get("defining_event_ids") or [])
+    gap = sorted(eid for eid in events if eid not in mentioned)
+    if gap:
+        F.append(_f("SCN-015", "catalog/events", f"scenario_event_coverage_gap: {gap}", "warning"))
+    # состояние сценариев (runtime) — по схеме, если файл есть
+    sp = ws / "portfolio" / "_scenarios" / "state.json"; ss = ws / "methodology" / "Scenario_State_Schema_v1.0.yaml"
+    if sp.exists() and ss.exists():
+        errs = _schema_errors(_load(ss), _load(sp))
+        F.append(_f("SCN-016", "portfolio/_scenarios/state.json", "scenario_state по схеме" if not errs else f"scenario_state не по схеме: {errs[0]['message'][:160]}", "info" if not errs else "error"))
+    if not any(f["rule"] in ("SCN-012", "SCN-013", "SCN-014", "SCN-015") and f["severity"] != "info" for f in F):
+        F.insert(0, _f("SCN-012", "scope", f"семантический слой v1.1: SCN-012…015 pass (каталог {cat_name}: {len(events)} событий, {len(external)} внешних)", "info"))
+    return F
 
 
 def run(inputs: dict, seed: int) -> dict:
