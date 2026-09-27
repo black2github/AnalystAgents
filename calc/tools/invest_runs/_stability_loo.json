@@ -1,0 +1,444 @@
+{
+ "model_version": "1.0.1",
+ "spec": "Portfolio_Stability_Test_Specification_v1.0",
+ "companies": [
+  "ASML",
+  "HOOD",
+  "LLY",
+  "META",
+  "NBIS",
+  "NVDA",
+  "RKLB",
+  "SPCX"
+ ],
+ "paths_used": 100000,
+ "search_paths": 100000,
+ "central_run_ref": "20260924T100703Z-portfolio_stability-c7444b",
+ "central": {
+  "weights": {
+   "ASML": 0.0,
+   "HOOD": 0.07,
+   "LLY": 0.14,
+   "META": 0.135,
+   "NBIS": 0.125,
+   "NVDA": 0.135,
+   "RKLB": 0.08,
+   "SPCX": 0.0
+  },
+  "dry_powder": 0.1992,
+  "median_CAGR_5Y": 0.11700673829235164,
+  "ES5": 0.0920908697388684,
+  "binding": [
+   "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+   "per_name_cap:LLY",
+   "per_name_cap:META",
+   "per_name_cap:NVDA",
+   "per_name_cap:RKLB"
+  ],
+  "start": "current"
+ },
+ "central_weights": {
+  "ASML": 0.0,
+  "HOOD": 0.07,
+  "LLY": 0.14,
+  "META": 0.135,
+  "NBIS": 0.125,
+  "NVDA": 0.135,
+  "RKLB": 0.08,
+  "SPCX": 0.0
+ },
+ "partial": true,
+ "families": [
+  "loo"
+ ],
+ "runs_total": 0,
+ "runs_by_family": {},
+ "valid_runs": 0,
+ "feasibility_rate": null,
+ "inclusion_frequency_by_asset": {
+  "ASML": null,
+  "HOOD": null,
+  "LLY": null,
+  "META": null,
+  "NBIS": null,
+  "NVDA": null,
+  "RKLB": null,
+  "SPCX": null
+ },
+ "weight_p10_p50_p90": {
+  "ASML": null,
+  "HOOD": null,
+  "LLY": null,
+  "META": null,
+  "NBIS": null,
+  "NVDA": null,
+  "RKLB": null,
+  "SPCX": null
+ },
+ "weight_spread": {
+  "ASML": null,
+  "HOOD": null,
+  "LLY": null,
+  "META": null,
+  "NBIS": null,
+  "NVDA": null,
+  "RKLB": null,
+  "SPCX": null
+ },
+ "return_sensitivity": {},
+ "terminal_sensitivity": {},
+ "correlation_sensitivity": {
+  "rank_corr_Y5_base_max_offdiag": 0.22122186914022623,
+  "runs": {}
+ },
+ "scenario_sensitivity": {
+  "status": "not_applicable",
+  "reason": "единственный сценарий BASE — вероятности сценариев не определены"
+ },
+ "driver_sensitivity": {
+  "status": "not_testable_path_level",
+  "reason": "выбивание драйвера требует пересимуляции company_mc с обнулённым положительным вкладом mapping — следующий срез",
+  "material_drivers": [
+   {
+    "driver": "ACQUISITION_INTEGRATION",
+    "weighted_abs_exposure_share": 0.361
+   },
+   {
+    "driver": "ADVANCED_PACKAGING",
+    "weighted_abs_exposure_share": 0.387
+   },
+   {
+    "driver": "AI_COMPUTE_DEMAND",
+    "weighted_abs_exposure_share": 0.577
+   },
+   {
+    "driver": "CAPITAL_MARKETS",
+    "weighted_abs_exposure_share": 0.442
+   },
+   {
+    "driver": "CLOUD_SOFTWARE_DEMAND",
+    "weighted_abs_exposure_share": 0.431
+   },
+   {
+    "driver": "DATA_CENTER_POWER",
+    "weighted_abs_exposure_share": 0.577
+   },
+   {
+    "driver": "HBM_MEMORY",
+    "weighted_abs_exposure_share": 0.387
+   },
+   {
+    "driver": "HYPERSCALER_CAPEX",
+    "weighted_abs_exposure_share": 0.485
+   },
+   {
+    "driver": "INTEREST_RATES",
+    "weighted_abs_exposure_share": 0.5
+   },
+   {
+    "driver": "TAIWAN_SUPPLY",
+    "weighted_abs_exposure_share": 0.478
+   }
+  ],
+  "material_rule": "Σ_i w_i·|exposure_i|/2 ≥ 0.30 × Σ w_i (экспозиция ±2 → 1.0, ±1 → 0.5)"
+ },
+ "leave_one_out": {
+  "HOOD": {
+   "feasible": false,
+   "start_used": "given",
+   "weights": {
+    "ASML": 0.03,
+    "HOOD": 0.0,
+    "LLY": 0.14,
+    "META": 0.125,
+    "NBIS": 0.225,
+    "NVDA": 0.0,
+    "RKLB": 0.085,
+    "SPCX": 0.08
+   },
+   "dry_powder": 0.1992,
+   "median_CAGR_5Y": 0.09780738369266273,
+   "ES5": -0.07532696608569876,
+   "violations": [
+    "per_name_cap:RKLB",
+    "common_cause_max:TAIWAN_SUPPLY_DISRUPTION"
+   ],
+   "turnover_from_central": 0.21500000000000002,
+   "median_CAGR_5Y_delta_vs_central": -0.01919935459968891
+  },
+  "LLY": {
+   "feasible": false,
+   "start_used": "given",
+   "weights": {
+    "ASML": 0.07,
+    "HOOD": 0.095,
+    "LLY": 0.0,
+    "META": 0.13,
+    "NBIS": 0.25,
+    "NVDA": 0.0,
+    "RKLB": 0.085,
+    "SPCX": 0.05
+   },
+   "dry_powder": 0.2042,
+   "median_CAGR_5Y": 0.0886374502302647,
+   "ES5": -0.16415581929132755,
+   "violations": [
+    "per_name_cap:RKLB",
+    "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+    "dry_powder_hard_max:Stress"
+   ],
+   "turnover_from_central": 0.28,
+   "median_CAGR_5Y_delta_vs_central": -0.02836928806208694
+  },
+  "META": {
+   "feasible": true,
+   "start_used": "given",
+   "weights": {
+    "ASML": 0.065,
+    "HOOD": 0.09,
+    "LLY": 0.14,
+    "META": 0.0,
+    "NBIS": 0.175,
+    "NVDA": 0.135,
+    "RKLB": 0.08,
+    "SPCX": 0.0
+   },
+   "dry_powder": 0.1992,
+   "median_CAGR_5Y": 0.10990552219335636,
+   "ES5": -0.006447698115690616,
+   "violations": [],
+   "turnover_from_central": 0.135,
+   "median_CAGR_5Y_delta_vs_central": -0.007101216098995278
+  },
+  "NBIS": {
+   "feasible": true,
+   "start_used": "given",
+   "weights": {
+    "ASML": 0.08,
+    "HOOD": 0.095,
+    "LLY": 0.14,
+    "META": 0.135,
+    "NBIS": 0.0,
+    "NVDA": 0.135,
+    "RKLB": 0.08,
+    "SPCX": 0.02
+   },
+   "dry_powder": 0.1992,
+   "median_CAGR_5Y": 0.07894030084585502,
+   "ES5": 0.013521198358222531,
+   "violations": [],
+   "turnover_from_central": 0.125,
+   "median_CAGR_5Y_delta_vs_central": -0.038066437446496626
+  },
+  "NVDA": {
+   "feasible": true,
+   "start_used": "empty",
+   "weights": {
+    "ASML": 0.05,
+    "HOOD": 0.095,
+    "LLY": 0.14,
+    "META": 0.135,
+    "NBIS": 0.22,
+    "NVDA": 0.0,
+    "RKLB": 0.05,
+    "SPCX": 0.0
+   },
+   "dry_powder": 0.1942,
+   "median_CAGR_5Y": 0.09657631948969281,
+   "ES5": -0.07012888009070728,
+   "violations": [],
+   "turnover_from_central": 0.16999999999999998,
+   "median_CAGR_5Y_delta_vs_central": -0.020430418802658834
+  },
+  "RKLB": {
+   "feasible": false,
+   "start_used": "given",
+   "weights": {
+    "ASML": 0.015,
+    "HOOD": 0.095,
+    "LLY": 0.145,
+    "META": 0.13,
+    "NBIS": 0.22,
+    "NVDA": 0.0,
+    "RKLB": 0.0,
+    "SPCX": 0.08
+   },
+   "dry_powder": 0.1992,
+   "median_CAGR_5Y": 0.09087625901922636,
+   "ES5": -0.10862360318191674,
+   "violations": [
+    "per_name_cap:LLY",
+    "common_cause_max:TAIWAN_SUPPLY_DISRUPTION"
+   ],
+   "turnover_from_central": 0.22,
+   "median_CAGR_5Y_delta_vs_central": -0.026130479273125284
+  }
+ },
+ "combined": {
+  "method": "latin_hypercube",
+  "runs": 0,
+  "dimensions": [
+   "ASML:return",
+   "HOOD:return",
+   "LLY:return",
+   "META:return",
+   "NBIS:return",
+   "NVDA:return",
+   "RKLB:return",
+   "SPCX:return",
+   "ASML:multiple",
+   "HOOD:multiple",
+   "LLY:multiple",
+   "META:multiple",
+   "NBIS:multiple",
+   "NVDA:multiple",
+   "RKLB:multiple",
+   "SPCX:multiple",
+   "ASML:margin",
+   "HOOD:margin",
+   "LLY:margin",
+   "META:margin",
+   "NBIS:margin",
+   "NVDA:margin",
+   "RKLB:margin",
+   "SPCX:margin",
+   "*:corr"
+  ],
+  "seed": 20260924,
+  "feasibility_rate": null,
+  "median_CAGR_5Y_quantiles": null,
+  "runs_detail": []
+ },
+ "turnover_distribution": null,
+ "binding_constraint_frequency": {},
+ "company_stability_classification": {
+  "ASML": {
+   "class": "not_evaluated",
+   "central_weight": 0.0,
+   "note": "популяция прогонов пуста (частичный прогон)"
+  },
+  "HOOD": {
+   "class": "not_evaluated",
+   "central_weight": 0.07,
+   "note": "популяция прогонов пуста (частичный прогон)"
+  },
+  "LLY": {
+   "class": "not_evaluated",
+   "central_weight": 0.14,
+   "note": "популяция прогонов пуста (частичный прогон)"
+  },
+  "META": {
+   "class": "not_evaluated",
+   "central_weight": 0.135,
+   "note": "популяция прогонов пуста (частичный прогон)"
+  },
+  "NBIS": {
+   "class": "not_evaluated",
+   "central_weight": 0.125,
+   "note": "популяция прогонов пуста (частичный прогон)"
+  },
+  "NVDA": {
+   "class": "not_evaluated",
+   "central_weight": 0.135,
+   "note": "популяция прогонов пуста (частичный прогон)"
+  },
+  "RKLB": {
+   "class": "not_evaluated",
+   "central_weight": 0.08,
+   "note": "популяция прогонов пуста (частичный прогон)"
+  },
+  "SPCX": {
+   "class": "not_evaluated",
+   "central_weight": 0.0,
+   "note": "популяция прогонов пуста (частичный прогон)"
+  }
+ },
+ "portfolio_stability_classification": {
+  "class": "not_evaluated",
+  "criteria": {
+   "hard_constraint_feasibility": {
+    "value": null,
+    "limit": 0.95,
+    "pass": null
+   },
+   "median_turnover_from_central": {
+    "value": null,
+    "limit": 0.25,
+    "pass": null
+   },
+   "p90_turnover_from_central": {
+    "value": null,
+    "limit": 0.5,
+    "pass": null
+   },
+   "driver_knockout_feasible_replacement": {
+    "value": null,
+    "pass": null,
+    "status": "not_evaluated (driver knockout not testable at path level)"
+   },
+   "median_5y_cagr_sign_flip_fraction": {
+    "value": null,
+    "limit": 0.2,
+    "pass": null
+   }
+  },
+  "criteria_not_evaluated": [
+   "hard_constraint_feasibility",
+   "median_turnover_from_central",
+   "p90_turnover_from_central",
+   "driver_knockout_feasible_replacement",
+   "median_5y_cagr_sign_flip_fraction"
+  ]
+ },
+ "mpc_robustness_mapping": null,
+ "mpc_note": "сравнение без/с кандидатом (§8) — отдельный вызов с кандидатом; здесь не применимо",
+ "perturbation_config": {
+  "combined_runs": 500,
+  "max_paths": 100000,
+  "search_paths": 100000,
+  "return_shift_pp": [
+   3,
+   5
+  ],
+  "multiple_pct": 0.2,
+  "margin_pp": 0.05,
+  "corr_delta": [
+   0.1,
+   0.15
+  ],
+  "loo_min_weight": 0.05,
+  "inclusion_threshold": 0.01,
+  "material_driver_min": 0.3,
+  "combined_return_pp": 3,
+  "combined_corr_delta": 0.1,
+  "objective_sign_reference": "median_CAGR_5Y",
+  "terminal_margins": {
+   "SPCX": 0.27,
+   "NBIS": 0.22,
+   "NVDA": 0.36,
+   "HOOD": 0.34,
+   "RKLB": 0.18,
+   "LLY": 0.31,
+   "META": 0.24,
+   "ASML": 0.3
+  },
+  "milestone_companies": [
+   "RKLB"
+  ],
+  "central_run_ref": "20260924T100703Z-portfolio_stability-c7444b",
+  "families": [
+   "loo"
+  ]
+ },
+ "assumptions_hash": "c54302f5e3466e9d77fdbdb7d9fbf544edec921f62f9e175d2c0ec982317db7a",
+ "assumptions": [
+  "серия на первых max_paths совместных путях (скорость); центральный прогон внутри теста — на той же выборке",
+  "valid_runs = допустимые прогоны; недопустимые входят только в feasibility_rate",
+  "terminal margin — прокси на уровне пути ((m+δ)/m на Y5/Y8), не пересимуляция",
+  "terminal multiple — лог-множитель ко всем горизонтам (точно для базы FCF_multiple)",
+  "корреляции — Иман–Коновер по рангам стоимости Y5; контроль нулевого δ показывает шум переспаривания",
+  "LOO-прогоны не входят в статистику включения/весов",
+  "milestones и driver knockout — not_testable до пересимуляции"
+ ],
+ "decision": "none"
+}

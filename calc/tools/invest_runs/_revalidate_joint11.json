@@ -1,0 +1,49 @@
+{
+ "SPCX": {
+  "run_id": "20260925T130009Z-artifact_validator-412e7c",
+  "pass": true,
+  "breach": []
+ },
+ "HOOD": {
+  "run_id": "20260925T130018Z-artifact_validator-c5ea7b",
+  "pass": true,
+  "breach": []
+ },
+ "RKLB": {
+  "run_id": "20260925T130024Z-artifact_validator-5858af",
+  "pass": true,
+  "breach": []
+ },
+ "LLY": {
+  "run_id": "20260925T130030Z-artifact_validator-f639b2",
+  "pass": true,
+  "breach": []
+ },
+ "PLTR": {
+  "run_id": "20260925T130035Z-artifact_validator-db5f74",
+  "pass": true,
+  "breach": []
+ },
+ "NET": {
+  "run_id": "20260925T130041Z-artifact_validator-0f8989",
+  "pass": true,
+  "breach": []
+ },
+ "ETN": {
+  "run_id": "20260925T130045Z-artifact_validator-d99552",
+  "pass": false,
+  "breach": [
+   "revenue_model.segments.ElectricalAmericas.initial_growth"
+  ]
+ },
+ "CRWV": {
+  "run_id": "20260925T130052Z-artifact_validator-ab9a5a",
+  "pass": true,
+  "breach": []
+ },
+ "ASTS": {
+  "run_id": "20260925T130059Z-artifact_validator-0366e8",
+  "pass": true,
+  "breach": []
+ }
+}

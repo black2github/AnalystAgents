@@ -1,0 +1,392 @@
+{
+ "current|0.15": {
+  "Y5": {
+   "median_CAGR": 0.21225534387527834,
+   "P_2x": 0.7194209800000001,
+   "P_loss_gt_30pct": 0.002709,
+   "P_loss_gt_50pct": 0.000245,
+   "expected_shortfall_5pct": 0.024530720996796547,
+   "CAGR_quantiles": {
+    "0.05": 0.04345790010881667,
+    "0.25": 0.1390185949014735,
+    "0.5": 0.21225534387527834,
+    "0.75": 0.29371892042542336,
+    "0.95": 0.42082465827064364
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.1,
+    "MedianImpact_Y5": -0.009895173280621184,
+    "ES5Impact_Y5": -0.055921363636961964,
+    "adverse_ES_burden_B": 0.055921363636961964
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.07,
+    "MedianImpact_Y5": 0.0007748756687324632,
+    "ES5Impact_Y5": 0.0016240045972256455,
+    "adverse_ES_burden_B": 0.0
+   },
+   "TAIWAN_QUARANTINE": {
+    "probability": 0.15,
+    "MedianImpact_Y5": -0.005808172040901221,
+    "ES5Impact_Y5": -0.03881727750180349,
+    "adverse_ES_burden_B": 0.03881727750180349
+   }
+  },
+  "concentration": {
+   "value": 0.5902698515070836,
+   "raw_value": 0.5902698515070836,
+   "adverse_scenarios": [
+    "TAIWAN_QUARANTINE",
+    "TAIWAN_SEIZURE"
+   ],
+   "applicable": true,
+   "status": "applicable",
+   "warning": true,
+   "hard_limit_breach": false,
+   "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+  }
+ },
+ "current|0.175": {
+  "Y5": {
+   "median_CAGR": 0.21128943405493117,
+   "P_2x": 0.71588363,
+   "P_loss_gt_30pct": 0.0027424500000000004,
+   "P_loss_gt_50pct": 0.0002457000000000001,
+   "expected_shortfall_5pct": 0.01907721009842719,
+   "CAGR_quantiles": {
+    "0.05": 0.04213610970943282,
+    "0.25": 0.1379093918595926,
+    "0.5": 0.21128943405493117,
+    "0.75": 0.29290060469307355,
+    "0.95": 0.42013445979265773
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.1,
+    "MedianImpact_Y5": -0.009895173280621184,
+    "ES5Impact_Y5": -0.055921363636961964,
+    "adverse_ES_burden_B": 0.055921363636961964
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.07,
+    "MedianImpact_Y5": 0.0007748756687324632,
+    "ES5Impact_Y5": 0.0016240045972256455,
+    "adverse_ES_burden_B": 0.0
+   },
+   "TAIWAN_QUARANTINE": {
+    "probability": 0.175,
+    "MedianImpact_Y5": -0.006776200714384758,
+    "ES5Impact_Y5": -0.04528682375210408,
+    "adverse_ES_burden_B": 0.04528682375210408
+   }
+  },
+  "concentration": {
+   "value": 0.5525379426269954,
+   "raw_value": 0.5525379426269954,
+   "adverse_scenarios": [
+    "TAIWAN_QUARANTINE",
+    "TAIWAN_SEIZURE"
+   ],
+   "applicable": true,
+   "status": "applicable",
+   "warning": true,
+   "hard_limit_breach": false,
+   "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+  }
+ },
+ "current|0.2": {
+  "Y5": {
+   "median_CAGR": 0.21032192803565763,
+   "P_2x": 0.7123462799999999,
+   "P_loss_gt_30pct": 0.0027759,
+   "P_loss_gt_50pct": 0.00024639999999999997,
+   "expected_shortfall_5pct": 0.013826696819085153,
+   "CAGR_quantiles": {
+    "0.05": 0.040896343643035515,
+    "0.25": 0.1368018729156657,
+    "0.5": 0.21032192803565763,
+    "0.75": 0.2920560428768266,
+    "0.95": 0.4194860366027111
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.1,
+    "MedianImpact_Y5": -0.009895173280621184,
+    "ES5Impact_Y5": -0.055921363636961964,
+    "adverse_ES_burden_B": 0.055921363636961964
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.07,
+    "MedianImpact_Y5": 0.0007748756687324632,
+    "ES5Impact_Y5": 0.0016240045972256455,
+    "adverse_ES_burden_B": 0.0
+   },
+   "TAIWAN_QUARANTINE": {
+    "probability": 0.2,
+    "MedianImpact_Y5": -0.007744229387868296,
+    "ES5Impact_Y5": -0.05175637000240466,
+    "adverse_ES_burden_B": 0.05175637000240466
+   }
+  },
+  "concentration": {
+   "value": 0.5193400877497416,
+   "raw_value": 0.5193400877497416,
+   "adverse_scenarios": [
+    "TAIWAN_QUARANTINE",
+    "TAIWAN_SEIZURE"
+   ],
+   "applicable": true,
+   "status": "applicable",
+   "warning": true,
+   "hard_limit_breach": false,
+   "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+  }
+ },
+ "current|0.0": {
+  "Y5": {
+   "median_CAGR": 0.217864821279808,
+   "P_2x": 0.7406450799999998,
+   "P_loss_gt_30pct": 0.0025082999999999998,
+   "P_loss_gt_50pct": 0.0002408,
+   "expected_shortfall_5pct": 0.06212062102337402,
+   "CAGR_quantiles": {
+    "0.05": 0.051872391989740585,
+    "0.25": 0.14568932950310676,
+    "0.5": 0.217864821279808,
+    "0.75": 0.2986209135493827,
+    "0.95": 0.42478283775422665
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.1,
+    "MedianImpact_Y5": -0.009895173280621184,
+    "ES5Impact_Y5": -0.055921363636961964,
+    "adverse_ES_burden_B": 0.055921363636961964
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.07,
+    "MedianImpact_Y5": 0.0007748756687324632,
+    "ES5Impact_Y5": 0.0016240045972256455,
+    "adverse_ES_burden_B": 0.0
+   },
+   "TAIWAN_QUARANTINE": {
+    "probability": 0.0,
+    "MedianImpact_Y5": -0.0,
+    "ES5Impact_Y5": -0.0,
+    "adverse_ES_burden_B": 0.0
+   }
+  },
+  "concentration": {
+   "value": null,
+   "raw_value": 1.0,
+   "adverse_scenarios": [
+    "TAIWAN_SEIZURE"
+   ],
+   "applicable": false,
+   "status": "not_applicable_single_adverse_scenario",
+   "warning": false,
+   "hard_limit_breach": false,
+   "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+  }
+ },
+ "optimum_run5|0.15": {
+  "Y5": {
+   "median_CAGR": 0.1960095227979608,
+   "P_2x": 0.7250482199999999,
+   "P_loss_gt_30pct": 8.3e-06,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.2809087399260337,
+   "CAGR_quantiles": {
+    "0.05": 0.07610089173539736,
+    "0.25": 0.14298695788017723,
+    "0.5": 0.1960095227979608,
+    "0.75": 0.2566479685205869,
+    "0.95": 0.3555761063024063
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.1,
+    "MedianImpact_Y5": -0.006694554216506421,
+    "ES5Impact_Y5": -0.03888653677653823,
+    "adverse_ES_burden_B": 0.03888653677653823
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.07,
+    "MedianImpact_Y5": 0.0007237924267800278,
+    "ES5Impact_Y5": 0.001864983331644869,
+    "adverse_ES_burden_B": 0.0
+   },
+   "TAIWAN_QUARANTINE": {
+    "probability": 0.15,
+    "MedianImpact_Y5": -0.003992812420678937,
+    "ES5Impact_Y5": -0.026180878506235156,
+    "adverse_ES_burden_B": 0.026180878506235156
+   }
+  },
+  "concentration": {
+   "value": 0.5976345703535799,
+   "raw_value": 0.5976345703535799,
+   "adverse_scenarios": [
+    "TAIWAN_QUARANTINE",
+    "TAIWAN_SEIZURE"
+   ],
+   "applicable": true,
+   "status": "applicable",
+   "warning": true,
+   "hard_limit_breach": false,
+   "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+  }
+ },
+ "optimum_run5|0.175": {
+  "Y5": {
+   "median_CAGR": 0.1953675290802308,
+   "P_2x": 0.7218137699999999,
+   "P_loss_gt_30pct": 8.350000000000003e-06,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.27700341224233604,
+   "CAGR_quantiles": {
+    "0.05": 0.07534312192535908,
+    "0.25": 0.1422287093158141,
+    "0.5": 0.1953675290802308,
+    "0.75": 0.2560297219574996,
+    "0.95": 0.35504572025293735
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.1,
+    "MedianImpact_Y5": -0.006694554216506421,
+    "ES5Impact_Y5": -0.03888653677653823,
+    "adverse_ES_burden_B": 0.03888653677653823
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.07,
+    "MedianImpact_Y5": 0.0007237924267800278,
+    "ES5Impact_Y5": 0.001864983331644869,
+    "adverse_ES_burden_B": 0.0
+   },
+   "TAIWAN_QUARANTINE": {
+    "probability": 0.175,
+    "MedianImpact_Y5": -0.00465828115745876,
+    "ES5Impact_Y5": -0.030544358257274345,
+    "adverse_ES_burden_B": 0.030544358257274345
+   }
+  },
+  "concentration": {
+   "value": 0.5600754067422095,
+   "raw_value": 0.5600754067422095,
+   "adverse_scenarios": [
+    "TAIWAN_QUARANTINE",
+    "TAIWAN_SEIZURE"
+   ],
+   "applicable": true,
+   "status": "applicable",
+   "warning": true,
+   "hard_limit_breach": false,
+   "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+  }
+ },
+ "optimum_run5|0.2": {
+  "Y5": {
+   "median_CAGR": 0.19470254638439566,
+   "P_2x": 0.7185793199999998,
+   "P_loss_gt_30pct": 8.4e-06,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.27321794753911965,
+   "CAGR_quantiles": {
+    "0.05": 0.07458668290498083,
+    "0.25": 0.14149832642488058,
+    "0.5": 0.19470254638439566,
+    "0.75": 0.25543175330534207,
+    "0.95": 0.35452805488647443
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.1,
+    "MedianImpact_Y5": -0.006694554216506421,
+    "ES5Impact_Y5": -0.03888653677653823,
+    "adverse_ES_burden_B": 0.03888653677653823
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.07,
+    "MedianImpact_Y5": 0.0007237924267800278,
+    "ES5Impact_Y5": 0.001864983331644869,
+    "adverse_ES_burden_B": 0.0
+   },
+   "TAIWAN_QUARANTINE": {
+    "probability": 0.2,
+    "MedianImpact_Y5": -0.005323749894238583,
+    "ES5Impact_Y5": -0.03490783800831354,
+    "adverse_ES_burden_B": 0.03490783800831354
+   }
+  },
+  "concentration": {
+   "value": 0.5269580085191089,
+   "raw_value": 0.5269580085191089,
+   "adverse_scenarios": [
+    "TAIWAN_QUARANTINE",
+    "TAIWAN_SEIZURE"
+   ],
+   "applicable": true,
+   "status": "applicable",
+   "warning": true,
+   "hard_limit_breach": false,
+   "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+  }
+ },
+ "optimum_run5|0.0": {
+  "Y5": {
+   "median_CAGR": 0.1999842579490665,
+   "P_2x": 0.7444549199999999,
+   "P_loss_gt_30pct": 8e-06,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.3069948063745525,
+   "CAGR_quantiles": {
+    "0.05": 0.08082039591753154,
+    "0.25": 0.14745625410833352,
+    "0.5": 0.1999842579490665,
+    "0.75": 0.26026824142150917,
+    "0.95": 0.35860630757384016
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.1,
+    "MedianImpact_Y5": -0.006694554216506421,
+    "ES5Impact_Y5": -0.03888653677653823,
+    "adverse_ES_burden_B": 0.03888653677653823
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.07,
+    "MedianImpact_Y5": 0.0007237924267800278,
+    "ES5Impact_Y5": 0.001864983331644869,
+    "adverse_ES_burden_B": 0.0
+   },
+   "TAIWAN_QUARANTINE": {
+    "probability": 0.0,
+    "MedianImpact_Y5": -0.0,
+    "ES5Impact_Y5": -0.0,
+    "adverse_ES_burden_B": 0.0
+   }
+  },
+  "concentration": {
+   "value": null,
+   "raw_value": 1.0,
+   "adverse_scenarios": [
+    "TAIWAN_SEIZURE"
+   ],
+   "applicable": false,
+   "status": "not_applicable_single_adverse_scenario",
+   "warning": false,
+   "hard_limit_breach": false,
+   "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+  }
+ }
+}

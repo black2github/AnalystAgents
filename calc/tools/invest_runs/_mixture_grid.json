@@ -1,0 +1,410 @@
+{
+ "current|0.1|0.2": {
+  "Y5": {
+   "median_CAGR": 0.21905798437244628,
+   "P_2x": 0.7428784,
+   "P_loss_gt_30pct": 0.0025540000000000003,
+   "P_loss_gt_50pct": 0.0002470000000000001,
+   "expected_shortfall_5pct": 0.06078195562745662,
+   "CAGR_quantiles": {
+    "0.05": 0.05183380389364867,
+    "0.25": 0.14638192714330334,
+    "0.5": 0.21905798437244628,
+    "0.75": 0.3001916601275567,
+    "0.95": 0.42694961928336284
+   }
+  },
+  "Y3": {
+   "median_CAGR": 0.20110349784305837,
+   "P_2x": 0.29970120000000006,
+   "P_loss_gt_30pct": 0.00023320000000000008,
+   "P_loss_gt_50pct": 1.2000000000000004e-06,
+   "expected_shortfall_5pct": 0.0262961187376294,
+   "CAGR_quantiles": {
+    "0.05": 0.04331056000913458,
+    "0.25": 0.13178387807276515,
+    "0.5": 0.20110349784305837,
+    "0.75": 0.27752387633202424,
+    "0.95": 0.395510751052776
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.1,
+    "MedianImpact_Y5": -0.009903338313726296,
+    "ES5Impact_Y5": -0.055879907467312695,
+    "adverse_ES_burden_B": 0.055879907467312695
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.2,
+    "MedianImpact_Y5": 0.0022106955024341346,
+    "ES5Impact_Y5": 0.004596859946372373,
+    "adverse_ES_burden_B": 0.0
+   }
+  },
+  "concentration": {
+   "value": 1.0,
+   "no_adverse_scenario_burden": false,
+   "warning": true,
+   "hard_limit_breach": true,
+   "rule": "max_s B_s / Σ_s B_s по non-BASE; warning >50 %, hard >60 % (Optimizer v1.0)"
+  }
+ },
+ "current|0.2|0.3": {
+  "Y5": {
+   "median_CAGR": 0.21185335447703135,
+   "P_2x": 0.7108738,
+   "P_loss_gt_30pct": 0.005053199999999999,
+   "P_loss_gt_50pct": 0.000494,
+   "expected_shortfall_5pct": -0.05789381918249204,
+   "CAGR_quantiles": {
+    "0.05": 0.0305188233541116,
+    "0.25": 0.13575065809230336,
+    "0.5": 0.21185335447703135,
+    "0.75": 0.29512327867201593,
+    "0.95": 0.42418777425013043
+   }
+  },
+  "Y3": {
+   "median_CAGR": 0.19580813196992142,
+   "P_2x": 0.28690319999999997,
+   "P_loss_gt_30pct": 0.0004583999999999999,
+   "P_loss_gt_50pct": 2.4e-06,
+   "expected_shortfall_5pct": -0.012772744725125183,
+   "CAGR_quantiles": {
+    "0.05": 0.03223675240856072,
+    "0.25": 0.12483560043076225,
+    "0.5": 0.19580813196992142,
+    "0.75": 0.27328896898038146,
+    "0.95": 0.392668782048456
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.2,
+    "MedianImpact_Y5": -0.019806676627452592,
+    "ES5Impact_Y5": -0.11175981493462539,
+    "adverse_ES_burden_B": 0.11175981493462539
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.3,
+    "MedianImpact_Y5": 0.003316043253651202,
+    "ES5Impact_Y5": 0.006895289919558558,
+    "adverse_ES_burden_B": 0.0
+   }
+  },
+  "concentration": {
+   "value": 1.0,
+   "no_adverse_scenario_burden": false,
+   "warning": true,
+   "hard_limit_breach": true,
+   "rule": "max_s B_s / Σ_s B_s по non-BASE; warning >50 %, hard >60 % (Optimizer v1.0)"
+  }
+ },
+ "current|0.05|0.4": {
+  "Y5": {
+   "median_CAGR": 0.22522944607051287,
+   "P_2x": 0.7651282,
+   "P_loss_gt_30pct": 0.0013064000000000003,
+   "P_loss_gt_50pct": 0.00012350000000000005,
+   "expected_shortfall_5pct": 0.14574730884520054,
+   "CAGR_quantiles": {
+    "0.05": 0.06381430187275527,
+    "0.25": 0.15348908567646902,
+    "0.5": 0.22522944607051287,
+    "0.75": 0.30606710476708865,
+    "0.95": 0.43260423051364894
+   }
+  },
+  "Y3": {
+   "median_CAGR": 0.20493716553984154,
+   "P_2x": 0.3107232000000001,
+   "P_loss_gt_30pct": 0.00012060000000000002,
+   "P_loss_gt_50pct": 6.000000000000002e-07,
+   "expected_shortfall_5pct": 0.05076111211120876,
+   "CAGR_quantiles": {
+    "0.05": 0.049596769974464605,
+    "0.25": 0.13619770174951795,
+    "0.5": 0.20493716553984154,
+    "0.75": 0.2810782616007814,
+    "0.95": 0.3989733031940179
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.05,
+    "MedianImpact_Y5": -0.004951669156863148,
+    "ES5Impact_Y5": -0.027939953733656347,
+    "adverse_ES_burden_B": 0.027939953733656347
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.4,
+    "MedianImpact_Y5": 0.004421391004868269,
+    "ES5Impact_Y5": 0.009193719892744746,
+    "adverse_ES_burden_B": 0.0
+   }
+  },
+  "concentration": {
+   "value": 1.0,
+   "no_adverse_scenario_burden": false,
+   "warning": true,
+   "hard_limit_breach": true,
+   "rule": "max_s B_s / Σ_s B_s по non-BASE; warning >50 %, hard >60 % (Optimizer v1.0)"
+  }
+ },
+ "current|0.3|0.2": {
+  "Y5": {
+   "median_CAGR": 0.20186441636245456,
+   "P_2x": 0.6738712,
+   "P_loss_gt_30pct": 0.0075508,
+   "P_loss_gt_50pct": 0.000741,
+   "expected_shortfall_5pct": -0.13487019192734995,
+   "CAGR_quantiles": {
+    "0.05": 0.012293779487322132,
+    "0.25": 0.12315917817129352,
+    "0.5": 0.20186441636245456,
+    "0.75": 0.2865852576477288,
+    "0.95": 0.4172318240592442
+   }
+  },
+  "Y3": {
+   "median_CAGR": 0.18915939466731535,
+   "P_2x": 0.2704068,
+   "P_loss_gt_30pct": 0.0006836,
+   "P_loss_gt_50pct": 3.6e-06,
+   "expected_shortfall_5pct": -0.04407396333233535,
+   "CAGR_quantiles": {
+    "0.05": 0.02196037815563545,
+    "0.25": 0.11704318553181237,
+    "0.5": 0.18915939466731535,
+    "0.75": 0.2675364874771695,
+    "0.95": 0.3878297014747424
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.3,
+    "MedianImpact_Y5": -0.029710014941178885,
+    "ES5Impact_Y5": -0.16763972240193808,
+    "adverse_ES_burden_B": 0.16763972240193808
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.2,
+    "MedianImpact_Y5": 0.0022106955024341346,
+    "ES5Impact_Y5": 0.004596859946372373,
+    "adverse_ES_burden_B": 0.0
+   }
+  },
+  "concentration": {
+   "value": 1.0,
+   "no_adverse_scenario_burden": false,
+   "warning": true,
+   "hard_limit_breach": true,
+   "rule": "max_s B_s / Σ_s B_s по non-BASE; warning >50 %, hard >60 % (Optimizer v1.0)"
+  }
+ },
+ "optimum_run4|0.1|0.2": {
+  "Y5": {
+   "median_CAGR": 0.15357875233270168,
+   "P_2x": 0.5290692,
+   "P_loss_gt_30pct": 6.520000000000003e-05,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.1484494749801154,
+   "CAGR_quantiles": {
+    "0.05": 0.05203132511630171,
+    "0.25": 0.11003046864248911,
+    "0.5": 0.15357875233270168,
+    "0.75": 0.20224093474416938,
+    "0.95": 0.28182120814604794
+   }
+  },
+  "Y3": {
+   "median_CAGR": 0.13523215633550123,
+   "P_2x": 0.029646200000000004,
+   "P_loss_gt_30pct": 1.4000000000000004e-06,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.05814671833437112,
+   "CAGR_quantiles": {
+    "0.05": 0.04100097406504455,
+    "0.25": 0.09513369583852449,
+    "0.5": 0.13523215633550123,
+    "0.75": 0.1778308106110933,
+    "0.95": 0.24346973214875867
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.1,
+    "MedianImpact_Y5": -0.006315462194397614,
+    "ES5Impact_Y5": -0.03471751789441631,
+    "adverse_ES_burden_B": 0.03471751789441631
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.2,
+    "MedianImpact_Y5": 0.0017229070499461764,
+    "ES5Impact_Y5": 0.003646770250287801,
+    "adverse_ES_burden_B": 0.0
+   }
+  },
+  "concentration": {
+   "value": 1.0,
+   "no_adverse_scenario_burden": false,
+   "warning": true,
+   "hard_limit_breach": true,
+   "rule": "max_s B_s / Σ_s B_s по non-BASE; warning >50 %, hard >60 % (Optimizer v1.0)"
+  }
+ },
+ "optimum_run4|0.2|0.3": {
+  "Y5": {
+   "median_CAGR": 0.14905667596763172,
+   "P_2x": 0.5019425999999999,
+   "P_loss_gt_30pct": 0.0001284,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.07802063848902091,
+   "CAGR_quantiles": {
+    "0.05": 0.039900855005400304,
+    "0.25": 0.103091917682822,
+    "0.5": 0.14905667596763172,
+    "0.75": 0.19919468595515055,
+    "0.95": 0.2803974023449525
+   }
+  },
+  "Y3": {
+   "median_CAGR": 0.13172602879395479,
+   "P_2x": 0.02822059999999999,
+   "P_loss_gt_30pct": 2.8e-06,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.03465553076383163,
+   "CAGR_quantiles": {
+    "0.05": 0.0342120882067356,
+    "0.25": 0.09049869598303917,
+    "0.5": 0.13172602879395479,
+    "0.75": 0.1752106522544492,
+    "0.95": 0.2417283826746388
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.2,
+    "MedianImpact_Y5": -0.012630924388795229,
+    "ES5Impact_Y5": -0.06943503578883262,
+    "adverse_ES_burden_B": 0.06943503578883262
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.3,
+    "MedianImpact_Y5": 0.0025843605749192645,
+    "ES5Impact_Y5": 0.005470155375431701,
+    "adverse_ES_burden_B": 0.0
+   }
+  },
+  "concentration": {
+   "value": 1.0,
+   "no_adverse_scenario_burden": false,
+   "warning": true,
+   "hard_limit_breach": true,
+   "rule": "max_s B_s / Σ_s B_s по non-BASE; warning >50 %, hard >60 % (Optimizer v1.0)"
+  }
+ },
+ "optimum_run4|0.05|0.4": {
+  "Y5": {
+   "median_CAGR": 0.15786540869714605,
+   "P_2x": 0.5547270000000001,
+   "P_loss_gt_30pct": 3.360000000000001e-05,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.19910007040984923,
+   "CAGR_quantiles": {
+    "0.05": 0.05946303646635709,
+    "0.25": 0.1147754727850332,
+    "0.5": 0.15786540869714605,
+    "0.75": 0.20644037901845902,
+    "0.95": 0.28619493549617103
+   }
+  },
+  "Y3": {
+   "median_CAGR": 0.13764472099013525,
+   "P_2x": 0.03183350000000001,
+   "P_loss_gt_30pct": 7.000000000000002e-07,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.0728227431266913,
+   "CAGR_quantiles": {
+    "0.05": 0.04498993937939044,
+    "0.25": 0.0979763932458173,
+    "0.5": 0.13764472099013525,
+    "0.75": 0.18011085507118496,
+    "0.95": 0.24567422607617817
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.05,
+    "MedianImpact_Y5": -0.003157731097198807,
+    "ES5Impact_Y5": -0.017358758947208154,
+    "adverse_ES_burden_B": 0.017358758947208154
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.4,
+    "MedianImpact_Y5": 0.003445814099892353,
+    "ES5Impact_Y5": 0.007293540500575602,
+    "adverse_ES_burden_B": 0.0
+   }
+  },
+  "concentration": {
+   "value": 1.0,
+   "no_adverse_scenario_burden": false,
+   "warning": true,
+   "hard_limit_breach": true,
+   "rule": "max_s B_s / Σ_s B_s по non-BASE; warning >50 %, hard >60 % (Optimizer v1.0)"
+  }
+ },
+ "optimum_run4|0.3|0.2": {
+  "Y5": {
+   "median_CAGR": 0.1423373135972612,
+   "P_2x": 0.4651404,
+   "P_loss_gt_30pct": 0.0001916,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.030705844782904036,
+   "CAGR_quantiles": {
+    "0.05": 0.02989733606881062,
+    "0.25": 0.09486209406851431,
+    "0.5": 0.1423373135972612,
+    "0.75": 0.19340166838864126,
+    "0.95": 0.2754303448260751
+   }
+  },
+  "Y3": {
+   "median_CAGR": 0.12743106461588116,
+   "P_2x": 0.025615399999999997,
+   "P_loss_gt_30pct": 4.2e-06,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.015806287174749092,
+   "CAGR_quantiles": {
+    "0.05": 0.028111307280196618,
+    "0.25": 0.08546829755435459,
+    "0.5": 0.12743106461588116,
+    "0.75": 0.17154780224249744,
+    "0.95": 0.23862566143942188
+   }
+  },
+  "impacts": {
+   "TAIWAN_SEIZURE": {
+    "probability": 0.3,
+    "MedianImpact_Y5": -0.01894638658319284,
+    "ES5Impact_Y5": -0.10415255368324891,
+    "adverse_ES_burden_B": 0.10415255368324891
+   },
+   "CHIP_COLD_WAR": {
+    "probability": 0.2,
+    "MedianImpact_Y5": 0.0017229070499461764,
+    "ES5Impact_Y5": 0.003646770250287801,
+    "adverse_ES_burden_B": 0.0
+   }
+  },
+  "concentration": {
+   "value": 1.0,
+   "no_adverse_scenario_burden": false,
+   "warning": true,
+   "hard_limit_breach": true,
+   "rule": "max_s B_s / Σ_s B_s по non-BASE; warning >50 %, hard >60 % (Optimizer v1.0)"
+  }
+ }
+}

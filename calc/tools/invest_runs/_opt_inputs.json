@@ -1,0 +1,328 @@
+{
+ "paths_files": {
+  "SPCX": "C:/openclaw-lab/data/workspace-invest/portfolio/_runs/20260924T073336Z-company_mc-e55d7d-paths.npz",
+  "NBIS": "C:/openclaw-lab/data/workspace-invest/portfolio/_runs/20260924T073647Z-company_mc-0daf30-paths.npz",
+  "NVDA": "C:/openclaw-lab/data/workspace-invest/portfolio/_runs/20260924T073919Z-company_mc-d5afc5-paths.npz",
+  "HOOD": "C:/openclaw-lab/data/workspace-invest/portfolio/_runs/20260924T074150Z-company_mc-038894-paths.npz",
+  "RKLB": "C:/openclaw-lab/data/workspace-invest/portfolio/_runs/20260924T074358Z-company_mc-224958-paths.npz",
+  "LLY": "C:/openclaw-lab/data/workspace-invest/portfolio/_runs/20260924T074630Z-company_mc-89318c-paths.npz",
+  "META": "C:/openclaw-lab/data/workspace-invest/portfolio/_runs/20260924T074844Z-company_mc-965cab-paths.npz",
+  "ASML": "C:/openclaw-lab/data/workspace-invest/portfolio/_runs/20260924T075104Z-company_mc-aa8132-paths.npz",
+  "MSFT": "C:/openclaw-lab/data/workspace-invest/portfolio/_runs/20260924T175814Z-company_mc-a26670-paths.npz",
+  "PLTR": "C:/openclaw-lab/data/workspace-invest/portfolio/_runs/20260924T180209Z-company_mc-460fe8-paths.npz",
+  "NET": "C:/openclaw-lab/data/workspace-invest/portfolio/_runs/20260924T180403Z-company_mc-a8783a-paths.npz",
+  "ETN": "C:/openclaw-lab/data/workspace-invest/portfolio/_runs/20260924T183027Z-company_mc-c0c4ef-paths.npz"
+ },
+ "weights_current": {
+  "NBIS": 0.3303,
+  "NVDA": 0.213,
+  "HOOD": 0.1423,
+  "LLY": 0.0822,
+  "META": 0.0547,
+  "ASML": 0.0277,
+  "RKLB": 0.0226,
+  "GLD": 0.022,
+  "MSFT": 0.019,
+  "NET": 0.0177,
+  "PLTR": 0.0175,
+  "ETN": 0.0116,
+  "SPOT": 0.0112,
+  "ASTS": 0.0102,
+  "SPCX": 0.0067,
+  "CRWV": 0.0049,
+  "UFO": 0.0017
+ },
+ "fixed_weights": {
+  "GLD": 0.022,
+  "SPOT": 0.0112,
+  "ASTS": 0.0102,
+  "CRWV": 0.0049,
+  "UFO": 0.0017
+ },
+ "dry_powder_current": 0.0047,
+ "dry_powder_return_annual": 0.04,
+ "regime": "Stress",
+ "limits": {
+  "sector_max": 0.35,
+  "top3_aggregate_max": 0.5,
+  "common_cause_effective_max": 0.35,
+  "roles": {
+   "Challenger_max_per_name": 0.08,
+   "Challenger_aggregate_max": 0.25
+  },
+  "dry_powder": {
+   "Normal": {
+    "min": 0.05,
+    "preferred_max": 0.1,
+    "hard_max": 0.15
+   },
+   "Stress": {
+    "min": 0.05,
+    "preferred_max": 0.15,
+    "hard_max": 0.2
+   },
+   "Shock": {
+    "min": 0.1,
+    "preferred_max": 0.2,
+    "hard_max": 0.3
+   }
+  },
+  "risk_5y": {
+   "p_loss_gt_30_max": 0.2,
+   "p_loss_gt_50_max": 0.1,
+   "es5_min": -0.55,
+   "scenario_concentration_max": 0.6
+  }
+ },
+ "per_name_caps": {
+  "SPCX": 0.0833,
+  "NBIS": 0.2505,
+  "NVDA": 0.1381,
+  "HOOD": 0.0951,
+  "RKLB": 0.0839,
+  "LLY": 0.1435,
+  "META": 0.1359,
+  "ASML": 0.1057,
+  "MSFT": 0.145,
+  "PLTR": 0.0952,
+  "NET": 0.0844,
+  "ETN": 0.1212
+ },
+ "roles": {},
+ "sectors": {
+  "RKLB": "SPACE",
+  "NVDA": "SEMICONDUCTORS",
+  "NET": "SOFTWARE",
+  "NBIS": "AI_COMPUTE",
+  "MSFT": "SOFTWARE",
+  "META": "INTERNET_PLATFORMS",
+  "LLY": "HEALTHCARE",
+  "HOOD": "FINTECH",
+  "GLD": "GOLD",
+  "ETN": "ELECTRIFICATION",
+  "ASML": "SEMICONDUCTORS",
+  "UFO": "SPACE",
+  "ASTS": "SPACE",
+  "CRWV": "AI_COMPUTE",
+  "PLTR": "SOFTWARE",
+  "SPCX": "SPACE",
+  "SPOT": "INTERNET_PLATFORMS"
+ },
+ "common_cause": {
+  "SEMICONDUCTOR_WFE_DOWNTURN": {
+   "ASML": 0.75
+  },
+  "TAIWAN_SUPPLY_DISRUPTION": {
+   "ASML": 1.0,
+   "CRWV": 0.75,
+   "META": 0.75,
+   "MSFT": 0.75,
+   "NBIS": 0.75,
+   "NVDA": 1.0,
+   "SPCX": 0.75
+  },
+  "EXPORT_CONTROLS_CHINA": {
+   "ASML": 0.75,
+   "NVDA": 0.75
+  },
+  "CUSTOMER_CAPEX_CONCENTRATION": {
+   "ASML": 0.75
+  },
+  "SINGLE_SOURCE_SUPPLIER_DISRUPTION": {
+   "ASML": 1.0
+  },
+  "LITHOGRAPHY_TECHNOLOGY_EXECUTION": {
+   "ASML": 0.75
+  },
+  "HYPERSCALER_CAPEX_SLOWDOWN": {
+   "ASML": 0.75,
+   "ETN": 0.75,
+   "META": 0.5,
+   "MSFT": 0.5,
+   "NVDA": 0.75
+  },
+  "MEMORY_CYCLE_DOWNTURN": {
+   "ASML": 0.5
+  },
+  "LAUNCH_OPERATIONS_FAILURE": {
+   "ASTS": 1.0,
+   "RKLB": 0.75,
+   "SPCX": 1.0
+  },
+  "SPACE_SYSTEMS_EXECUTION": {
+   "ASTS": 1.0,
+   "RKLB": 0.75
+  },
+  "LAUNCH_ECONOMICS_DOWNSIDE": {
+   "ASTS": 0.75
+  },
+  "SPACE_REGULATORY_SPECTRUM_DELAY": {
+   "ASTS": 1.0,
+   "SPCX": 0.75
+  },
+  "SATELLITE_CONNECTIVITY_MONETIZATION_FAILURE": {
+   "ASTS": 0.75,
+   "SPCX": 0.75
+  },
+  "CAPITAL_MARKETS_TIGHTENING": {
+   "ASTS": 0.75,
+   "CRWV": 1.0,
+   "ETN": 0.5,
+   "NBIS": 0.75,
+   "NET": 0.5,
+   "RKLB": 0.5,
+   "SPCX": 0.5
+  },
+  "GOVERNMENT_SPACE_BUDGET": {
+   "ASTS": 0.5,
+   "RKLB": 0.75,
+   "SPCX": 0.75
+  },
+  "SPACE_REGULATORY_RANGE_DELAY": {
+   "ASTS": 0.75,
+   "RKLB": 0.5,
+   "SPCX": 0.75
+  },
+  "AI_OVERBUILD": {
+   "CRWV": 0.75,
+   "META": 0.75,
+   "MSFT": 0.75,
+   "NBIS": 0.75,
+   "NET": 0.5,
+   "NVDA": 0.75,
+   "SPCX": 0.75
+  },
+  "CUSTOMER_CONCENTRATION": {
+   "CRWV": 1.0,
+   "NVDA": 0.5
+  },
+  "DATA_CENTER_POWER_CONSTRAINT": {
+   "CRWV": 0.75,
+   "ETN": 0.75,
+   "META": 0.75,
+   "MSFT": 0.75,
+   "NBIS": 0.75,
+   "SPCX": 0.75
+  },
+  "CONTRACT_CONVERSION_FAILURE": {
+   "CRWV": 0.75,
+   "PLTR": 0.75
+  },
+  "LEVERAGE_DEBT_SERVICE": {
+   "CRWV": 0.75
+  },
+  "ACQUISITION_INTEGRATION_FAILURE": {
+   "CRWV": 0.5,
+   "ETN": 0.75,
+   "HOOD": 0.5,
+   "LLY": 0.5,
+   "NBIS": 0.5,
+   "RKLB": 0.75
+  },
+  "ELECTRIFICATION_GRID_SLOWDOWN": {
+   "ETN": 0.75
+  },
+  "PORTFOLIO_SEPARATION_EXECUTION": {
+   "ETN": 0.5
+  },
+  "INDUSTRIAL_CAPACITY_EXECUTION": {
+   "ETN": 0.75
+  },
+  "CAPITAL_MARKETS_RISK_OFF": {
+   "HOOD": 0.75
+  },
+  "REGULATORY_PREDICTION_MARKETS": {
+   "HOOD": 0.75
+  },
+  "CRYPTO_CYCLE_DOWNTURN": {
+   "HOOD": 0.5
+  },
+  "INTEREST_RATE_DECLINE": {
+   "HOOD": 0.5
+  },
+  "CONSUMER_CREDIT_DETERIORATION": {
+   "HOOD": 0.75
+  },
+  "MARKET_STRUCTURE_COUNTERPARTY_CONCENTRATION": {
+   "HOOD": 0.5
+  },
+  "GLP1_PRICING_REIMBURSEMENT": {
+   "LLY": 0.75
+  },
+  "PHARMA_MANUFACTURING_CAPACITY": {
+   "LLY": 0.75
+  },
+  "CLINICAL_REGULATORY_FAILURE": {
+   "LLY": 0.75
+  },
+  "PRODUCT_CONCENTRATION": {
+   "LLY": 1.0
+  },
+  "GLP1_COMPETITIVE_INTENSITY": {
+   "LLY": 0.75
+  },
+  "PHARMA_LITIGATION": {
+   "LLY": 0.5
+  },
+  "DIGITAL_AD_DEMAND_SLOWDOWN": {
+   "META": 0.75
+  },
+  "LONG_DURATION_NEW_BET_BURN": {
+   "META": 0.5
+  },
+  "PLATFORM_REGULATORY_PRESSURE": {
+   "META": 0.75,
+   "MSFT": 0.5
+  },
+  "CLOUD_SOFTWARE_DEMAND_SLOWDOWN": {
+   "MSFT": 0.75,
+   "NET": 0.75,
+   "PLTR": 0.75
+  },
+  "AI_CLOUD_CUSTOMER_FINANCING_STRESS": {
+   "MSFT": 0.75,
+   "NBIS": 0.75,
+   "NVDA": 0.75,
+   "SPCX": 0.75
+  },
+  "AI_MONETIZATION_FAILURE": {
+   "NET": 0.75,
+   "PLTR": 0.75
+  },
+  "CLOUD_PLATFORM_COMPETITION": {
+   "NET": 0.75
+  },
+  "INTERNET_INFRASTRUCTURE_OUTAGE": {
+   "NET": 1.0
+  },
+  "ENTERPRISE_EXPANSION_SLOWDOWN": {
+   "NET": 0.75
+  },
+  "ADVANCED_PACKAGING_HBM_BOTTLENECK": {
+   "NVDA": 0.75
+  },
+  "ARCHITECTURE_TRANSITION_EXECUTION": {
+   "NVDA": 0.75
+  },
+  "GOVERNMENT_DEFENSE_BUDGET_SLOWDOWN": {
+   "PLTR": 0.75
+  },
+  "GOVERNMENT_CONTRACT_COMPLIANCE": {
+   "PLTR": 1.0
+  },
+  "GEOGRAPHIC_REVENUE_CONCENTRATION": {
+   "PLTR": 0.5
+  },
+  "EQUITY_COMPENSATION_DILUTION": {
+   "PLTR": 0.5
+  },
+  "LAUNCH_VEHICLE_DEVELOPMENT_FAILURE": {
+   "RKLB": 1.0,
+   "SPCX": 1.0
+  },
+  "CAPITAL_INTENSITY_OVERBUILD": {
+   "SPCX": 1.0
+  }
+ },
+ "objective_tolerance_pp": 0.5
+}

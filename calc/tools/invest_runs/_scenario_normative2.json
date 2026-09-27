@@ -1,0 +1,1129 @@
+{
+ "TAIWAN_SEIZURE": {
+  "SPCX": {
+   "run_id": "20260925T132150Z-company_mc-de4cc4",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T132150Z-company_mc-de4cc4-paths.npz",
+   "median_CAGR_5Y": -0.19108183183179578,
+   "q05": -0.39069269791411987,
+   "q95": 0.03808558782900453,
+   "P_loss_gt_30pct_5Y": 0.815154,
+   "P_loss_gt_50pct_5Y": 0.677928,
+   "ES5": -0.939754275817647,
+   "P_2x_5Y": 0.008452,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "CHINA_REVENUE",
+    "SEMICONDUCTOR_WFE"
+   ],
+   "applicable": [
+    "ADVANCED_PACKAGING",
+    "AI_COMPUTE_DEMAND",
+    "CAPITAL_MARKETS",
+    "GOVERNMENT_DEFENSE",
+    "HBM_MEMORY",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "NBIS": {
+   "run_id": "20260925T132442Z-company_mc-cc4c7b",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T132442Z-company_mc-cc4c7b-paths.npz",
+   "median_CAGR_5Y": 0.23866433273128873,
+   "q05": -0.08553798146307771,
+   "q95": 0.5928827595310799,
+   "P_loss_gt_30pct_5Y": 0.060114,
+   "P_loss_gt_50pct_5Y": 0.02885,
+   "ES5": -0.5514085864311622,
+   "P_2x_5Y": 0.665712,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "SEMICONDUCTOR_WFE"
+   ],
+   "applicable": [
+    "ADVANCED_PACKAGING",
+    "AI_COMPUTE_DEMAND",
+    "CAPITAL_MARKETS",
+    "HBM_MEMORY",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "NVDA": {
+   "run_id": "20260925T132706Z-company_mc-b183d7",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T132706Z-company_mc-b183d7-paths.npz",
+   "median_CAGR_5Y": 0.052541346913142495,
+   "q05": -0.17022238915670593,
+   "q95": 0.3074136009601235,
+   "P_loss_gt_30pct_5Y": 0.192588,
+   "P_loss_gt_50pct_5Y": 0.092492,
+   "ES5": -0.7039925594111203,
+   "P_2x_5Y": 0.256558,
+   "scenario_mode": "phased",
+   "unmapped": [],
+   "applicable": [
+    "ADVANCED_PACKAGING",
+    "AI_COMPUTE_DEMAND",
+    "CAPITAL_MARKETS",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "HOOD": {
+   "run_id": "20260925T133012Z-company_mc-68dd8f",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T133012Z-company_mc-68dd8f-paths.npz",
+   "median_CAGR_5Y": -0.11922903422153125,
+   "q05": -0.24466109320402404,
+   "q95": 0.026843883435767345,
+   "P_loss_gt_30pct_5Y": 0.7257,
+   "P_loss_gt_50pct_5Y": 0.449402,
+   "ES5": -0.7947206839880764,
+   "P_2x_5Y": 0.002074,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ADVANCED_PACKAGING",
+    "AI_COMPUTE_DEMAND",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "CAPITAL_MARKETS"
+   ]
+  },
+  "RKLB": {
+   "run_id": "20260925T133227Z-company_mc-c5b6a6",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T133227Z-company_mc-c5b6a6-paths.npz",
+   "median_CAGR_5Y": 0.053889140148314696,
+   "q05": -0.3343994076059617,
+   "q95": 0.21448413081402784,
+   "P_loss_gt_30pct_5Y": 0.146172,
+   "P_loss_gt_50pct_5Y": 0.104206,
+   "ES5": -0.8943677225775231,
+   "P_2x_5Y": 0.167718,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ADVANCED_PACKAGING",
+    "AI_COMPUTE_DEMAND",
+    "CHINA_REVENUE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "CAPITAL_MARKETS",
+    "GOVERNMENT_DEFENSE"
+   ]
+  },
+  "LLY": {
+   "run_id": "20260925T133526Z-company_mc-5b0f28",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T133526Z-company_mc-5b0f28-paths.npz",
+   "median_CAGR_5Y": 0.06687795259965001,
+   "q05": -0.0741847085594002,
+   "q95": 0.22381887927030683,
+   "P_loss_gt_30pct_5Y": 0.057548,
+   "P_loss_gt_50pct_5Y": 0.00852,
+   "ES5": -0.42217133309779326,
+   "P_2x_5Y": 0.194472,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ADVANCED_PACKAGING",
+    "AI_COMPUTE_DEMAND",
+    "CAPITAL_MARKETS",
+    "GOVERNMENT_DEFENSE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "CHINA_REVENUE"
+   ]
+  },
+  "META": {
+   "run_id": "20260925T133825Z-company_mc-37ea96",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T133825Z-company_mc-37ea96-paths.npz",
+   "median_CAGR_5Y": 0.07065621627751795,
+   "q05": -0.09664645239532836,
+   "q95": 0.23795471071091662,
+   "P_loss_gt_30pct_5Y": 0.08611,
+   "P_loss_gt_50pct_5Y": 0.023562,
+   "ES5": -0.5119926541715116,
+   "P_2x_5Y": 0.224104,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "CAPITAL_MARKETS",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "SEMICONDUCTOR_WFE"
+   ],
+   "applicable": [
+    "ADVANCED_PACKAGING",
+    "AI_COMPUTE_DEMAND",
+    "HBM_MEMORY",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "ASML": {
+   "run_id": "20260925T134220Z-company_mc-319a55",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134220Z-company_mc-319a55-paths.npz",
+   "median_CAGR_5Y": -0.13544918145508295,
+   "q05": -0.29614936872151437,
+   "q95": 0.04605396264881249,
+   "P_loss_gt_30pct_5Y": 0.731654,
+   "P_loss_gt_50pct_5Y": 0.522638,
+   "ES5": -0.8646322971065575,
+   "P_2x_5Y": 0.005784,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "CAPITAL_MARKETS",
+    "GOVERNMENT_DEFENSE"
+   ],
+   "applicable": [
+    "ADVANCED_PACKAGING",
+    "AI_COMPUTE_DEMAND",
+    "CHINA_REVENUE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "MSFT": {
+   "run_id": "20260925T134524Z-company_mc-f162c6",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134524Z-company_mc-f162c6-paths.npz",
+   "median_CAGR_5Y": 0.028971953664998606,
+   "q05": -0.12181995711673368,
+   "q95": 0.1718618259255742,
+   "P_loss_gt_30pct_5Y": 0.140646,
+   "P_loss_gt_50pct_5Y": 0.041908,
+   "ES5": -0.5748528525829663,
+   "P_2x_5Y": 0.085726,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "CAPITAL_MARKETS",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "SEMICONDUCTOR_WFE"
+   ],
+   "applicable": [
+    "ADVANCED_PACKAGING",
+    "AI_COMPUTE_DEMAND",
+    "HBM_MEMORY",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "PLTR": {
+   "run_id": "20260925T134713Z-company_mc-8d8b95",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134713Z-company_mc-8d8b95-paths.npz",
+   "median_CAGR_5Y": -0.0029668338444405196,
+   "q05": -0.16139566825923812,
+   "q95": 0.16416980773677084,
+   "P_loss_gt_30pct_5Y": 0.250496,
+   "P_loss_gt_50pct_5Y": 0.095848,
+   "ES5": -0.6656960931484205,
+   "P_2x_5Y": 0.067196,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ADVANCED_PACKAGING",
+    "CAPITAL_MARKETS",
+    "CHINA_REVENUE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "AI_COMPUTE_DEMAND",
+    "GOVERNMENT_DEFENSE"
+   ]
+  },
+  "NET": {
+   "run_id": "20260925T134818Z-company_mc-b24c52",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134818Z-company_mc-b24c52-paths.npz",
+   "median_CAGR_5Y": -0.1963422051418851,
+   "q05": -0.35888272650393743,
+   "q95": -0.025641616412656186,
+   "P_loss_gt_30pct_5Y": 0.892584,
+   "P_loss_gt_50pct_5Y": 0.745282,
+   "ES5": -0.9187940337927323,
+   "P_2x_5Y": 0.00093,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ADVANCED_PACKAGING",
+    "CAPITAL_MARKETS",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "AI_COMPUTE_DEMAND"
+   ]
+  },
+  "ETN": {
+   "run_id": "20260925T134919Z-company_mc-004eab",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134919Z-company_mc-004eab-paths.npz",
+   "median_CAGR_5Y": 0.01734574393137256,
+   "q05": -0.1488499561191224,
+   "q95": 0.18833649463219587,
+   "P_loss_gt_30pct_5Y": 0.19805,
+   "P_loss_gt_50pct_5Y": 0.073314,
+   "ES5": -0.6432280965211399,
+   "P_2x_5Y": 0.101654,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ADVANCED_PACKAGING",
+    "CAPITAL_MARKETS",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "AI_COMPUTE_DEMAND"
+   ]
+  },
+  "ASTS": {
+   "run_id": "20260925T135043Z-company_mc-5b3a3a",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T135043Z-company_mc-5b3a3a-paths.npz",
+   "median_CAGR_5Y": 0.021408465961278322,
+   "q05": -0.9915177352238763,
+   "q95": 0.3188803638791683,
+   "P_loss_gt_30pct_5Y": 0.338548,
+   "P_loss_gt_50pct_5Y": 0.265334,
+   "ES5": -0.9999999999560905,
+   "P_2x_5Y": 0.246964,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ADVANCED_PACKAGING",
+    "AI_COMPUTE_DEMAND",
+    "CHINA_REVENUE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "CAPITAL_MARKETS",
+    "GOVERNMENT_DEFENSE"
+   ]
+  },
+  "CRWV": {
+   "run_id": "20260925T135209Z-company_mc-a2a418",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T135209Z-company_mc-a2a418-paths.npz",
+   "median_CAGR_5Y": 0.2688294018937357,
+   "q05": -0.05710998691780797,
+   "q95": 0.598211689441881,
+   "P_loss_gt_30pct_5Y": 0.043626,
+   "P_loss_gt_50pct_5Y": 0.019664,
+   "ES5": -0.47297665363031544,
+   "P_2x_5Y": 0.721092,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ADVANCED_PACKAGING",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE"
+   ],
+   "applicable": [
+    "AI_COMPUTE_DEMAND",
+    "CAPITAL_MARKETS",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "SPOT": {
+   "run_id": "20260925T135336Z-company_mc-5dcb6e",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T135336Z-company_mc-5dcb6e-paths.npz",
+   "median_CAGR_5Y": 0.1104101783871313,
+   "q05": -0.003185716833216001,
+   "q95": 0.2256131069832956,
+   "P_loss_gt_30pct_5Y": 0.003568,
+   "P_loss_gt_50pct_5Y": 1e-05,
+   "ES5": -0.1383917941756549,
+   "P_2x_5Y": 0.291008,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ADVANCED_PACKAGING",
+    "AI_COMPUTE_DEMAND",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "CAPITAL_MARKETS"
+   ]
+  }
+ },
+ "CHIP_COLD_WAR": {
+  "SPCX": {
+   "run_id": "20260925T135440Z-company_mc-85aeb0",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T135440Z-company_mc-85aeb0-paths.npz",
+   "median_CAGR_5Y": -0.13394329178001751,
+   "q05": -0.34449317094760884,
+   "q95": 0.10065763360049397,
+   "P_loss_gt_30pct_5Y": 0.680476,
+   "P_loss_gt_50pct_5Y": 0.512998,
+   "ES5": -0.9128327920065541,
+   "P_2x_5Y": 0.023744,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "CHINA_REVENUE",
+    "INDUSTRIAL_RESHORING",
+    "SEMICONDUCTOR_WFE"
+   ],
+   "applicable": [
+    "AI_CLOUD_PRICING",
+    "DATA_CENTER_POWER",
+    "GOVERNMENT_DEFENSE",
+    "HYPERSCALER_CAPEX",
+    "INTEREST_RATES",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "NBIS": {
+   "run_id": "20260925T135640Z-company_mc-35c9e9",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T135640Z-company_mc-35c9e9-paths.npz",
+   "median_CAGR_5Y": 0.3650476898360385,
+   "q05": 0.058870063769254244,
+   "q95": 0.7016753963487748,
+   "P_loss_gt_30pct_5Y": 0.006088,
+   "P_loss_gt_50pct_5Y": 0.001344,
+   "ES5": 0.006685362600083881,
+   "P_2x_5Y": 0.869092,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "INDUSTRIAL_RESHORING",
+    "SEMICONDUCTOR_WFE"
+   ],
+   "applicable": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "AI_CLOUD_PRICING",
+    "DATA_CENTER_POWER",
+    "HYPERSCALER_CAPEX",
+    "INTEREST_RATES",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "NVDA": {
+   "run_id": "20260925T135856Z-company_mc-69c058",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T135856Z-company_mc-69c058-paths.npz",
+   "median_CAGR_5Y": 0.2400651368360477,
+   "q05": 0.050279331876968626,
+   "q95": 0.44863144307177233,
+   "P_loss_gt_30pct_5Y": 0.002298,
+   "P_loss_gt_50pct_5Y": 0.000218,
+   "ES5": 0.04906712401416084,
+   "P_2x_5Y": 0.77829,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "AI_CLOUD_PRICING",
+    "INDUSTRIAL_RESHORING"
+   ],
+   "applicable": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "CHINA_REVENUE",
+    "DATA_CENTER_POWER",
+    "GOVERNMENT_DEFENSE",
+    "HYPERSCALER_CAPEX",
+    "INTEREST_RATES",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "HOOD": {
+   "run_id": "20260925T140222Z-company_mc-d4857b",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T140222Z-company_mc-d4857b-paths.npz",
+   "median_CAGR_5Y": -0.08363309379959222,
+   "q05": -0.2078886279056785,
+   "q95": 0.05188342421045378,
+   "P_loss_gt_30pct_5Y": 0.573704,
+   "P_loss_gt_50pct_5Y": 0.27929,
+   "ES5": -0.7377524358028175,
+   "P_2x_5Y": 0.00225,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "AI_CLOUD_PRICING",
+    "CHINA_REVENUE",
+    "DATA_CENTER_POWER",
+    "GOVERNMENT_DEFENSE",
+    "HYPERSCALER_CAPEX",
+    "INDUSTRIAL_RESHORING",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "INTEREST_RATES"
+   ]
+  },
+  "RKLB": {
+   "run_id": "20260925T140353Z-company_mc-e8d208",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T140353Z-company_mc-e8d208-paths.npz",
+   "median_CAGR_5Y": 0.05620662404341603,
+   "q05": -0.3336377526625456,
+   "q95": 0.21461656986740182,
+   "P_loss_gt_30pct_5Y": 0.1416,
+   "P_loss_gt_50pct_5Y": 0.10198,
+   "ES5": -0.8939042644555405,
+   "P_2x_5Y": 0.171024,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "AI_CLOUD_PRICING",
+    "CHINA_REVENUE",
+    "DATA_CENTER_POWER",
+    "HYPERSCALER_CAPEX",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "GOVERNMENT_DEFENSE",
+    "INDUSTRIAL_RESHORING",
+    "INTEREST_RATES"
+   ]
+  },
+  "LLY": {
+   "run_id": "20260925T140547Z-company_mc-d24156",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T140547Z-company_mc-d24156-paths.npz",
+   "median_CAGR_5Y": 0.07731765274646829,
+   "q05": -0.06401196709879976,
+   "q95": 0.23413564533006273,
+   "P_loss_gt_30pct_5Y": 0.043866,
+   "P_loss_gt_50pct_5Y": 0.00573,
+   "ES5": -0.3886247211655086,
+   "P_2x_5Y": 0.225976,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "AI_CLOUD_PRICING",
+    "DATA_CENTER_POWER",
+    "GOVERNMENT_DEFENSE",
+    "HYPERSCALER_CAPEX",
+    "INDUSTRIAL_RESHORING",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "CHINA_REVENUE",
+    "INTEREST_RATES"
+   ]
+  },
+  "META": {
+   "run_id": "20260925T140728Z-company_mc-aa5b84",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T140728Z-company_mc-aa5b84-paths.npz",
+   "median_CAGR_5Y": 0.11946415689199619,
+   "q05": -0.042573401477182235,
+   "q95": 0.27803051410978624,
+   "P_loss_gt_30pct_5Y": 0.027128,
+   "P_loss_gt_50pct_5Y": 0.004734,
+   "ES5": -0.3365899665633702,
+   "P_2x_5Y": 0.383532,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "AI_CLOUD_PRICING",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "INDUSTRIAL_RESHORING",
+    "SEMICONDUCTOR_WFE"
+   ],
+   "applicable": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "DATA_CENTER_POWER",
+    "HYPERSCALER_CAPEX",
+    "INTEREST_RATES",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "ASML": {
+   "run_id": "20260925T140933Z-company_mc-7c2422",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T140933Z-company_mc-7c2422-paths.npz",
+   "median_CAGR_5Y": -0.01249593488863171,
+   "q05": -0.16525837121674755,
+   "q95": 0.15213246674011827,
+   "P_loss_gt_30pct_5Y": 0.278836,
+   "P_loss_gt_50pct_5Y": 0.107264,
+   "ES5": -0.6696275850374847,
+   "P_2x_5Y": 0.053618,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "AI_CLOUD_PRICING",
+    "GOVERNMENT_DEFENSE"
+   ],
+   "applicable": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "CHINA_REVENUE",
+    "DATA_CENTER_POWER",
+    "HYPERSCALER_CAPEX",
+    "INDUSTRIAL_RESHORING",
+    "INTEREST_RATES",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "MSFT": {
+   "run_id": "20260925T141154Z-company_mc-cf7e62",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T141154Z-company_mc-cf7e62-paths.npz",
+   "median_CAGR_5Y": 0.0465222955417639,
+   "q05": -0.10835384712371353,
+   "q95": 0.18826378361171142,
+   "P_loss_gt_30pct_5Y": 0.107968,
+   "P_loss_gt_50pct_5Y": 0.031416,
+   "ES5": -0.5439339087568981,
+   "P_2x_5Y": 0.122314,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "INDUSTRIAL_RESHORING",
+    "INTEREST_RATES",
+    "SEMICONDUCTOR_WFE"
+   ],
+   "applicable": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "AI_CLOUD_PRICING",
+    "DATA_CENTER_POWER",
+    "HYPERSCALER_CAPEX",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "PLTR": {
+   "run_id": "20260925T141326Z-company_mc-e42fb5",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T141326Z-company_mc-e42fb5-paths.npz",
+   "median_CAGR_5Y": 0.0039541725596795585,
+   "q05": -0.14966294835030733,
+   "q95": 0.16323051732992486,
+   "P_loss_gt_30pct_5Y": 0.220476,
+   "P_loss_gt_50pct_5Y": 0.076922,
+   "ES5": -0.6383549931826201,
+   "P_2x_5Y": 0.067258,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "AI_CLOUD_PRICING",
+    "CHINA_REVENUE",
+    "DATA_CENTER_POWER",
+    "HYPERSCALER_CAPEX",
+    "INDUSTRIAL_RESHORING",
+    "INTEREST_RATES",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "GOVERNMENT_DEFENSE"
+   ]
+  },
+  "NET": {
+   "run_id": "20260925T141423Z-company_mc-081723",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T141423Z-company_mc-081723-paths.npz",
+   "median_CAGR_5Y": -0.1661228127989009,
+   "q05": -0.32234335292344624,
+   "q95": -0.004959112854512777,
+   "P_loss_gt_30pct_5Y": 0.84177,
+   "P_loss_gt_50pct_5Y": 0.6486,
+   "ES5": -0.890555604645376,
+   "P_2x_5Y": 0.001172,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "CHINA_REVENUE",
+    "DATA_CENTER_POWER",
+    "GOVERNMENT_DEFENSE",
+    "HYPERSCALER_CAPEX",
+    "INDUSTRIAL_RESHORING",
+    "INTEREST_RATES",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "AI_CLOUD_PRICING"
+   ]
+  },
+  "ETN": {
+   "run_id": "20260925T141522Z-company_mc-2adec4",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T141522Z-company_mc-2adec4-paths.npz",
+   "median_CAGR_5Y": 0.06619266052548356,
+   "q05": -0.11359834336502005,
+   "q95": 0.25464843688045163,
+   "P_loss_gt_30pct_5Y": 0.108992,
+   "P_loss_gt_50pct_5Y": 0.036312,
+   "ES5": -0.5651932364161656,
+   "P_2x_5Y": 0.232148,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "AI_CLOUD_PRICING",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "INTEREST_RATES",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "DATA_CENTER_POWER",
+    "HYPERSCALER_CAPEX",
+    "INDUSTRIAL_RESHORING"
+   ]
+  },
+  "ASTS": {
+   "run_id": "20260925T141641Z-company_mc-1bc553",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T141641Z-company_mc-1bc553-paths.npz",
+   "median_CAGR_5Y": 0.01765077366322909,
+   "q05": -0.9915177352238763,
+   "q95": 0.3128208441644166,
+   "P_loss_gt_30pct_5Y": 0.342922,
+   "P_loss_gt_50pct_5Y": 0.267754,
+   "ES5": -0.9999999999560905,
+   "P_2x_5Y": 0.238576,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "AI_CLOUD_PRICING",
+    "CHINA_REVENUE",
+    "DATA_CENTER_POWER",
+    "HYPERSCALER_CAPEX",
+    "INDUSTRIAL_RESHORING",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "GOVERNMENT_DEFENSE",
+    "INTEREST_RATES"
+   ]
+  },
+  "CRWV": {
+   "run_id": "20260925T141822Z-company_mc-68a67b",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T141822Z-company_mc-68a67b-paths.npz",
+   "median_CAGR_5Y": 0.3411548366668484,
+   "q05": 0.015936289712571206,
+   "q95": 0.6684815022462958,
+   "P_loss_gt_30pct_5Y": 0.016154,
+   "P_loss_gt_50pct_5Y": 0.005634,
+   "ES5": -0.2146423435870262,
+   "P_2x_5Y": 0.827798,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "INDUSTRIAL_RESHORING",
+    "SEMICONDUCTOR_WFE"
+   ],
+   "applicable": [
+    "AI_CLOUD_PRICING",
+    "DATA_CENTER_POWER",
+    "HYPERSCALER_CAPEX",
+    "INTEREST_RATES",
+    "TAIWAN_SUPPLY"
+   ]
+  },
+  "SPOT": {
+   "run_id": "20260925T141958Z-company_mc-081d3d",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T141958Z-company_mc-081d3d-paths.npz",
+   "median_CAGR_5Y": 0.11329655943571437,
+   "q05": -0.0009337230864363403,
+   "q95": 0.2304598555920818,
+   "P_loss_gt_30pct_5Y": 0.003256,
+   "P_loss_gt_50pct_5Y": 1e-05,
+   "ES5": -0.12955734202935834,
+   "P_2x_5Y": 0.307076,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ACCELERATOR_PRICE_COMPETITION",
+    "CHINA_REVENUE",
+    "DATA_CENTER_POWER",
+    "GOVERNMENT_DEFENSE",
+    "HYPERSCALER_CAPEX",
+    "INDUSTRIAL_RESHORING",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "AI_CLOUD_PRICING",
+    "INTEREST_RATES"
+   ]
+  }
+ },
+ "portfolio": {
+  "current": {
+   "run_id": "20260925T142103Z-portfolio_paths-51764c",
+   "by_scenario": {
+    "BASE": {
+     "Y3": {
+      "median_CAGR": 0.20560063740957202,
+      "P_2x": 0.31065,
+      "P_loss_gt_30pct": 8e-06,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.07481472157485689,
+      "CAGR_quantiles": {
+       "0.05": 0.05457547669137416,
+       "0.25": 0.13815029669759238,
+       "0.5": 0.20560063740957202,
+       "0.75": 0.2808254934670381,
+       "0.95": 0.39744236812090716
+      }
+     },
+     "Y5": {
+      "median_CAGR": 0.22469395153003324,
+      "P_2x": 0.772384,
+      "P_loss_gt_30pct": 5.4e-05,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.23868690776202414,
+      "CAGR_quantiles": {
+       "0.05": 0.0728030444393005,
+       "0.25": 0.15549629803986625,
+       "0.5": 0.22469395153003324,
+       "0.75": 0.3037152312461614,
+       "0.95": 0.42793162178802446
+      }
+     },
+     "Y8": {
+      "median_CAGR": 0.2574608297880514,
+      "P_2x": 0.965798,
+      "P_loss_gt_30pct": 1e-05,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.8020331928619888,
+      "CAGR_quantiles": {
+       "0.05": 0.10332170759880775,
+       "0.25": 0.18568011662307876,
+       "0.5": 0.2574608297880514,
+       "0.75": 0.34156084806529935,
+       "0.95": 0.471925861049139
+      }
+     }
+    },
+    "TAIWAN_SEIZURE": {
+     "Y3": {
+      "median_CAGR": 0.1414088175282452,
+      "P_2x": 0.164178,
+      "P_loss_gt_30pct": 0.00226,
+      "P_loss_gt_50pct": 1.2e-05,
+      "expected_shortfall_5pct": -0.15164368078531223,
+      "CAGR_quantiles": {
+       "0.05": -0.02086252341356735,
+       "0.25": 0.0689617962682681,
+       "0.5": 0.1414088175282452,
+       "0.75": 0.22182025099219066,
+       "0.95": 0.34565302008631454
+      }
+     },
+     "Y5": {
+      "median_CAGR": 0.1256605683927703,
+      "P_2x": 0.427348,
+      "P_loss_gt_30pct": 0.025038,
+      "P_loss_gt_50pct": 0.00247,
+      "expected_shortfall_5pct": -0.3201121669111028,
+      "CAGR_quantiles": {
+       "0.05": -0.04350914181753605,
+       "0.25": 0.04814810774494144,
+       "0.5": 0.1256605683927703,
+       "0.75": 0.21392199678014812,
+       "0.95": 0.3529439118051716
+      }
+     },
+     "Y8": {
+      "median_CAGR": 0.15374312276903068,
+      "P_2x": 0.704238,
+      "P_loss_gt_30pct": 0.015496,
+      "P_loss_gt_50pct": 0.002078,
+      "expected_shortfall_5pct": -0.24710246303895803,
+      "CAGR_quantiles": {
+       "0.05": -0.009362216479796886,
+       "0.25": 0.07589693636369244,
+       "0.5": 0.15374312276903068,
+       "0.75": 0.24573027595056113,
+       "0.95": 0.3909052076342661
+      }
+     }
+    },
+    "CHIP_COLD_WAR": {
+     "Y3": {
+      "median_CAGR": 0.21081416822659294,
+      "P_2x": 0.329142,
+      "P_loss_gt_30pct": 8e-06,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.08128088076265871,
+      "CAGR_quantiles": {
+       "0.05": 0.057154138963934245,
+       "0.25": 0.14233556186132945,
+       "0.5": 0.21081416822659294,
+       "0.75": 0.28705720560578085,
+       "0.95": 0.40503037418667215
+      }
+     },
+     "Y5": {
+      "median_CAGR": 0.23574742904220392,
+      "P_2x": 0.797374,
+      "P_loss_gt_30pct": 6.2e-05,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.261671207493886,
+      "CAGR_quantiles": {
+       "0.05": 0.0777003956165793,
+       "0.25": 0.16409161117275567,
+       "0.5": 0.23574742904220392,
+       "0.75": 0.3166572883343256,
+       "0.95": 0.443938457759126
+      }
+     },
+     "Y8": {
+      "median_CAGR": 0.26803684560161456,
+      "P_2x": 0.96527,
+      "P_loss_gt_30pct": 3e-05,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.7823314002876051,
+      "CAGR_quantiles": {
+       "0.05": 0.1038264097818941,
+       "0.25": 0.19205952460287318,
+       "0.5": 0.26803684560161456,
+       "0.75": 0.3559375740364849,
+       "0.95": 0.4918991002523668
+      }
+     }
+    }
+   },
+   "delta": {
+    "TAIWAN_SEIZURE": {
+     "Y3": {
+      "median_CAGR": -0.06419181988132683,
+      "P_loss_gt_30pct": 0.0022519999999999997,
+      "P_loss_gt_50pct": 1.2e-05,
+      "expected_shortfall_5pct": -0.22645840236016912,
+      "P_2x": -0.146472
+     },
+     "Y5": {
+      "median_CAGR": -0.09903338313726295,
+      "P_loss_gt_30pct": 0.024984000000000003,
+      "P_loss_gt_50pct": 0.00247,
+      "expected_shortfall_5pct": -0.558799074673127,
+      "P_2x": -0.34503599999999995
+     },
+     "Y8": {
+      "median_CAGR": -0.10371770701902072,
+      "P_loss_gt_30pct": 0.015486,
+      "P_loss_gt_50pct": 0.002078,
+      "expected_shortfall_5pct": -1.0491356559009468,
+      "P_2x": -0.26156
+     }
+    },
+    "CHIP_COLD_WAR": {
+     "Y3": {
+      "median_CAGR": 0.005213530817020917,
+      "P_loss_gt_30pct": 0.0,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.006466159187801829,
+      "P_2x": 0.01849200000000001
+     },
+     "Y5": {
+      "median_CAGR": 0.011053477512170673,
+      "P_loss_gt_30pct": 8.000000000000005e-06,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.022984299731861862,
+      "P_2x": 0.024990000000000068
+     },
+     "Y8": {
+      "median_CAGR": 0.010576015813563155,
+      "P_loss_gt_30pct": 1.9999999999999998e-05,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": -0.01970179257438376,
+      "P_2x": -0.000528000000000084
+     }
+    }
+   },
+   "status": "pending_owner_judgment"
+  },
+  "optimum_run4": {
+   "run_id": "20260925T142111Z-portfolio_paths-60045a",
+   "by_scenario": {
+    "BASE": {
+     "Y3": {
+      "median_CAGR": 0.13818666599801266,
+      "P_2x": 0.030482,
+      "P_loss_gt_30pct": 0.0,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.08763214443757358,
+      "CAGR_quantiles": {
+       "0.05": 0.04835098277240328,
+       "0.25": 0.0994706394399053,
+       "0.5": 0.13818666599801266,
+       "0.75": 0.17993705578297786,
+       "0.95": 0.2445968680079218
+      }
+     },
+     "Y5": {
+      "median_CAGR": 0.15692939580020238,
+      "P_2x": 0.551358,
+      "P_loss_gt_30pct": 2e-06,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.25293256574891326,
+      "CAGR_quantiles": {
+       "0.05": 0.06500648049145177,
+       "0.25": 0.11580408388868263,
+       "0.5": 0.15692939580020238,
+       "0.75": 0.20402457784205769,
+       "0.95": 0.2816614329788083
+      }
+     },
+     "Y8": {
+      "median_CAGR": 0.186583834162506,
+      "P_2x": 0.941406,
+      "P_loss_gt_30pct": 0.0,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.6977827238623316,
+      "CAGR_quantiles": {
+       "0.05": 0.08665705699809087,
+       "0.25": 0.13993821957126124,
+       "0.5": 0.186583834162506,
+       "0.75": 0.24378971673114136,
+       "0.95": 0.34138644971973475
+      }
+     }
+    },
+    "TAIWAN_SEIZURE": {
+     "Y3": {
+      "median_CAGR": 0.09676450118900848,
+      "P_2x": 0.010328,
+      "P_loss_gt_30pct": 1.4e-05,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": -0.05158996031797548,
+      "CAGR_quantiles": {
+       "0.05": 0.0028358467589170394,
+       "0.25": 0.055977015950118614,
+       "0.5": 0.09676450118900848,
+       "0.75": 0.14114169157934153,
+       "0.95": 0.21005704867533284
+      }
+     },
+     "Y5": {
+      "median_CAGR": 0.09377477385622623,
+      "P_2x": 0.231714,
+      "P_loss_gt_30pct": 0.000634,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": -0.09424261319524979,
+      "CAGR_quantiles": {
+       "0.05": -0.0010403391598961078,
+       "0.25": 0.050716334339741986,
+       "0.5": 0.09377477385622623,
+       "0.75": 0.14400738644905914,
+       "0.95": 0.22949041762913946
+      }
+     },
+     "Y8": {
+      "median_CAGR": 0.11745958585239813,
+      "P_2x": 0.648654,
+      "P_loss_gt_30pct": 0.000374,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.038289328650489694,
+      "CAGR_quantiles": {
+       "0.05": 0.021454295875116304,
+       "0.25": 0.07204387389277844,
+       "0.5": 0.11745958585239813,
+       "0.75": 0.1747555357161873,
+       "0.95": 0.2780688112014109
+      }
+     }
+    },
+    "CHIP_COLD_WAR": {
+     "Y3": {
+      "median_CAGR": 0.1413132390608075,
+      "P_2x": 0.03638,
+      "P_loss_gt_30pct": 0.0,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.09103169362041055,
+      "CAGR_quantiles": {
+       "0.05": 0.04975723000536775,
+       "0.25": 0.10177871709903435,
+       "0.5": 0.1413132390608075,
+       "0.75": 0.18381670636721426,
+       "0.95": 0.24968623155859082
+      }
+     },
+     "Y5": {
+      "median_CAGR": 0.16554393104993326,
+      "P_2x": 0.599736,
+      "P_loss_gt_30pct": 2e-06,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.27116641700035227,
+      "CAGR_quantiles": {
+       "0.05": 0.06888703711066442,
+       "0.25": 0.12226237335793783,
+       "0.5": 0.16554393104993326,
+       "0.75": 0.21466390981399158,
+       "0.95": 0.29533886106628676
+      }
+     },
+     "Y8": {
+      "median_CAGR": 0.19743838673842085,
+      "P_2x": 0.947054,
+      "P_loss_gt_30pct": 0.0,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.708622466663824,
+      "CAGR_quantiles": {
+       "0.05": 0.0890477837724405,
+       "0.25": 0.14711148562877524,
+       "0.5": 0.19743838673842085,
+       "0.75": 0.25798538769449264,
+       "0.95": 0.36033193159666493
+      }
+     }
+    }
+   },
+   "delta": {
+    "TAIWAN_SEIZURE": {
+     "Y3": {
+      "median_CAGR": -0.04142216480900418,
+      "P_loss_gt_30pct": 1.4e-05,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": -0.13922210475554908,
+      "P_2x": -0.020154
+     },
+     "Y5": {
+      "median_CAGR": -0.06315462194397614,
+      "P_loss_gt_30pct": 0.000632,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": -0.34717517894416305,
+      "P_2x": -0.31964400000000004
+     },
+     "Y8": {
+      "median_CAGR": -0.06912424831010788,
+      "P_loss_gt_30pct": 0.000374,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": -0.6594933952118419,
+      "P_2x": -0.292752
+     }
+    },
+    "CHIP_COLD_WAR": {
+     "Y3": {
+      "median_CAGR": 0.0031265730627948463,
+      "P_loss_gt_30pct": 0.0,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.0033995491828369695,
+      "P_2x": 0.005898000000000004
+     },
+     "Y5": {
+      "median_CAGR": 0.008614535249730881,
+      "P_loss_gt_30pct": 0.0,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.018233851251439004,
+      "P_2x": 0.04837800000000003
+     },
+     "Y8": {
+      "median_CAGR": 0.010854552575914833,
+      "P_loss_gt_30pct": 0.0,
+      "P_loss_gt_50pct": 0.0,
+      "expected_shortfall_5pct": 0.010839742801492358,
+      "P_2x": 0.005647999999999986
+     }
+    }
+   },
+   "status": "pending_owner_judgment"
+  }
+ }
+}
