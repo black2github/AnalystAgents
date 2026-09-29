@@ -45,8 +45,11 @@ inputs: всё, что принимает portfolio_optimizer (paths_files, weig
                        "loo_min_weight": 0.05, "inclusion_threshold": 0.01, "workers": null,
                        "families": null | ["return_shift","terminal","correlation","scenario","combined","loo","milestone","driver_knockout"] (частичный перепрогон: partial=true),
                        "scenario_probabilities": null | {"scenarios": [{"id", "probability": p | null, "paths_files": {tk: .npz}}] (non-BASE, общие
-                                                          path_id с BASE), "base_paths_files": {tk: .npz}, "order": [id] | null} — paths_files теста
-                                                          при этом — файлы-смеси на центральных вероятностях (центральный прогон не меняется),
+                                                          path_id с BASE), "base_paths_files": {tk: .npz}, "order": [id] | null} — при заданных
+                                                          вероятностях центральный прогон и все семейства идут на центральной смеси
+                                                          build_mixture_data из первых max_paths путей BASE и сценариев (первые max_paths путей
+                                                          файла-смеси — только BASE-отрезок разбиения); paths_files задают компании и число путей,
+                                                          их содержимое не используется; при pending — прежнее усечение paths_files,
                        "resimulate": null | {"calibrations": {tk: cal}, "equity_value_0": {tk: E0}, "joint_layer_spec": spec, "global_seed": int,
                                              "chunk": 50000, "milestone_pp": 0.10}}
 outputs: §10 — central_weights, inclusion_frequency_by_asset, weight_p10_p50_p90, weight_spread, return/terminal/correlation/
@@ -268,13 +271,25 @@ def _q(x: list, q: float) -> float:
 _W: dict = {}   # состояние процесса-исполнителя (или главного процесса при workers=1)
 
 
+def _base_data(inputs: dict, tick: list, n: int) -> tuple[dict, dict | None]:
+    """Пути, на которых идут центральный прогон и все семейства (первые n). Без stability.scenario_probabilities (или при pending) —
+    усечение paths_files. С вероятностями — центральная смесь build_mixture_data на первых n путях base_paths_files и файлов
+    сценариев: первые n путей файла-смеси — только BASE-отрезок разбиения (порядок BASE, затем сценарии), усекать его нельзя.
+    Возвращает (base, scen) — scen = {"loaded", "order", "central"} или None."""
+    sp = (inputs.get("stability") or {}).get("scenario_probabilities") or None
+    if sp and not any(sc.get("probability") is None for sc in sp.get("scenarios") or []):
+        ss = _scenario_spec(sp, tick)
+        loaded = _load_scenarios(sp, tick, n)
+        base = _copy(portfolio_paths.build_mixture_data(loaded, {sid: ss["central"][sid] for sid in ss["order"]}, ss["order"], n), n)
+        return base, {"loaded": loaded, "order": ss["order"], "central": ss["central"]}
+    files = inputs["paths_files"]
+    return _copy({t: portfolio_paths.load_paths(files[t]) for t in tick}, n), None
+
+
 def _worker_init(inputs: dict, n: int, cw: dict, cdp: float) -> None:
-    files = inputs["paths_files"]; tick = sorted(files)
-    base = _copy({t: portfolio_paths.load_paths(files[t]) for t in tick}, n)
-    st = inputs.get("stability") or {}; sp = st.get("scenario_probabilities") or None
-    scen = None
-    if sp and "scenario" in (st.get("families") or FAMILIES) and not any(sc.get("probability") is None for sc in sp.get("scenarios") or []):
-        scen = {"loaded": _load_scenarios(sp, tick, n), "order": _scenario_spec(sp, tick)["order"]}   # BASE и сценарии — один раз на процесс
+    tick = sorted(inputs["paths_files"])
+    base, scen = _base_data(inputs, tick, n)          # BASE и сценарии — один раз на процесс
+    st = inputs.get("stability") or {}
     _W.update({"inp": inputs, "n": n, "tick": tick, "base": base, "cw": cw, "cdp": cdp, "resim": (st.get("resimulate") or None), "scen": scen})
 
 
@@ -375,9 +390,11 @@ def run(inputs: dict, seed: int) -> dict:
     tick = sorted(files)
     if not tick:
         raise ValueError("paths_files пуст")
-    base = {t: portfolio_paths.load_paths(files[t]) for t in tick}
-    n = min(min(len(d["r5"]) for d in base.values()), int(cfg["max_paths"]))
-    base = _copy(base, n)
+    file_data = {t: portfolio_paths.load_paths(files[t]) for t in tick}
+    n = min(min(len(d["r5"]) for d in file_data.values()), int(cfg["max_paths"]))
+    file_meta = {t: d["meta"] for t, d in file_data.items()}
+    del file_data
+    base, scen_base = _base_data(inputs, tick, n)     # при scenario_probabilities — центральная смесь в памяти, не усечение файла-смеси
     inp = dict(inputs); inp["max_paths"] = n; inp["search_paths"] = min(int(cfg["search_paths"]), n)
     margins = {t: float(m) for t, m in (cfg.get("terminal_margins") or {}).items() if m is not None}
     incl_thr = float(cfg["inclusion_threshold"])
@@ -390,7 +407,7 @@ def run(inputs: dict, seed: int) -> dict:
         # сторож: пересимуляция BASE первой компании должна побитно совпасть с нормативными путями (общие шоки, chunk, seed)
         _worker_init(inp, n, {}, 0.0)
         chk = _resimulate(tick[0], None, None)
-        if not np.array_equal(chk["r5"], base[tick[0]]["r5"]):
+        if not np.array_equal(chk["r5"], (scen_base["loaded"]["BASE"] if scen_base else base)[tick[0]]["r5"]):
             raise ValueError(f"resimulate: пересимуляция BASE {tick[0]} не воспроизводит нормативные пути (проверьте калибровку, equity_value_0, global_seed, chunk)")
         resim_check = {"company": tick[0], "reproduced": True}
 
@@ -466,8 +483,8 @@ def run(inputs: dict, seed: int) -> dict:
                          "max_burden_scenario": None, "perturbations": [], "max_abs_weight_shift_vs_central": None, "rule": SCENARIO_RULE}
         else:
             central_p = ss["central"]; order = ss["order"]
-            scen_loaded = _load_scenarios(sp, tick, n)
-            m_ref = base[tick[0]]["meta"]
+            scen_loaded = scen_base["loaded"]
+            m_ref = file_meta[tick[0]]
             for sid, dd in scen_loaded.items():
                 for t in tick:
                     if (dd[t]["meta"].get("global_seed"), dd[t]["meta"].get("chunk")) != (m_ref.get("global_seed"), m_ref.get("chunk")) or not np.array_equal(dd[t]["path_id"], base[tick[0]]["path_id"]):

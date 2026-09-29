@@ -255,3 +255,25 @@ def test_scenario_sensitivity_invalid_pending_and_absent(scen):
     bad = _scen_inputs(scen); bad["stability"]["scenario_probabilities"]["order"] = ["S1"]
     with pytest.raises(ValueError, match="order"):
         ps.run(bad, 11)
+
+
+def test_scenario_central_run_from_mixture_in_memory(scen):
+    """При scenario_probabilities центральный прогон (и все семейства) идут на центральной смеси build_mixture_data из первых max_paths
+    путей BASE и сценариев, а не на усечении файла-смеси (его первые max_paths путей — только BASE-отрезок): результат не зависит от
+    того, поданы в paths_files файлы-смеси или BASE-файлы; он отличается от прогона на одних BASE-путях."""
+    via_mix = ps.run(_scen_inputs(scen), 11)
+    inp = _scen_inputs(scen); inp["paths_files"] = scen["base"]
+    via_base = ps.run(inp, 11)
+    assert via_mix["paths_used"] == via_base["paths_used"] == 3000
+    assert via_mix["central"] == via_base["central"] and via_mix["central_weights"] == via_base["central_weights"]
+    assert json.dumps(via_mix["scenario_sensitivity"], sort_keys=True) == json.dumps(via_base["scenario_sensitivity"], sort_keys=True)
+    assert via_mix["assumptions_hash"] == via_base["assumptions_hash"]
+    # центральная смесь содержит сценарные пути: ES5 центра хуже, чем на одних BASE-путях (сценарии S1/S2 неблагоприятные)
+    plain = _inputs(scen["base"]); plain["stability"] = {**plain["stability"], "families": ["scenario"], "workers": 1}
+    base_only = ps.run(plain, 11)
+    assert via_mix["central"]["ES5"] < base_only["central"]["ES5"]
+    # центр = оптимизатор на смеси build_mixture_data с центральными вероятностями
+    loaded = {sid: ps._copy({t: pp.load_paths(f) for t, f in fs.items()}, 3000) for sid, fs in [("BASE", scen["base"])] + list(scen["files"].items())}
+    mix = pp.build_mixture_data(loaded, scen["probs"], ["S1", "S2"], 3000)
+    direct = ps._opt({**_scen_inputs(scen), "max_paths": 3000, "search_paths": 3000}, ps._copy(mix, 3000), None, None)
+    assert direct["weights"] == via_mix["central_weights"] and direct["ES5"] == via_mix["central"]["ES5"]
