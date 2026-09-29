@@ -189,3 +189,50 @@ def test_positive_fcf_bridge_share_diagnostic():
         d = pb[h]; assert d is not None
         assert d["bridge_with_positive_fcf"] + d["bridge_with_nonpositive_fcf"] == pytest.approx(out["base"]["valuation_basis_share"][h]["crossover_bridge"], abs=1e-9)
         assert d["positive_share_of_bridge_paths"] is None or 0.0 <= d["positive_share_of_bridge_paths"] <= 1.0
+
+
+def _cond_inputs(tmp_path, rid, scenario=None, conditional=None):
+    from tests.test_joint_layer import SPEC, MAPPING
+    c = cal_mature(); c["joint_simulation"] = {"layer_version": "1.0", "active_drivers": ["AI_COMPUTE_DEMAND", "INTEREST_RATES"]}
+    c["driver_parameter_mapping"] = [m for m in MAPPING if m["driver_id"] in ("AI_COMPUTE_DEMAND", "INTEREST_RATES")]
+    inp = {"calibration": c, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 4000, "convergence_check": False, "robustness": False,
+           "store_paths": True, "_runs_dir": str(tmp_path), "_run_id": rid}
+    if scenario is not None:
+        inp["scenario"] = scenario
+    if conditional is not None:
+        inp["conditional_run"] = conditional
+    return inp
+
+
+def test_conditional_run_confirmed_phase(tmp_path):
+    """§21 (company_mc 2.5.0): P — первая фаза с fixed_quarter 0 → условный прогон побитно равен безусловному; P — поздняя фаза →
+    медиана Y5 другая, path_id/global_seed совпадают с BASE; выходы conditional_run, scenario_mode, meta; ошибки входа."""
+    from engine import portfolio_paths as pp
+    from tests.test_joint_layer import _ph
+    d = "AI_COMPUTE_DEMAND"
+    first0 = {"scenario_id": "S0", "phases": [_ph("A", quarter=0, ramp=2, dur="until_next_phase", ov={d: (-1.5, 1.3)}), _ph("B", tri=(6, 8, 12), anchor="phase:A", ramp=2, ov={d: (0.5, 1.0)})]}
+    unc = cm.run(_cond_inputs(tmp_path, "u0", first0), 0); con = cm.run(_cond_inputs(tmp_path, "c0", first0, {"confirmed_phase": "A"}), 0)
+    pu, pc = pp.load_paths(unc["paths_file"]), pp.load_paths(con["paths_file"])
+    assert all(np.array_equal(pu[k], pc[k]) for k in ("r3", "r5", "r8", "maxdd5", "path_id"))                 # инвариант: история пуста, P уже с квартала 0
+    assert con["joint_simulation"]["scenario_mode"] == "conditional_confirmed_phase" and unc["joint_simulation"]["scenario_mode"] == "phased"
+    assert con["conditional_run"] == {"confirmed_phase": "A", "historical_phases": [], "state_at_t0": "BASE", "materialized_effective_from": {"A": {"kind": "fixed_quarter", "quarter": 0, "anchor": "t0"}},
+                                      "rule": "Scenario_Engine_Specification v1.1 §21"}
+    assert pc["meta"]["scenario"] == "S0" and pc["meta"]["conditional_run"] == "A" and "conditional_run" not in pu["meta"] and "conditional_run" not in unc
+    assert con["joint_simulation"]["scenario"] == "S0" and con["joint_simulation"]["conditional_run"] == "A"
+    # поздняя фаза: условная картина отличается, выравнивание с BASE сохраняется
+    late = {"scenario_id": "S1", "phases": [_ph("A", tri=(2, 4, 6), ramp=2, dur="until_next_phase", ov={d: (0.8, 1.0)}),
+                                            _ph("B", tri=(8, 12, 16), anchor="phase:A", ramp=2, ov={d: (-2.0, 1.4)})]}
+    base = cm.run(_cond_inputs(tmp_path, "b"), 0); u1 = cm.run(_cond_inputs(tmp_path, "u1", late), 0); c1 = cm.run(_cond_inputs(tmp_path, "c1", late, {"confirmed_phase": "B"}), 0)
+    pb, p1 = pp.load_paths(base["paths_file"]), pp.load_paths(c1["paths_file"])
+    assert abs(c1["base"]["return"]["median_CAGR_5Y"] - u1["base"]["return"]["median_CAGR_5Y"]) > 1e-4
+    assert np.array_equal(p1["path_id"], pb["path_id"]) and p1["meta"]["global_seed"] == pb["meta"]["global_seed"] == 101 and p1["meta"]["chunk"] == pb["meta"]["chunk"]
+    assert c1["conditional_run"]["historical_phases"] == ["A"] and c1["conditional_run"]["state_at_t0"] == "A"
+    q = c1["joint_simulation"]["scenario_phases"]["phase_start_quantiles"]; assert q["B"] == {"0.1": 0.0, "0.5": 0.0, "0.9": 0.0}   # диагностика — по преобразованному сценарию
+    # безусловный прогон не изменился от соседства с условным (тот же вход → те же пути)
+    assert np.array_equal(pp.load_paths(cm.run(_cond_inputs(tmp_path, "u1b", late), 0)["paths_file"])["r5"], pp.load_paths(u1["paths_file"])["r5"])
+    with pytest.raises(ValueError, match="не найдена"):
+        cm.run(_cond_inputs(tmp_path, "e1", late, {"confirmed_phase": "NOPE"}), 0)
+    with pytest.raises(ValueError, match="фазовый"):
+        cm.run(_cond_inputs(tmp_path, "e2", None, {"confirmed_phase": "B"}), 0)
+    with pytest.raises(ValueError, match="фазовый"):
+        cm.run(_cond_inputs(tmp_path, "e3", {"scenario_id": "LEG", "driver_overrides": {d: {"mean_shift_sigma": -1.0}}}, {"confirmed_phase": "B"}), 0)
