@@ -1,4 +1,4 @@
-"""Portfolio Stability Test v1.0 (Portfolio_Stability_Test_Specification_v1.0, схема v1.0): устойчивость включения и веса бумаг
+"""Portfolio Stability Test v1.0 (Portfolio_Stability_Test_Specification_v1.0, схема v1.0; модуль 1.3.0): устойчивость включения и веса бумаг
 к малым правдоподобным изменениям предпосылок — серия повторных прогонов portfolio_optimizer на возмущённых совместных путях.
 
 Центральный прогон = optimizer на тех же входах (тёплый старт «current», как в нормативном прогоне). Каждое возмущение меняет
@@ -10,7 +10,14 @@
 - correlations ±0.10 / ±0.15: переспаривание путей методом Имана–Коновера под целевую ранговую корреляцию стоимостей Y5
   (маргиналы сохраняются, горизонты внутри компании переставляются вместе); PSD-ремонт (обрезка собственных чисел) логируется;
   нулевое δ прогоняется отдельно как контроль шума самого метода;
-- scenario probabilities: единственный сценарий BASE → not_applicable (§3.3);
+- scenario probabilities (1.3.0, Scenario_Engine_Specification v1.1 §8 «Stability Test §3.3»): при stability.scenario_probabilities —
+  семейство scenario: для каждого non-BASE сценария p_s×0.75 и p_s×1.25 (BASE держит центральное значение, затем все вероятности
+  делятся на сумму), затем up10 — сценарий с максимальным B_s на центральных весах получает +0.10, у остальных (включая BASE)
+  0.10 забирается пропорционально их вероятностям; масса доноров < 0.10 → возмущение invalid (donor_mass_below_0.10), без усечения;
+  все B_s = 0 → up10 не строится (no_adverse_scenario). Для каждого валидного возмущения: смесь в памяти (portfolio_paths.
+  build_mixture_data на первых max_paths путях BASE и сценариев), взвешенная смесь §6 и ScenarioConcentration на центральных весах,
+  optimizer на смеси (тёплый старт от центра); scenario_constraints (если во входах) — с возмущёнными probability. Pending-вероятность
+  → not_testable_pending_owner_probability без прогонов; без входа — not_applicable (единственный сценарий BASE);
 - milestones ±10 п.п. и driver knockout (§3.5): без stability.resimulate — not_testable; с resimulate (1.2.0, срез 2) —
   ПЕРЕСИМУЛЯЦИЯ company_mc.simulate_paths на тех же общих шоках (global_seed, chunk): маржа ±5 п.п. точно (margin_shift вместо
   прокси), вероятность вех ±10 п.п. (milestone_prob_shift) у компаний с milestone_model, knockout материальных драйверов
@@ -23,7 +30,7 @@
   недоработка поиска;
 - combined: латинский гиперкуб N (по умолчанию 500) по измерениям [return ±3 п.п., multiple ±20 %, margin ±5 п.п.] × компании
   + общий сдвиг корреляций ±0.10; фиксированный seed.
-Популяция для §5–6 (включение, веса): однофакторные + корреляционные + combined прогоны, ДОПУСТИМЫЕ (valid = feasible);
+Популяция для §5–6 (включение, веса): однофакторные + корреляционные + сценарные + combined прогоны, ДОПУСТИМЫЕ (valid = feasible);
 LOO-прогоны в статистику бумаг не входят (там исключение задано конструкцией) — отдельный блок структурной зависимости.
 Серия идёт на первых max_paths совместных путях (по умолчанию 100000) — допущение скорости; центральный прогон внутри теста
 считается на той же выборке, внешний нормативный (500k) указывается ссылкой central_run_ref и сравнивается по весам.
@@ -36,7 +43,10 @@ inputs: всё, что принимает portfolio_optimizer (paths_files, weig
                        "driver_exposures": {tk: {driver: ±2|±1}}, "milestone_companies": [tk], "central_run_ref": run_id|null,
                        "return_shift_pp": [3, 5], "multiple_pct": 0.20, "margin_pp": 0.05, "corr_delta": [0.10, 0.15],
                        "loo_min_weight": 0.05, "inclusion_threshold": 0.01, "workers": null,
-                       "families": null | ["return_shift","terminal","correlation","combined","loo","milestone","driver_knockout"] (частичный перепрогон: partial=true),
+                       "families": null | ["return_shift","terminal","correlation","scenario","combined","loo","milestone","driver_knockout"] (частичный перепрогон: partial=true),
+                       "scenario_probabilities": null | {"scenarios": [{"id", "probability": p | null, "paths_files": {tk: .npz}}] (non-BASE, общие
+                                                          path_id с BASE), "base_paths_files": {tk: .npz}, "order": [id] | null} — paths_files теста
+                                                          при этом — файлы-смеси на центральных вероятностях (центральный прогон не меняется),
                        "resimulate": null | {"calibrations": {tk: cal}, "equity_value_0": {tk: E0}, "joint_layer_spec": spec, "global_seed": int,
                                              "chunk": 50000, "milestone_pp": 0.10}}
 outputs: §10 — central_weights, inclusion_frequency_by_asset, weight_p10_p50_p90, weight_spread, return/terminal/correlation/
@@ -58,12 +68,15 @@ from engine import company_mc
 from engine import portfolio_optimizer as po
 from engine import portfolio_paths
 
-VERSION = "1.2.1"
+VERSION = "1.3.0"
 HKEYS = (("r3", 3), ("r5", 5), ("r8", 8))
 DEFAULTS = {"combined_runs": 500, "max_paths": 100_000, "search_paths": 100_000, "return_shift_pp": [3, 5], "multiple_pct": 0.20, "margin_pp": 0.05,
             "corr_delta": [0.10, 0.15], "loo_min_weight": 0.05, "inclusion_threshold": 0.01, "material_driver_min": 0.30, "combined_return_pp": 3,
             "combined_corr_delta": 0.10, "objective_sign_reference": "median_CAGR_5Y", "workers": None}
-FAMILIES = ("return_shift", "terminal", "correlation", "combined", "loo", "milestone", "driver_knockout")
+FAMILIES = ("return_shift", "terminal", "correlation", "scenario", "combined", "loo", "milestone", "driver_knockout")
+SCENARIO_RULE = ("§3.3: p_s×0.75 и p_s×1.25 по каждому non-BASE сценарию, затем renormalize всех (включая BASE); up10: сценарий с max B_s "
+                 "(центральные веса) +0.10, у остальных пропорционально; масса доноров < 0.10 → invalid без усечения; после каждого — смесь, "
+                 "ScenarioConcentration и Optimizer")
 
 
 # ----------------------------------------------------------------------------------------------------------- возмущения путей
@@ -161,8 +174,89 @@ def _capacity(inputs: dict, tick: list, excluded: str | None) -> dict | None:
             "note": "оценка сверху без топ-3 и риск-лимитов; structurally_infeasible=true доказывает недопустимость, false её не гарантирует"}
 
 
+# ------------------------------------------------------------------------------------------- §3.3 вероятности сценариев (1.3.0)
+def _scenario_spec(sp: dict, tick: list) -> dict:
+    """Проверка входа stability.scenario_probabilities: id уникальны и не BASE, order — перестановка id, файлы на все компании.
+    Возвращает {"ids", "order", "pending", "central"} (central — {sid: p, "BASE": 1 − Σp} или None при pending)."""
+    scen = sp.get("scenarios") or []
+    ids = [str(sc["id"]) for sc in scen]
+    if not ids or len(set(ids)) != len(ids) or "BASE" in ids:
+        raise ValueError("scenario_probabilities.scenarios: нужны non-BASE сценарии с уникальными id (BASE задаётся base_paths_files)")
+    order = [str(x) for x in (sp.get("order") or ids) if str(x) != "BASE"]
+    if sorted(order) != sorted(ids):
+        raise ValueError(f"scenario_probabilities.order {order} должен быть перестановкой id сценариев {ids}")
+    pending = [sc["id"] for sc in scen if sc.get("probability") is None]
+    central = None
+    if not pending:
+        pn = {str(sc["id"]): float(sc["probability"]) for sc in scen}
+        if any(v < 0 for v in pn.values()) or sum(pn.values()) > 1.0 + 1e-12:
+            raise ValueError(f"scenario_probabilities: вероятности non-BASE сценариев должны быть ≥0 и в сумме ≤1: {pn}")
+        central = {sid: pn[sid] for sid in order}; central["BASE"] = 1.0 - sum(pn.values())
+    for sid, files in [("BASE", sp.get("base_paths_files") or {})] + [(str(sc["id"]), sc.get("paths_files") or {}) for sc in scen]:
+        miss = [t for t in tick if t not in files]
+        if miss:
+            raise ValueError(f"scenario_probabilities: у сценария {sid} нет файлов путей для {miss}")
+    return {"ids": ids, "order": order, "pending": pending, "central": central}
+
+
+def _load_scenarios(sp: dict, tick: list, n: int) -> dict:
+    """{"BASE": data, sid: data} — первые n путей BASE и сценариев (как у остальных семейств)."""
+    files = {"BASE": sp["base_paths_files"], **{str(sc["id"]): sc["paths_files"] for sc in sp["scenarios"]}}
+    out = {}
+    for sid, fs in files.items():
+        d = {t: portfolio_paths.load_paths(fs[t]) for t in tick}
+        short = [t for t in tick if len(d[t]["r5"]) < n]
+        if short:
+            raise ValueError(f"scenario_probabilities: у сценария {sid} меньше {n} путей для {short}")
+        out[sid] = _copy(d, n)
+    return out
+
+
+def _scenario_perturbations(central: dict, order: list, burdens: dict) -> tuple[list, str | None, str]:
+    """Возмущения §3.3 в нормативном порядке: p:<sid>:x0.75, p:<sid>:x1.25 по order, затем p:up10:<sid*>.
+    Возвращает ([(label, probs, valid, reason)], sid* | None, статус up10)."""
+    out = []
+    for sid in order:
+        for f in (0.75, 1.25):
+            pr = dict(central); pr[sid] = f * central[sid]
+            tot = sum(pr.values())
+            out.append((f"p:{sid}:x{f:.2f}", {k: v / tot for k, v in pr.items()}, True, None))
+    top = None
+    for sid in order:                                                     # равенство максимумов — первый по order
+        if burdens[sid] > 0.0 and (top is None or burdens[sid] > burdens[top]):
+            top = sid
+    if top is None:
+        return out, None, "no_adverse_scenario"
+    donors = {k: v for k, v in central.items() if k != top}
+    mass = sum(donors.values())
+    if mass < 0.10 - 1e-12:
+        out.append((f"p:up10:{top}", None, False, "donor_mass_below_0.10"))
+        return out, top, "invalid"
+    pr = {k: v - 0.10 * v / mass for k, v in donors.items()}; pr[top] = central[top] + 0.10
+    out.append((f"p:up10:{top}", {k: pr[k] for k in central}, True, None))
+    return out, top, "built"
+
+
+def _pv_central(d: dict, w: dict, wdp: float, rdp: float, fixed_total: float, key: str, yrs: int) -> np.ndarray:
+    """Стоимость портфеля на пути при заданных весах — как в optimizer: Σ w·r + w_dp·(1+r_dp)^h + fixed (плоско)."""
+    pv = np.zeros(len(next(iter(d.values()))[key]))
+    for t, wt in w.items():
+        pv += float(wt) * d[t][key].astype(np.float64)
+    return pv + wdp * (1.0 + rdp) ** yrs + fixed_total
+
+
+def _with_probabilities(obj, probs: dict, key=None):
+    """Копия scenario_constraints с возмущёнными probability: элемент {"id": sid, "probability": …} или {sid: {"probability": …}}."""
+    if isinstance(obj, dict):
+        sid = obj.get("id", key)
+        return {k: (float(probs[str(sid)]) if k == "probability" and str(sid) in probs else _with_probabilities(v, probs, k)) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_with_probabilities(v, probs) for v in obj]
+    return obj
+
+
 def _turnover(w: dict, dp: float, w0: dict, dp0: float) -> float:
-    keys = set(w) | set(w0)
+    keys = sorted(set(w) | set(w0))          # фиксированный порядок суммирования: порядок set зависит от PYTHONHASHSEED процесса (1.3.0)
     return float(0.5 * (sum(abs(w.get(t, 0.0) - w0.get(t, 0.0)) for t in keys) + abs(dp - dp0)))
 
 
@@ -177,7 +271,11 @@ _W: dict = {}   # состояние процесса-исполнителя (и
 def _worker_init(inputs: dict, n: int, cw: dict, cdp: float) -> None:
     files = inputs["paths_files"]; tick = sorted(files)
     base = _copy({t: portfolio_paths.load_paths(files[t]) for t in tick}, n)
-    _W.update({"inp": inputs, "n": n, "tick": tick, "base": base, "cw": cw, "cdp": cdp, "resim": ((inputs.get("stability") or {}).get("resimulate") or None)})
+    st = inputs.get("stability") or {}; sp = st.get("scenario_probabilities") or None
+    scen = None
+    if sp and "scenario" in (st.get("families") or FAMILIES) and not any(sc.get("probability") is None for sc in sp.get("scenarios") or []):
+        scen = {"loaded": _load_scenarios(sp, tick, n), "order": _scenario_spec(sp, tick)["order"]}   # BASE и сценарии — один раз на процесс
+    _W.update({"inp": inputs, "n": n, "tick": tick, "base": base, "cw": cw, "cdp": cdp, "resim": (st.get("resimulate") or None), "scen": scen})
 
 
 def _check_chunk_alignment(paths_base: int, n: int, chunk: int) -> None:
@@ -220,11 +318,17 @@ def _apply_ops(d: dict, ops: list, tick: list) -> dict:
             for k in ("r3", "r5", "r8", "maxdd5"):
                 d[op[1]][k] = r[k]
             d.setdefault("_resim_info", {})[op[1]] = {"summary": r["summary"], "knockout_applied": r["knockout_applied"]}
+        elif op[0] == "mixture":
+            # §3.3: смесь сценариев при возмущённых вероятностях — вместо путей центральной смеси
+            sc = _W["scen"]
+            d = _copy(portfolio_paths.build_mixture_data(sc["loaded"], op[1], sc["order"], _W["n"]), _W["n"])
     return d
 
 
 def _run_task(task: dict) -> dict:
     inp, n, tick, base, cw, cdp = (_W[k] for k in ("inp", "n", "tick", "base", "cw", "cdp"))
+    if task.get("inputs_override"):
+        inp = {**inp, **task["inputs_override"]}
     d = _apply_ops(_copy(base, n), task["ops"], tick)
     resim_info = d.pop("_resim_info", None)          # служебная запись пересимуляции — не компания, оптимизатору не передаётся
     if task["family"] == "loo":
@@ -300,7 +404,8 @@ def run(inputs: dict, seed: int) -> dict:
     bad = fam - set(FAMILIES)
     if bad:
         raise ValueError(f"неизвестные семейства прогонов: {sorted(bad)}; допустимы {FAMILIES}")
-    partial = fam != set(FAMILIES)
+    sp = cfg.get("scenario_probabilities") or None
+    partial = not (set(FAMILIES) - (set() if sp else {"scenario"})) <= fam   # без входа §3.3 семейство scenario не требуется для полного прогона
     workers = cfg.get("workers")
     workers = int(workers) if workers else max(1, min(12, (os.cpu_count() or 2) - 2))
     k = len(tick)
@@ -350,8 +455,46 @@ def run(inputs: dict, seed: int) -> dict:
         T, repaired = _nearest_psd(T)
         label = "zero_delta_control" if delta == 0.0 else f"{delta:+.2f}"
         add("correlation", f"corr:{label}", [("corr", T.tolist(), seed + 7919)], {"delta": delta, "psd_repaired": repaired}, ("corr", label, repaired), measure_corr=True)
-    # --- 3.3 сценарии; 3.5 драйверы
-    scen_sens = {"status": "not_applicable", "reason": "единственный сценарий BASE — вероятности сценариев не определены"}
+    # --- 3.3 вероятности сценариев
+    scen_loaded = None
+    if not sp:
+        scen_sens = {"status": "not_applicable", "reason": "единственный сценарий BASE — вероятности сценариев не определены"}
+    else:
+        ss = _scenario_spec(sp, tick)
+        if ss["pending"]:
+            scen_sens = {"status": "not_testable_pending_owner_probability", "pending": ss["pending"], "central_probabilities": None, "burdens_at_central": None,
+                         "max_burden_scenario": None, "perturbations": [], "max_abs_weight_shift_vs_central": None, "rule": SCENARIO_RULE}
+        else:
+            central_p = ss["central"]; order = ss["order"]
+            scen_loaded = _load_scenarios(sp, tick, n)
+            m_ref = base[tick[0]]["meta"]
+            for sid, dd in scen_loaded.items():
+                for t in tick:
+                    if (dd[t]["meta"].get("global_seed"), dd[t]["meta"].get("chunk")) != (m_ref.get("global_seed"), m_ref.get("chunk")) or not np.array_equal(dd[t]["path_id"], base[tick[0]]["path_id"]):
+                        raise ValueError(f"scenario_probabilities: пути сценария {sid}, {t} не выровнены с путями теста (global_seed/chunk/path_id)")
+            rdp = float(inputs.get("dry_powder_return_annual", 0.0)); fixed_total = float(sum(float(v) for v in (inputs.get("fixed_weights") or {}).values()))
+            pv5 = {sid: _pv_central(dd, cw, cdp, rdp, fixed_total, "r5", 5) for sid, dd in scen_loaded.items()}
+            es5 = {sid: po._metrics(v, 5)["expected_shortfall_5pct"] for sid, v in pv5.items()}
+            gap = {sid: max(0.0, es5["BASE"] - es5[sid]) for sid in order}              # B_s / p_s: не зависит от вероятностей
+            burdens = {sid: central_p[sid] * gap[sid] for sid in order}
+            perts, top, up10 = _scenario_perturbations(central_p, order, burdens)
+            scen_sens = {"status": "evaluated" if "scenario" in fam else "not_run", "central_probabilities": central_p, "burdens_at_central": burdens, "max_burden_scenario": top,
+                         "up10_status": up10, "es5_Y5_by_scenario_at_central_weights": es5, "perturbations": [], "max_abs_weight_shift_vs_central": None, "rule": SCENARIO_RULE}
+            if "scenario" not in fam:
+                scen_sens["reason"] = "семейство scenario не запрошено"
+            sc_in = inputs.get("scenario_constraints")
+            for label, pr, ok, reason in (perts if "scenario" in fam else []):
+                row = {"label": label, "probabilities": pr, "valid": ok, "reason": reason, "mixture_Y5": None, "scenario_concentration": None, "optimizer": None,
+                       "max_abs_weight_shift_vs_central": None}
+                if ok:
+                    pv = np.concatenate([pv5[sid] for sid in ["BASE"] + order]); wt = np.concatenate([np.full(n, pr[sid] / n) for sid in ["BASE"] + order])
+                    mx = portfolio_paths._wmetrics(pv, wt, 5)
+                    row["mixture_Y5"] = {k: mx[k] for k in ("median_CAGR", "expected_shortfall_5pct", "P_loss_gt_30pct")}
+                    row["scenario_concentration"] = portfolio_paths.scenario_concentration({sid: pr[sid] * gap[sid] for sid in order})
+                    add("scenario", label, [("mixture", {sid: pr[sid] for sid in order})], {"probabilities": pr}, ("scen", label),
+                        **({"inputs_override": {"scenario_constraints": _with_probabilities(sc_in, pr)}} if sc_in is not None else {}))
+                scen_sens["perturbations"].append(row)
+    # --- 3.5 драйверы
     expo = cfg.get("driver_exposures") or {}
     material = []
     if expo:
@@ -435,8 +578,15 @@ def run(inputs: dict, seed: int) -> dict:
             t = key[1]
             loo[t] = {"feasible": r["feasible"], "start_used": r["start_used"], "capacity": _capacity(inp, tick, t), "weights": r["weights"], "dry_powder": r["dry_powder"], "median_CAGR_5Y": r["median_CAGR_5Y"],
                       "ES5": r["ES5"], "violations": r["violations"], "turnover_from_central": r["turnover_from_central"], "median_CAGR_5Y_delta_vs_central": r["median_CAGR_5Y"] - central["median_CAGR_5Y"]}
+        elif key[0] == "scen":
+            row = next(x for x in scen_sens["perturbations"] if x["label"] == key[1])
+            row["optimizer"] = {"weights": r["weights"], "dry_powder": r["dry_powder"], "feasible": r["feasible"], "median_CAGR_5Y": r["median_CAGR_5Y"], "ES5": r["ES5"]}
+            row["max_abs_weight_shift_vs_central"] = float(max(abs(float(r["weights"].get(t, 0.0)) - float(cw.get(t, 0.0))) for t in tick))
         elif key[0] == "lhs":
             combined.append({"i": key[1], "feasible": r["feasible"], "weights": r["weights"], "dry_powder": r["dry_powder"], "median_CAGR_5Y": r["median_CAGR_5Y"], "ES5": r["ES5"], "turnover_from_central": r["turnover_from_central"], "binding": r["binding"]})
+    shifts = [x["max_abs_weight_shift_vs_central"] for x in scen_sens.get("perturbations") or [] if x["optimizer"] and x["optimizer"]["feasible"]]
+    if shifts:
+        scen_sens["max_abs_weight_shift_vs_central"] = max(shifts)
     # --- §5–7 статистика
     valid = [r for r in runs if r["feasible"]]
     total = len(runs)
@@ -488,8 +638,10 @@ def run(inputs: dict, seed: int) -> dict:
                 "median_5y_cagr_sign_flip_fraction": crit(flips, 0.20, lambda v: v <= 0.20)}
     evaluated = [c for c in criteria.values() if c["pass"] is not None]
     port_class = ("structurally_stable" if all(c["pass"] for c in evaluated) else "not_structurally_stable") if evaluated else "not_evaluated"
-    ah = hashlib.sha256(json.dumps({"inputs": {k: v for k, v in inputs.items() if k not in ("paths_files", "stability")}, "paths_meta": {t: base[t]["meta"] for t in tick}, "n": n, "cfg": {k: v for k, v in cfg.items() if k != "resimulate"}, "resimulate": bool(resim), "seed": seed, "version": VERSION},
-                                   sort_keys=True, ensure_ascii=False, default=str).encode()).hexdigest()
+    hash_doc = {"inputs": {k: v for k, v in inputs.items() if k not in ("paths_files", "stability")}, "paths_meta": {t: base[t]["meta"] for t in tick}, "n": n, "cfg": {k: v for k, v in cfg.items() if k != "resimulate"}, "resimulate": bool(resim), "seed": seed, "version": VERSION}
+    if scen_loaded is not None:
+        hash_doc["scenario_paths_meta"] = {sid: {t: dd[t]["meta"] for t in tick} for sid, dd in scen_loaded.items()}
+    ah = hashlib.sha256(json.dumps(hash_doc, sort_keys=True, ensure_ascii=False, default=str).encode()).hexdigest()
     fam_counts: dict = {}
     for r in runs:
         fam_counts[r["family"]] = fam_counts.get(r["family"], 0) + 1
@@ -513,5 +665,7 @@ def run(inputs: dict, seed: int) -> dict:
                             "valid_runs = допустимые прогоны; недопустимые входят только в feasibility_rate",
                             ("terminal margin — пересимуляция company_mc (margin_shift) на общих шоках" if resim else "terminal margin — прокси на уровне пути ((m+δ)/m на Y5/Y8), не пересимуляция"), "terminal multiple — лог-множитель ко всем горизонтам (точно для базы FCF_multiple)",
                             "корреляции — Иман–Коновер по рангам стоимости Y5; контроль нулевого δ показывает шум переспаривания",
+                            *(["вероятности сценариев §3.3 — смесь по разбиению path_id (build_mixture_data) на первых max_paths путях BASE и сценариев; B_s, смесь §6 и "
+                               "ScenarioConcentration — на центральных весах; fixed_weights — плоско, как в optimizer"] if scen_loaded is not None else []),
                             "LOO-прогоны не входят в статистику включения/весов", ("milestones ±10 п.п. и driver knockout — пересимуляция (срез 2)" if resim else "milestones и driver knockout — not_testable до пересимуляции")],
             "decision": "none"}

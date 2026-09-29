@@ -1,4 +1,4 @@
-"""Агрегация портфеля по совместным путям v1.0 (Portfolio_Optimizer_Specification_v1.0 §7): срез 4 company_mc.
+"""Агрегация портфеля по совместным путям v1.0 (Portfolio_Optimizer_Specification_v1.0 §7): срез 4 company_mc; модуль 1.4.0.
 
 PortfolioValue_h = Σ_i w_i · RelativeValue_i,h + w_dp · (1 + r_dp)^h — по одному и тому же path_id у всех компаний.
 Файлы путей пишет company_mc (inputs.paths_out) в формате .npz: r3, r5, r8, maxdd5 (float32, относительная стоимость
@@ -20,6 +20,9 @@ outputs: медианный CAGR 3/5/8Y портфеля, P(2x), P(loss>30/50%),
   чтобы не резать антитетические пары; BASE — остаток), одни и те же диапазоны у всех компаний → совместная структура путей
   сохраняется; meta — как у BASE-файла (global_seed/chunk/paths/joint) + "mixture". Файлы-смеси читаются оптимизатором и
   Stability без изменений; их метрики — стратифицированная выборка взвешенной смеси §6 (проверяется тестом).
+Смесь в памяти (1.4.0): build_mixture_data(loaded {scenario_id: {ticker: load_paths}}, probs, order, n) → {ticker: data} того же
+  вида, что load_paths (meta от BASE + mixture {ranges, probabilities}) — то же разбиение, что у mixture_export (экспорт собирается
+  ею, файлы побитно прежние); используется Stability Test §3.3 для возмущённых вероятностей сценариев без записи на диск.
 """
 from __future__ import annotations
 
@@ -29,7 +32,7 @@ import os
 
 import numpy as np
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 
 
 def load_paths(path: str) -> dict:
@@ -240,9 +243,41 @@ def mixture_ranges(n: int, probs: dict, order: list) -> dict:
     return ranges
 
 
+def build_mixture_data(loaded: dict, probs: dict, order: list, n: int) -> dict:
+    """Смесь в памяти (1.4.0): loaded = {scenario_id: {ticker: load_paths(...)}} (обязателен BASE; сценарии — с общими path_id),
+    probs — вероятности non-BASE (BASE — остаток), order — порядок сценариев в разбиении, n — число путей. Возвращает
+    {ticker: data} того же вида, что load_paths: каждый массив (кроме meta) — конкатенация отрезков mixture_ranges(n, probs, order)
+    из данных сценариев в порядке BASE, затем сценарии по order; одни диапазоны у всех компаний; meta — от BASE +
+    mixture {ranges, probabilities}. Выравнивание сценариев с BASE (global_seed, chunk, path_id[:n]) проверяется — иначе ValueError."""
+    if "BASE" not in loaded:
+        raise ValueError("build_mixture_data: обязателен BASE")
+    ranges = mixture_ranges(n, probs, order)
+    seq = ["BASE"] + [sid for sid in order if sid != "BASE"]
+    pr = {sid: float(p) for sid, p in probs.items() if sid != "BASE"}
+    pr["BASE"] = float(probs["BASE"]) if "BASE" in probs else 1.0 - sum(pr.values())
+    out = {}
+    for t, d0 in loaded["BASE"].items():
+        m0 = d0["meta"]; ref_ids = d0["path_id"][:n]
+        for sid in seq:
+            d = loaded[sid][t]
+            if d["meta"].get("global_seed") != m0.get("global_seed") or d["meta"].get("chunk") != m0.get("chunk") or not np.array_equal(d["path_id"][:n], ref_ids):
+                raise ValueError(f"сценарий {sid}, {t}: пути не выровнены по path_id с BASE — смесь не считается")
+        arrays = {k: np.concatenate([loaded[sid][t][k][ranges[sid][0]:ranges[sid][1]] for sid in seq]) for k in d0 if k != "meta"}
+        meta = dict(m0); meta["mixture"] = {"ranges": {sid: list(r) for sid, r in ranges.items()}, "probabilities": pr}
+        out[t] = {"meta": meta, **arrays}
+    return out
+
+
+def _load_all(path: str) -> dict:
+    """Все массивы файла путей (включая b3/b5/b8) + meta — для экспорта смеси без потери полей."""
+    z = np.load(path, allow_pickle=False)
+    return {"meta": json.loads(str(z["meta"])), **{k: z[k] for k in z.files if k != "meta"}}
+
+
 def _export_mixture(inputs: dict) -> dict:
     """Режим mixture_export (1.3.0): файлы путей-смеси по компаниям — стратифицированная выборка взвешенной смеси §6 по
-    разбиению path_id (общие диапазоны у всех компаний). Требует вероятностей у всех non-BASE сценариев."""
+    разбиению path_id (общие диапазоны у всех компаний). Требует вероятностей у всех non-BASE сценариев. Сборка — build_mixture_data
+    (1.4.0; побитно прежний результат)."""
     scen = inputs["scenarios"]; ids = [sc["id"] for sc in scen]
     if len(set(ids)) != len(ids) or "BASE" not in ids:
         raise ValueError("scenarios: id уникальны и обязателен BASE")
@@ -264,32 +299,25 @@ def _export_mixture(inputs: dict) -> dict:
             raise ValueError(f"сценарий {sc['id']}: нет файлов путей для {missing}")
     out_dir = inputs.get("out_dir") or os.path.dirname(base["paths_files"][tickers[0]]); tag = str(inputs.get("tag") or "mixture")
     os.makedirs(out_dir, exist_ok=True)
-    files_out = {}; ranges = None; n_ref = None; ref_meta = None
+    loaded = {sc["id"]: {} for sc in scen}; n_ref = None; ref_meta = None
     for t in tickers:
-        loaded = {sc["id"]: load_paths(sc["paths_files"][t]) for sc in scen}
-        z0 = np.load(base["paths_files"][t], allow_pickle=False); keys = [k for k in z0.files if k != "meta"]
-        n = min(len(d["r5"]) for d in loaded.values())
+        for sc in scen:
+            loaded[sc["id"]][t] = _load_all(sc["paths_files"][t])
+        n = min(len(loaded[sid][t]["r5"]) for sid in ids)
         if n_ref is None:
-            n_ref = n; ref_meta = loaded["BASE"]["meta"]; ranges = mixture_ranges(n, probs, ids)
+            n_ref = n; ref_meta = loaded["BASE"][t]["meta"]
         elif n != n_ref:
             raise ValueError(f"{t}: число путей {n} ≠ {n_ref} у первой компании — смесь не выравнивается")
-        m0 = loaded["BASE"]["meta"]
+        m0 = loaded["BASE"][t]["meta"]
         if m0.get("global_seed") != ref_meta.get("global_seed") or m0.get("chunk") != ref_meta.get("chunk") or m0.get("paths") != ref_meta.get("paths"):
             raise ValueError(f"{t}: BASE-пути не выровнены с первой компанией (global_seed/chunk/paths)")
-        ref_ids = loaded["BASE"]["path_id"][:n]
-        for sid, d in loaded.items():
-            if d["meta"].get("global_seed") != m0.get("global_seed") or d["meta"].get("chunk") != m0.get("chunk") or not np.array_equal(d["path_id"][:n], ref_ids):
-                raise ValueError(f"сценарий {sid}, {t}: пути не выровнены по path_id с BASE — смесь не считается")
-        arrays = {}
-        for k in keys:
-            parts = []
-            for sid in ["BASE"] + [s for s in ids if s != "BASE"]:
-                a, b = ranges[sid]
-                z = np.load(scen[ids.index(sid)]["paths_files"][t], allow_pickle=False)
-                parts.append(z[k][a:b])
-            arrays[k] = np.concatenate(parts)
-        meta = dict(m0); meta["mixture"] = {"spec": "Scenario_Engine_Specification_v1.0 §6 — stratified partition by path_id", "probabilities": probs,
-                                            "ranges": {sid: list(r) for sid, r in ranges.items()}, "source_files": {sc["id"]: sc["paths_files"][t] for sc in scen}, "exporter": f"portfolio_paths {VERSION}"}
+    mix = build_mixture_data(loaded, probs, ids, n_ref)
+    ranges = mixture_ranges(n_ref, probs, ids)
+    files_out = {}
+    for t in tickers:
+        arrays = {k: v for k, v in mix[t].items() if k != "meta"}
+        meta = dict(loaded["BASE"][t]["meta"]); meta["mixture"] = {"spec": "Scenario_Engine_Specification_v1.0 §6 — stratified partition by path_id", "probabilities": probs,
+                                                                   "ranges": {sid: list(r) for sid, r in ranges.items()}, "source_files": {sc["id"]: sc["paths_files"][t] for sc in scen}, "exporter": f"portfolio_paths {VERSION}"}
         fp = os.path.join(out_dir, f"{tag}-mixture-{t}-paths.npz")
         np.savez_compressed(fp, meta=np.array(json.dumps(meta, ensure_ascii=False)), **arrays)
         files_out[t] = fp
