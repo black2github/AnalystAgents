@@ -16,10 +16,25 @@ inputs: {"paths_files": {tk: .npz}, "weights_current": {tk: w} (все пози�
          "sectors": {tk: sector_id}, "common_cause": {cause: {tk: severity_factor}},
          "mpc_range": {"min_weight": 0, "max_weight": 0.2, "grid_step": 0.01, "local_refinement_step": 0.005},
          "objective_tolerance_pp": 0.5, "starts": ["current","equal","empty"] (+ "given": start_weights/start_dry_powder),
-         "search_paths": 100000, "max_paths": null}
+         "search_paths": 100000, "max_paths": null,
+         1.1.0 (DR-2026-09-27-01, решение владельца 30.09.2026; заказ слоя действий v1.2 п. 2.3):
+         "scenario_constraints": {"p_min": 0.10, "es5_min": -0.40, "p_loss_gt_30_max": 0.25, "scenario_concentration_max": 0.60,
+                                  "thresholds": {sid: {"es5_min", "p_loss_gt_30_max"}} (необязательно, поимённо — вариант V3),
+                                  "scenarios": [{"id", "probability", "paths_files": {tk: .npz}}] (adverse-сценарии, пути на общих path_id),
+                                  "base_paths_files": {tk: .npz} (нужны для ScenarioConcentration: B_s = p_s·max(0, ES5_BASE − ES5_s))},
+         "hedge_instruments": {tk: {"max_weight": 0.10, "return_annual": 0.0}} — разрешённые владельцем инструменты хеджа (кэш и GLD, В1/V1):
+                              переменная оптимизации с ПЛОСКОЙ доходностью (1+r)^h без калибровки и без отклика на сценарий
+                              (model_assumption: движок видит хедж только как не-акционерный балласт, рост золота под шоком не смоделирован);
+                              тикер берётся из weights_current (не из fixed_weights).}
 outputs: proposed_weights, dry_powder_weight, feasible_weight_bands, portfolio_return_distribution (3/5/8Y), portfolio_downside,
   sector/common_cause/top3 concentrations, binding_constraints, constraint_gaps_vs_current, marginal_curves (MPC-сетка по бумаге),
-  evaluations, infeasible (+ minimum_relaxations), decision: none. Детерминирован (перебор без случайности; seed не используется).
+  evaluations, infeasible (+ minimum_relaxations), scenario_constraints (метрики портфеля под каждым сценарием на оптимуме и на текущих
+  весах, ScenarioConcentration по варианту «а»), hedge_instruments, decision: none. Детерминирован (перебор без случайности; seed не используется).
+Сценарно-условные ограничения (1.1.0): для каждого adverse-сценария s с owner-вероятностью p_s ≥ p_min — ES5_5Y(портфель | s) ≥ es5_min и
+P(loss>30 %)_5Y(портфель | s) ≤ p_loss_gt_30_max (пороги — owner_judgment); ScenarioConcentration ≤ scenario_concentration_max только при
+|A| ≥ 2 (вариант «а» IMMA). Жёсткие, в той же лексикографической схеме §3 (без тихого ослабления); в цели — как тай-брейк после ES5 (§3:
+меньшая концентрация), когда она определена. Stability Test при сценарных ограничениях подаёт возмущённые BASE-пути, сценарные пути
+берутся из файлов без возмущения (допущение).
 """
 from __future__ import annotations
 
@@ -29,7 +44,7 @@ import numpy as np
 
 from engine import portfolio_paths
 
-VERSION = "1.0.2"
+VERSION = "1.1.0"
 HORIZONS = (("Y3", "r3", 3), ("Y5", "r5", 5), ("Y8", "r8", 8))
 
 
@@ -70,13 +85,61 @@ class _Problem:
         if inputs.get("max_paths"):
             n = min(n, int(inputs["max_paths"]))
         self.n = n
-        self.R = {key: np.stack([data[t][key][:n].astype(np.float64) for t in self.tick], axis=1) for _, key, _ in HORIZONS}
+        self.fixed = {k: float(v) for k, v in (inputs.get("fixed_weights") or {}).items()}
+        # инструменты хеджа (1.1.0): переменные с плоской доходностью (1+r)^h — синтетическая константная колонка путей
+        self.hedge = {k: {"max_weight": float(v.get("max_weight", 0.0)), "return_annual": float(v.get("return_annual", 0.0))} for k, v in (inputs.get("hedge_instruments") or {}).items()}
+        for h_tk in self.hedge:
+            if h_tk in self.fixed:
+                raise ValueError(f"инструмент хеджа {h_tk} одновременно в fixed_weights — уберите из fixed")
+            if h_tk in data:
+                raise ValueError(f"инструмент хеджа {h_tk} имеет собственные пути — задайте его как обычную бумагу")
+        self.data_tick = list(self.tick)                                # бумаги с путями (без хеджа)
+        self.tick = sorted(set(self.tick) | set(self.hedge))
+        self.R = {key: np.stack([(data[t][key][:n].astype(np.float64) if t in data else np.full(n, (1.0 + self.hedge[t]["return_annual"]) ** yrs)) for t in self.tick], axis=1) for _, key, yrs in HORIZONS}
         # поиск — на первых search_paths совместных путях (те же path_id у всех компаний), итог и проверка допустимости — на всех
         self.n_search = int(min(n, int(inputs.get("search_paths", 100_000))))
         self.R5s = self.R["r5"][: self.n_search]
-        self.meta = {t: data[t]["meta"] for t in self.tick}
+        self.meta = {t: data[t]["meta"] for t in self.data_tick}
         cur = {k: float(v) for k, v in (inputs.get("weights_current") or {}).items()}
-        self.fixed = {k: float(v) for k, v in (inputs.get("fixed_weights") or {}).items()}
+        # сценарно-условные ограничения (1.1.0): пути adverse-сценариев на общих path_id (Y5), BASE — для бремени B_s / концентрации
+        sc_in = inputs.get("scenario_constraints") or {}
+        self.sc_cfg = None; self.SR = {}; self.SRs = {}; self.sc_probs = {}; self.sc_applied = []; self.sc_skipped = []; self.BR = None
+        if sc_in.get("scenarios"):
+            p_min = float(sc_in.get("p_min", 0.0)); thr = sc_in.get("thresholds") or {}
+            self.sc_cfg = {"p_min": p_min, "es5_min": sc_in.get("es5_min"), "p_loss_gt_30_max": sc_in.get("p_loss_gt_30_max"),
+                           "scenario_concentration_max": sc_in.get("scenario_concentration_max"), "thresholds": {}}
+            ref_ids = data[self.data_tick[0]]["path_id"][:n]
+            for sc in sc_in["scenarios"]:
+                sid = str(sc["id"]); p_s = float(sc["probability"]); sfiles = sc.get("paths_files") or {}
+                if sid == "BASE":
+                    raise ValueError("scenario_constraints.scenarios: BASE задаётся в base_paths_files")
+                self.sc_probs[sid] = p_s
+                cols = []
+                for t in self.tick:
+                    if t in self.hedge:
+                        cols.append(np.full(n, (1.0 + self.hedge[t]["return_annual"]) ** 5)); continue
+                    if t not in sfiles:
+                        raise ValueError(f"сценарий {sid}: нет файла путей для {t}")
+                    d = portfolio_paths.load_paths(sfiles[t])
+                    if d["meta"].get("global_seed") != ref.get("global_seed") or not np.array_equal(d["path_id"][:n], ref_ids):
+                        raise ValueError(f"сценарий {sid}, {t}: пути не выровнены по path_id с базовыми — условное ограничение не считается")
+                    cols.append(d["r5"][:n].astype(np.float64))
+                self.SR[sid] = np.stack(cols, axis=1); self.SRs[sid] = self.SR[sid][: self.n_search]
+                th = thr.get(sid) or {}
+                self.sc_cfg["thresholds"][sid] = {"es5_min": th.get("es5_min", self.sc_cfg["es5_min"]), "p_loss_gt_30_max": th.get("p_loss_gt_30_max", self.sc_cfg["p_loss_gt_30_max"])}
+                (self.sc_applied if p_s >= p_min - 1e-12 else self.sc_skipped).append(sid)
+            bfiles = sc_in.get("base_paths_files") or {}
+            self.BR = None
+            if bfiles:
+                cols = []
+                for t in self.tick:
+                    if t in self.hedge:
+                        cols.append(np.full(n, (1.0 + self.hedge[t]["return_annual"]) ** 5)); continue
+                    d = portfolio_paths.load_paths(bfiles[t])
+                    if not np.array_equal(d["path_id"][:n], ref_ids):
+                        raise ValueError(f"BASE, {t}: пути не выровнены по path_id")
+                    cols.append(d["r5"][:n].astype(np.float64))
+                self.BR = np.stack(cols, axis=1); self.BRs = self.BR[: self.n_search]
         self.cur = np.array([cur.get(t, 0.0) for t in self.tick])
         self.dp_cur = float(inputs.get("dry_powder_current", 0.0))
         self.rdp = float(inputs.get("dry_powder_return_annual", 0.0))
@@ -102,6 +165,7 @@ class _Problem:
         self.cap = np.array([min(float(caps[t]) if caps.get(t) is not None else self.wmax_default,
                                  float(self.ch_name) if (self.roles.get(t) == "Challenger" and self.ch_name is not None) else 9.0) for t in self.tick])
         self.cap = np.array([0.0 if self.roles.get(t) == "Watch" else c for t, c in zip(self.tick, self.cap)])
+        self.cap = np.array([self.hedge[t]["max_weight"] if t in self.hedge else c for t, c in zip(self.tick, self.cap)])   # потолок хеджа — лимит владельца
         self.sectors = inputs.get("sectors") or {}
         self.cc = inputs.get("common_cause") or {}
         # матричная форма концентраций (1.0.2): секторы, общие причины, Challenger — без словарных циклов на каждую оценку
@@ -135,8 +199,28 @@ class _Problem:
             pv = Rm @ w + wdp * (1.0 + self.rdp) ** yrs + self.fixed_total
             out[h] = _metrics(pv, yrs) if full else _fast_metrics(pv, yrs)
         res = {"horizons": out, "turnover": float(0.5 * (np.abs(w - self.cur).sum() + abs(wdp - self.dp_cur))), "scenario_concentration": None, "_full": full}
+        if self.sc_cfg is not None:
+            dp_term = wdp * (1.0 + self.rdp) ** 5 + self.fixed_total
+            scen = {}
+            for sid in self.SR:
+                Rm = self.SR[sid] if full else self.SRs[sid]
+                scen[sid] = _fast_metrics(Rm @ w + dp_term, 5)
+            res["scenarios"] = scen
+            if self.BR is not None:
+                base = _fast_metrics((self.BR if full else self.BRs) @ w + dp_term, 5)
+                res["base"] = base
+                burdens = {sid: self.sc_probs[sid] * max(0.0, base["expected_shortfall_5pct"] - m["expected_shortfall_5pct"]) for sid, m in scen.items()}
+                res["scenario_burdens"] = burdens
+                res["scenario_concentration"] = portfolio_paths.scenario_concentration(burdens)
         self._cache[key] = res
         return res
+
+    def use_full_paths(self) -> None:
+        """Переключить поиск на все совместные пути (после нарушения риск-ограничений только на полном наборе)."""
+        self.R5s = self.R["r5"]; self.n_search = self.n
+        self.SRs = dict(self.SR)
+        if self.sc_cfg is not None and self.BR is not None:
+            self.BRs = self.BR
 
     def concentrations(self, w: np.ndarray, wdp: float) -> dict:
         w = np.asarray(w, dtype=float)
@@ -177,10 +261,21 @@ class _Problem:
             V.append({"constraint": "risk_5y:p_loss_gt_50_max", "value": y5["P_loss_gt_50pct"], "bound": float(self.p50_max), "excess": y5["P_loss_gt_50pct"] - float(self.p50_max)})
         if self.es5_min is not None and y5["expected_shortfall_5pct"] < float(self.es5_min) - 1e-9:
             V.append({"constraint": "risk_5y:es5_min", "value": y5["expected_shortfall_5pct"], "bound": float(self.es5_min), "excess": float(self.es5_min) - y5["expected_shortfall_5pct"]})
+        # сценарно-условные (1.1.0): только сценарии с p_s ≥ p_min; концентрация — только при |A| ≥ 2 (вариант «а»)
+        if self.sc_cfg is not None:
+            for sid in self.sc_applied:
+                m = ev["scenarios"][sid]; th = self.sc_cfg["thresholds"][sid]
+                if th["es5_min"] is not None and m["expected_shortfall_5pct"] < float(th["es5_min"]) - 1e-9:
+                    V.append({"constraint": f"scenario:{sid}:es5_min", "value": m["expected_shortfall_5pct"], "bound": float(th["es5_min"]), "excess": float(th["es5_min"]) - m["expected_shortfall_5pct"]})
+                if th["p_loss_gt_30_max"] is not None and m["P_loss_gt_30pct"] > float(th["p_loss_gt_30_max"]) + 1e-9:
+                    V.append({"constraint": f"scenario:{sid}:p_loss_gt_30_max", "value": m["P_loss_gt_30pct"], "bound": float(th["p_loss_gt_30_max"]), "excess": m["P_loss_gt_30pct"] - float(th["p_loss_gt_30_max"])})
+            cmax = self.sc_cfg["scenario_concentration_max"]; sc = ev.get("scenario_concentration")
+            if cmax is not None and sc and sc.get("applicable") and sc["value"] > float(cmax) + 1e-9:
+                V.append({"constraint": "scenario_concentration_max", "value": sc["value"], "bound": float(cmax), "excess": sc["value"] - float(cmax)})
         return V
 
     def better(self, a: dict, b: dict) -> bool:
-        """Лексикографически: a лучше b? (медиана CAGR 5Y с допуском → ES5 → [концентрация сценария] → оборот)."""
+        """Лексикографически: a лучше b? (медиана CAGR 5Y с допуском → ES5 → [концентрация сценария, если определена] → оборот)."""
         ma, mb = a["horizons"]["Y5"]["median_CAGR"], b["horizons"]["Y5"]["median_CAGR"]
         if ma > mb + self.tol:
             return True
@@ -189,6 +284,9 @@ class _Problem:
         ea, eb = a["horizons"]["Y5"]["expected_shortfall_5pct"], b["horizons"]["Y5"]["expected_shortfall_5pct"]
         if abs(ea - eb) > 1e-4:
             return ea > eb
+        ca, cb = a.get("scenario_concentration") or {}, b.get("scenario_concentration") or {}
+        if ca.get("applicable") and cb.get("applicable") and abs(ca["value"] - cb["value"]) > 1e-4:
+            return ca["value"] < cb["value"]
         if abs(a["turnover"] - b["turnover"]) > 1e-6:
             return a["turnover"] < b["turnover"]
         return ma > mb
@@ -207,6 +305,7 @@ def _search(P: _Problem, w0: np.ndarray, wdp0: float, step: float, max_iter: int
     if wdp < P.dp_min or wdp > P.dp_max:
         target = min(max(wdp, P.dp_min), P.dp_max)
         w = np.array([_snap(x, step) for x in w * (P.budget - target) / max(w.sum(), 1e-12)]) if w.sum() > 0 else w
+        w = np.minimum(w, P.cap)                                     # масштабирование не должно выводить бумагу за потолок (1.1.0)
         wdp = round(P.budget - w.sum(), 9)
     evals = 0
 
@@ -276,8 +375,8 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
         w, wdp, nf = _search(P, w, wdp, P.fine, max_iter=30)          # локальное уточнение ±0.5 п.п. (§6)
         ev = P.evaluate(w, wdp, full=True); V = P.violations(w, wdp, ev)
         if V and P.n_search < P.n and not any(v["constraint"].startswith(("per_name", "sector", "top3", "common", "Challenger", "dry")) for v in V):
-            # риск-ограничения нарушены только на полном наборе путей — досчитать поиск на всех путях
-            P.R5s = P.R["r5"]; P.n_search = P.n
+            # риск-ограничения (в т. ч. сценарные) нарушены только на полном наборе путей — досчитать поиск на всех путях
+            P.use_full_paths()
             w, wdp, nf2 = _search(P, w, wdp, P.fine, max_iter=30); nf += nf2
             ev = P.evaluate(w, wdp, full=True); V = P.violations(w, wdp, ev)
         cands.append({"start": s, "w": w, "wdp": wdp, "ev": ev, "feasible": not V, "violations": V, "evals": ne + nf})
@@ -321,6 +420,17 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
         binding.append("risk_5y:p_loss_gt_30_max")
     if P.es5_min is not None and y5["expected_shortfall_5pct"] - float(P.es5_min) <= 0.01:
         binding.append("risk_5y:es5_min")
+    sc_block = None
+    if P.sc_cfg is not None:
+        for sid in P.sc_applied:
+            m = ev["scenarios"][sid]; th = P.sc_cfg["thresholds"][sid]
+            if th["es5_min"] is not None and m["expected_shortfall_5pct"] - float(th["es5_min"]) <= 0.01:
+                binding.append(f"scenario:{sid}:es5_min")
+            if th["p_loss_gt_30_max"] is not None and float(th["p_loss_gt_30_max"]) - m["P_loss_gt_30pct"] <= 0.01:
+                binding.append(f"scenario:{sid}:p_loss_gt_30_max")
+        scc = ev.get("scenario_concentration")
+        if scc and scc.get("applicable") and P.sc_cfg["scenario_concentration_max"] is not None and float(P.sc_cfg["scenario_concentration_max"]) - scc["value"] <= 0.01:
+            binding.append("scenario_concentration_max")
     # маргинальные кривые по бумаге (MPC-сетка §6): вес бумаги 0..cap шагом grid, остальные — пропорционально, dp фикс.
     curves = {}
     for i, t in enumerate(P.tick):
@@ -338,22 +448,34 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
         curves[t] = pts
     cur_ev = P.evaluate(P.cur, P.dp_cur, full=True); cur_V = P.violations(P.cur, P.dp_cur, cur_ev)
     proposed = {t: round(float(w[i]), 4) for i, t in enumerate(P.tick)}
+    if P.sc_cfg is not None:
+        pick = lambda m: {kk: m[kk] for kk in ("median_CAGR", "P_loss_gt_30pct", "P_loss_gt_50pct", "expected_shortfall_5pct")}  # noqa: E731
+        sc_block = {"rule": "для каждого adverse-сценария s с owner-вероятностью p_s ≥ p_min: ES5_5Y(портфель | s) ≥ es5_min и P(loss>30 %)_5Y(портфель | s) ≤ p_loss_gt_30_max; ScenarioConcentration ≤ max только при |A| ≥ 2 (вариант «а»); пороги — owner_judgment (DR-2026-09-27-01)",
+                    "config": {**P.sc_cfg, "probabilities": P.sc_probs}, "applied_scenarios": sorted(P.sc_applied), "skipped_below_p_min": sorted(P.sc_skipped),
+                    "at_optimum": {"by_scenario": {sid: pick(m) for sid, m in ev["scenarios"].items()}, "base": (pick(ev["base"]) if ev.get("base") else None),
+                                   "burdens_B": ev.get("scenario_burdens"), "scenario_concentration": ev.get("scenario_concentration")},
+                    "at_current": {"by_scenario": {sid: pick(m) for sid, m in cur_ev["scenarios"].items()}, "base": (pick(cur_ev["base"]) if cur_ev.get("base") else None),
+                                   "burdens_B": cur_ev.get("scenario_burdens"), "scenario_concentration": cur_ev.get("scenario_concentration")},
+                    "note": "метрики под сценарием — на scenario-specific путях с общими path_id (probability = 1 для сценария, §21 v1.1); хедж и fixed — плоская доходность"}
+    hedge_block = ({t: {**cfg, "current_weight": float(P.cur[P.tick.index(t)]), "proposed_weight": proposed[t],
+                        "return_assumption": "flat (1+r)^h, без калибровки и без отклика на сценарий — model_assumption"} for t, cfg in P.hedge.items()} if P.hedge else None)
     return {"model_version": VERSION, "stage": "A_continuous_target", "paths": P.n, "search_paths": P.n_search, "companies": P.tick, "regime": P.regime,
+            "scenario_constraints": sc_block, "hedge_instruments": hedge_block,
             "fixed_positions": {"weights": P.fixed, "total": P.fixed_total, "return_assumption": "flat (относительная стоимость 1.0): без калибровок; участвуют в лимитах, не в распределении доходности"},
-            "budget_optimizable_plus_dry_powder": P.budget, "objective": {"primary": "median_CAGR_5Y", "tolerance": P.tol, "secondary": ["ES5_5Y", "scenario_concentration (BASE only: n/a)", "turnover"]},
+            "budget_optimizable_plus_dry_powder": P.budget, "objective": {"primary": "median_CAGR_5Y", "tolerance": P.tol, "secondary": ["ES5_5Y", ("scenario_concentration (вариант «а», при |A| ≥ 2)" if P.sc_cfg is not None and P.BR is not None else "scenario_concentration (BASE only: n/a)"), "turnover"]},
             "feasible": best["feasible"], "start_used": best["start"], "violations_at_optimum": best["violations"],
             "minimum_relaxations": ({v["constraint"]: round(v["excess"], 4) for v in best["violations"]} if not best["feasible"] else {}),
             "proposed_weights": proposed, "dry_powder_weight": round(float(wdp), 4), "dry_powder_preferred_max": P.dp_pref, "dry_powder_above_preferred": bool(wdp > P.dp_pref + 1e-9),
             "per_name_caps": {t: float(c) for t, c in zip(P.tick, P.cap)}, "feasible_weight_bands": {t: [round(b[0], 4), round(b[1], 4)] for t, b in bands.items()},
             "portfolio_return_distribution": {h: {kk: vv for kk, vv in ev["horizons"][h].items() if kk in ("median_CAGR", "P_2x", "CAGR_quantiles")} for h in ("Y3", "Y5", "Y8")},
             "portfolio_downside": {h: {kk: vv for kk, vv in ev["horizons"][h].items() if kk in ("P_loss_gt_30pct", "P_loss_gt_50pct", "expected_shortfall_5pct")} for h in ("Y3", "Y5", "Y8")},
-            "turnover_from_current": round(ev["turnover"], 4), "scenario_concentration": None,
+            "turnover_from_current": round(ev["turnover"], 4), "scenario_concentration": ev.get("scenario_concentration"),
             "concentrations": con, "binding_constraints": sorted(set(binding)),
             "current_portfolio": {"weights": {t: float(P.cur[i]) for i, t in enumerate(P.tick)}, "dry_powder": P.dp_cur,
                                   "return_distribution_Y5": {kk: vv for kk, vv in cur_ev["horizons"]["Y5"].items() if kk not in ("CAGR_quantiles",)}, "violations": cur_V},
             "constraint_gaps_vs_current": [{**v, "note": "разрыв, не приказ продавать (§3.1)"} for v in cur_V],
             "marginal_curves": curves, "candidates": [{"start": c["start"], "feasible": c["feasible"], "median_CAGR_5Y": c["ev"]["horizons"]["Y5"]["median_CAGR"], "ES5": c["ev"]["horizons"]["Y5"]["expected_shortfall_5pct"], "evals": c["evals"]} for c in cands],
             "execution_projection_by_account": None, "ex_post_initial_hypothesis_comparison": None, "stability_test_ref": None,
-            "assumptions": ["позиции без калибровок фиксированы на текущих весах с плоской доходностью", "единственный сценарий BASE — Scenario Concentration не определена",
+            "assumptions": ["позиции без калибровок фиксированы на текущих весах с плоской доходностью", ("сценарные ограничения на scenario-specific путях; хедж — плоская доходность без отклика на сценарий" if P.sc_cfg is not None else "единственный сценарий BASE — Scenario Concentration не определена"),
                             "оборот = Σ|Δw|/2 по оптимизируемым бумагам и dry powder", "стадия B (проекция на счета, лоты, издержки) не выполняется"],
             "decision": "none"}

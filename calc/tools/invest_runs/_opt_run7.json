@@ -1,0 +1,93 @@
+{
+ "A": {
+  "run_id": "20260929T213442Z-portfolio_optimizer-c82639",
+  "weights": {
+   "ASML": 0.0,
+   "ASTS": 0.0,
+   "CRWV": 0.055,
+   "ETN": 0.0,
+   "HOOD": 0.0,
+   "LLY": 0.105,
+   "META": 0.0,
+   "MSFT": 0.0,
+   "NBIS": 0.215,
+   "NET": 0.02,
+   "NVDA": 0.14,
+   "PLTR": 0.02,
+   "RKLB": 0.08,
+   "SPCX": 0.01,
+   "SPOT": 0.135
+  },
+  "dp": 0.1963
+ },
+ "B": {
+  "run_id": "20260929T220021Z-portfolio_optimizer-0c1365",
+  "weights": {
+   "ASML": 0.0,
+   "ASTS": 0.0,
+   "CRWV": 0.055,
+   "ETN": 0.0,
+   "HOOD": 0.0,
+   "LLY": 0.105,
+   "META": 0.0,
+   "MSFT": 0.0,
+   "NBIS": 0.215,
+   "NET": 0.02,
+   "NVDA": 0.14,
+   "PLTR": 0.02,
+   "RKLB": 0.08,
+   "SPCX": 0.01,
+   "SPOT": 0.135
+  },
+  "dp": 0.1963,
+  "feasible": true
+ },
+ "C": {
+  "run_id": "20260929T222504Z-portfolio_optimizer-731cdc",
+  "weights": {
+   "ASML": 0.0,
+   "ASTS": 0.035,
+   "CRWV": 0.0,
+   "ETN": 0.005,
+   "GLD": 0.005,
+   "HOOD": 0.035,
+   "LLY": 0.09,
+   "META": 0.0,
+   "MSFT": 0.0,
+   "NBIS": 0.27,
+   "NET": 0.02,
+   "NVDA": 0.14,
+   "PLTR": 0.02,
+   "RKLB": 0.08,
+   "SPCX": 0.01,
+   "SPOT": 0.09
+  },
+  "dp": 0.1983,
+  "feasible": true
+ },
+ "mixture_C": "20260929T224856Z-portfolio_paths-90fe12",
+ "C2": {
+  "run_id": "20260929T225008Z-portfolio_optimizer-5a6da6",
+  "weights": {
+   "ASML": 0.0,
+   "ASTS": 0.0,
+   "CRWV": 0.105,
+   "ETN": 0.0,
+   "GLD": 0.0,
+   "HOOD": 0.0,
+   "LLY": 0.135,
+   "META": 0.02,
+   "MSFT": 0.0,
+   "NBIS": 0.185,
+   "NET": 0.0,
+   "NVDA": 0.11,
+   "PLTR": 0.02,
+   "RKLB": 0.08,
+   "SPCX": 0.01,
+   "SPOT": 0.135
+  },
+  "dp": 0.1983,
+  "feasible": true,
+  "mixture": "20260929T231342Z-portfolio_paths-4337b5"
+ }
+}

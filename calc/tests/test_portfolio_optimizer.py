@@ -68,3 +68,61 @@ def test_lexicographic_tolerance_and_watch_role(paths):
     assert P.better(a, b) and not P.better(b, a)                                            # в пределах 0.5 п.п. решает ES5
     c = {"horizons": {"Y5": {"median_CAGR": 0.110, "expected_shortfall_5pct": -0.40}}, "turnover": 0.1}
     assert P.better(c, a)                                                                   # вне допуска решает медиана
+
+
+def _shocked(src: str, dst: Path, factors: dict) -> str:
+    """Сценарный файл путей: те же path_id/meta, r5 умножен на factor по тикеру (синтетический шок сценария)."""
+    z = np.load(src, allow_pickle=False); d = {k: z[k] for k in z.files}
+    d["r5"] = (d["r5"].astype(np.float64) * float(factors.get("f", 1.0))).astype(d["r5"].dtype)
+    np.savez(dst, **d); return str(dst)
+
+
+def test_hedge_instrument_and_scenario_constraints_v110(paths, tmp_path):
+    # сценарные пути: S1 — сильный шок только по AAA (×0.15); S2 — лёгкий по всем (×0.9) ниже p_min → не применяется
+    s1 = {"AAA": _shocked(paths["AAA"], tmp_path / "s1-AAA.npz", {"f": 0.15}), "BBB": _shocked(paths["BBB"], tmp_path / "s1-BBB.npz", {"f": 1.0}), "CCC": _shocked(paths["CCC"], tmp_path / "s1-CCC.npz", {"f": 1.0})}
+    s2 = {t: _shocked(paths[t], tmp_path / f"s2-{t}.npz", {"f": 0.9}) for t in paths}
+    hedge = {"HGD": {"max_weight": 0.10, "return_annual": 0.0}}
+    base_inp = _inputs(paths, weights_current={"AAA": 0.10, "BBB": 0.40, "CCC": 0.30, "HGD": 0.02}, fixed_weights={"ZZZ": 0.03}, hedge_instruments=hedge,
+                       sectors={"AAA": "S1", "BBB": "S1", "CCC": "S2", "ZZZ": "S3", "HGD": "GOLD"})
+    free = po.run(base_inp, 0)
+    assert free["feasible"] and "HGD" in free["companies"] and free["proposed_weights"]["HGD"] <= 0.10 + 1e-9
+    assert free["hedge_instruments"]["HGD"]["current_weight"] == 0.02 and free["scenario_constraints"] is None
+    assert abs(sum(free["proposed_weights"].values()) + free["dry_powder_weight"] + 0.03 - 1.0) < 1e-6
+    # хедж с плоской доходностью 0 занимает место слабой BBB при заполненном dry powder (hard_max 15 %) — в пределах лимита владельца
+    assert free["proposed_weights"]["HGD"] <= 0.10 + 1e-9 and free["per_name_caps"]["HGD"] == 0.10
+    sc = {"p_min": 0.10, "es5_min": None, "p_loss_gt_30_max": None, "scenario_concentration_max": None,
+          "scenarios": [{"id": "S1", "probability": 0.15, "paths_files": s1}, {"id": "S2", "probability": 0.05, "paths_files": s2}], "base_paths_files": paths}
+    rep = po.run({**base_inp, "scenario_constraints": sc}, 0)                                   # только отчёт: пороги не заданы
+    assert rep["proposed_weights"] == free["proposed_weights"] and rep["scenario_constraints"]["applied_scenarios"] == ["S1"]
+    es5_free = rep["scenario_constraints"]["at_optimum"]["by_scenario"]["S1"]["expected_shortfall_5pct"]
+    sc = {**sc, "es5_min": es5_free + 0.05, "p_loss_gt_30_max": 0.25}                          # порог чуть строже картины свободного оптимума → связывает
+    con = po.run({**base_inp, "scenario_constraints": sc}, 0)
+    blk = con["scenario_constraints"]
+    assert blk["applied_scenarios"] == ["S1"] and blk["skipped_below_p_min"] == ["S2"]
+    assert con["feasible"] and con["violations_at_optimum"] == []
+    m1 = blk["at_optimum"]["by_scenario"]["S1"]
+    assert m1["expected_shortfall_5pct"] >= sc["es5_min"] - 1e-9 and m1["P_loss_gt_30pct"] <= 0.25 + 1e-9
+    assert blk["at_current"]["by_scenario"]["S1"]["expected_shortfall_5pct"] < m1["expected_shortfall_5pct"]        # текущие веса хуже под S1
+    assert con["proposed_weights"]["AAA"] < free["proposed_weights"]["AAA"]                                          # ограничение связывает: AAA (шок ×0.35) сокращается
+    assert any(v.startswith("scenario:S1") for v in con["binding_constraints"])
+    scc = blk["at_optimum"]["scenario_concentration"]
+    assert scc["status"] == "applicable" and set(blk["at_optimum"]["burdens_B"]) == {"S1", "S2"} and con["scenario_concentration"] == scc
+    # лимит концентрации (вариант «а», |A| = 2): без лимита бремя S1 доминирует (> 0.60), с лимитом 0.60 оптимизатор уходит из AAA
+    assert scc["value"] > 0.60
+    conc = po.run({**base_inp, "scenario_constraints": {**sc, "scenario_concentration_max": 0.60}}, 0)
+    assert conc["feasible"] and conc["scenario_concentration"]["value"] <= 0.60 + 1e-9 and conc["proposed_weights"]["AAA"] < con["proposed_weights"]["AAA"]
+    # невыполнимый лимит концентрации 0.30: единственный выход — AAA = 0 (|A| = 1, лимит не применяется), но тогда кэш выше hard_max →
+    # честный infeasible с названным минимальным ослаблением, без тихого ослабления
+    conc0 = po.run({**base_inp, "scenario_constraints": {**sc, "scenario_concentration_max": 0.30}}, 0)
+    assert not conc0["feasible"] and conc0["minimum_relaxations"]
+    c0 = conc0["scenario_concentration"]
+    assert "scenario_concentration_max" in conc0["minimum_relaxations"] or not c0["applicable"] or c0["value"] <= 0.30 + 1e-9
+    # невыполнимый порог — честный infeasible с минимальным ослаблением, без тихого ослабления
+    bad = po.run({**base_inp, "scenario_constraints": {**sc, "es5_min": 0.50}}, 0)
+    assert not bad["feasible"] and any(k.startswith("scenario:S1:es5_min") for k in bad["minimum_relaxations"])
+    # поимённые пороги (вариант V3) переопределяют общие
+    v3 = po.run({**base_inp, "scenario_constraints": {**sc, "thresholds": {"S1": {"es5_min": -0.90, "p_loss_gt_30_max": 0.9}}}}, 0)
+    assert v3["scenario_constraints"]["config"]["thresholds"]["S1"]["es5_min"] == -0.90 and v3["feasible"]
+    # хедж не может быть одновременно fixed
+    with pytest.raises(ValueError):
+        po.run({**base_inp, "fixed_weights": {"ZZZ": 0.03, "HGD": 0.02}}, 0)
