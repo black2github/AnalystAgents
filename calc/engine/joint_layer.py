@@ -33,7 +33,10 @@ P.effective_from = fixed_quarter 0 / t0 (ramp, длительность, decay, 
 BASE — прежние прогоны побитно те же); фазы после P сохраняют распределения effective_from; anchor phase:<P или позже> работает
 как раньше (старт P = 0 на всех путях), anchor phase:<историческая> заменяется на t0 (отсчёт от нового t0), anchor t0 — без
 изменений. Розыгрыши стартов по (seed, scenario_id, phase_id) не меняются. В копию добавляется conditional_run {confirmed_phase,
-historical_phases, rule}; вероятности сценариев и смесь не затрагиваются (§21 п. 6).
+historical_phases, rule}; вероятности сценариев и смесь не затрагиваются (§21 п. 6). Подтверждено IMMA 01.10.2026 с нормативным
+уточнением: «Historical phases preceding the confirmed phase are not replayed in the forward horizon. Their realized effect may enter
+only through the observed initial state at conditional-run t0; historical phase overrides must not be re-applied as forward shocks» —
+именно так: overrides исторической фазы не активны ни в одном квартале горизонта, они лишь начальное состояние ramp фазы P.
 """
 from __future__ import annotations
 

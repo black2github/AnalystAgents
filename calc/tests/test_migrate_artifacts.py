@@ -506,12 +506,12 @@ def _spcx_state() -> dict:
 def _spcx_ws(tmp_path, folder="spacex", state=None) -> Path:
     d = tmp_path / "portfolio" / folder
     d.mkdir(parents=True)
-    (d / "states.yaml").write_text(SPCX_STATES, encoding="utf-8")
-    (d / "kpis.yaml").write_text(SPCX_KPIS, encoding="utf-8")
+    (d / "states.yaml").write_bytes(SPCX_STATES.encode("utf-8"))        # LF явно: write_text на Windows даёт CRLF, а тест проверяет сохранение LF
+    (d / "kpis.yaml").write_bytes(SPCX_KPIS.encode("utf-8"))
     (d / "triggers.yaml").write_bytes(SPCX_TRIGGERS_RAW.replace("\n", "\r\n").encode("utf-8"))
     vec = "".join(f"  {k}: {2 if k == 'AI_COMPUTE_DEMAND' else 0}\n" for k in TAXONOMY_1_1)
     (d / "mpc_inputs.yaml").write_bytes((SPCX_MPC_HEAD + vec + SPCX_MPC_TAIL).replace("\n", "\r\n").encode("utf-8"))
-    (d / "state.json").write_text(json.dumps(state if state is not None else _spcx_state(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (d / "state.json").write_bytes((json.dumps(state if state is not None else _spcx_state(), ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
     (d / "thesis.md").write_text("# тезис — не мигрируется\n", encoding="utf-8")
     return d
 
