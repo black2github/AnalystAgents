@@ -122,3 +122,30 @@ def test_scenario_concentration_rule_a():
     assert c2["applicable"] and c2["value"] == pytest.approx(0.7) and c2["warning"] and c2["hard_limit_breach"] and c2["adverse_scenarios"] == ["CW", "TS"]
     c3 = pp.scenario_concentration({"A": 0.05, "B": 0.05, "C": 0.04})
     assert c3["value"] == pytest.approx(5 / 14) and not c3["warning"] and not c3["hard_limit_breach"]
+
+
+def test_build_mixture_data_equals_export(tmp_path):
+    """build_mixture_data (1.4.0): смесь в памяти побитно равна файлам mixture_export (та же постановка, что в
+    test_mixture_export_partition) — по всем массивам файла, включая b3/b5/b8; meta от BASE + mixture {ranges, probabilities};
+    невыровненные пути → ValueError."""
+    base_a = _run_store(_joint(cal_mature(), "AAA"), tmp_path); base_b = _run_store(_joint(cal_capital(), "BBB"), tmp_path)
+    down = {"scenario_id": "DOWN", "driver_overrides": {"AI_COMPUTE_DEMAND": {"mean_shift_sigma": -2.0}}}
+    mk = lambda c, rid: cm.run({"calibration": c, "equity_value_0": 30e9, "joint_layer_spec": SPEC, "global_seed": 101, "paths": 6000, "convergence_check": False, "robustness": False, "store_paths": True, "_runs_dir": str(tmp_path), "_run_id": rid, "scenario": down}, 0)  # noqa: E731
+    da = mk(_joint(cal_mature(), "AAA"), "t-AAA-DOWN"); db = mk(_joint(cal_capital(), "BBB"), "t-BBB-DOWN")
+    files = {"BASE": {"AAA": base_a["paths_file"], "BBB": base_b["paths_file"]}, "DOWN": {"AAA": da["paths_file"], "BBB": db["paths_file"]}}
+    scen = [{"id": "BASE", "paths_files": files["BASE"]}, {"id": "DOWN", "probability": 0.3, "paths_files": files["DOWN"]}]
+    ex = pp.run({"mode": "mixture_export", "scenarios": scen, "out_dir": str(tmp_path / "mix"), "tag": "t"}, 0)
+    for loader in (pp.load_paths, pp._load_all):
+        loaded = {sid: {t: loader(f) for t, f in fs.items()} for sid, fs in files.items()}
+        mem = pp.build_mixture_data(loaded, {"DOWN": 0.3}, ["BASE", "DOWN"], 6000)
+        for t in ("AAA", "BBB"):
+            z = np.load(ex["paths_files"][t])
+            keys = [k for k in mem[t] if k != "meta"]
+            assert set(keys) <= set(z.files) and all(np.array_equal(mem[t][k], z[k]) and mem[t][k].dtype == z[k].dtype for k in keys)
+            assert mem[t]["meta"]["mixture"] == {"ranges": {"BASE": [0, 4200], "DOWN": [4200, 6000]}, "probabilities": {"DOWN": 0.3, "BASE": 0.7}}
+            assert {k: v for k, v in mem[t]["meta"].items() if k != "mixture"} == loaded["BASE"][t]["meta"]
+    assert set(pp._load_all(files["BASE"]["AAA"])) >= {"b3", "b5", "b8"}                                     # экспорт сохраняет все поля файла
+    bad = {sid: {t: pp.load_paths(f) for t, f in fs.items()} for sid, fs in files.items()}
+    bad["DOWN"]["AAA"] = {**bad["DOWN"]["AAA"], "path_id": bad["DOWN"]["AAA"]["path_id"][::-1].copy()}
+    with pytest.raises(ValueError, match="не выровнены"):
+        pp.build_mixture_data(bad, {"DOWN": 0.3}, ["DOWN"], 6000)

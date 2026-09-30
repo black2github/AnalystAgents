@@ -143,3 +143,137 @@ def test_resimulation_families(paths):
     crit = out["portfolio_stability_classification"]["criteria"]["driver_knockout_feasible_replacement"]; assert crit["pass"] in (True, False) and crit["value"] is not None
     assert out["runs_by_family"].get("milestone") is None                                                                    # milestone_companies пуст — вех нет
     assert all(fam in out["families"] for fam in ("terminal", "milestone", "driver_knockout")) and out["partial"] is True
+
+
+# ------------------------------------------------------------------------------------ §3.3 вероятности сценариев (1.3.0)
+import json  # noqa: E402
+
+import pytest  # noqa: E402
+
+
+def _scaled(src: str, dst: str, f: float) -> str:
+    """Синтетический сценарий: копия BASE-файла с масштабом f на r3/r5/r8 (все горизонты); path_id, meta и прочие поля — как у BASE."""
+    z = np.load(src, allow_pickle=False)
+    arrays = {k: ((z[k].astype(np.float64) * f).astype(z[k].dtype) if k in ("r3", "r5", "r8") else z[k]) for k in z.files if k != "meta"}
+    np.savez_compressed(dst, meta=z["meta"], **arrays)
+    return dst
+
+
+@pytest.fixture(scope="module")
+def scen(paths, tmp_path_factory):
+    """BASE — файлы фикстуры оптимизатора; S1 (×0.70) и S2 (×0.85) — неблагоприятные сценарии; центральная смесь — mixture_export."""
+    tmp = tmp_path_factory.mktemp("scen")
+    files = {"S1": {t: _scaled(f, str(tmp / f"S1-{t}.npz"), 0.70) for t, f in paths.items()}, "S2": {t: _scaled(f, str(tmp / f"S2-{t}.npz"), 0.85) for t, f in paths.items()}}
+    probs = {"S1": 0.10, "S2": 0.15}
+    ex = pp.run({"mode": "mixture_export", "scenarios": [{"id": "BASE", "paths_files": paths}] + [{"id": s, "probability": p, "paths_files": files[s]} for s, p in probs.items()],
+                 "out_dir": str(tmp / "mix"), "tag": "central"}, 0)
+    return {"base": paths, "files": files, "probs": probs, "central_files": ex["paths_files"]}
+
+
+def _scen_inputs(scen, probs=None, families=("scenario",), workers=1, **st):
+    probs = scen["probs"] if probs is None else probs
+    inp = _inputs(scen["central_files"])
+    inp["stability"] = {**inp["stability"], "workers": workers, "families": list(families) if families else None,
+                        "scenario_probabilities": {"scenarios": [{"id": s, "probability": p, "paths_files": scen["files"][s]} for s, p in probs.items()],
+                                                   "base_paths_files": scen["base"]}, **st}
+    return inp
+
+
+def test_scenario_perturbation_rules():
+    """§3.3 без оптимизатора: метки и порядок, ×0.75/×1.25 с renormalize (BASE держит центральное значение), Σ = 1; up10 — max B_s,
+    при равенстве — первый по order, доноры пропорционально; масса доноров < 0.10 → invalid без усечения; все B_s = 0 → нет up10."""
+    central = {"S1": 0.10, "S2": 0.15, "BASE": 0.75}
+    perts, top, st = ps._scenario_perturbations(central, ["S1", "S2"], {"S1": 0.03, "S2": 0.02})
+    assert [p[0] for p in perts] == ["p:S1:x0.75", "p:S1:x1.25", "p:S2:x0.75", "p:S2:x1.25", "p:up10:S1"] and top == "S1" and st == "built"
+    for _, pr, ok, _ in perts:
+        assert ok and abs(sum(pr.values()) - 1.0) < 1e-12 and set(pr) == set(central)
+    assert perts[0][1]["S1"] == pytest.approx(0.075 / 0.975) and perts[0][1]["BASE"] == pytest.approx(0.75 / 0.975) and perts[3][1]["S2"] == pytest.approx(0.1875 / 1.0375)
+    up = perts[-1][1]
+    assert up["S1"] == pytest.approx(0.20) and up["S2"] / 0.15 == pytest.approx(up["BASE"] / 0.75) and up["S2"] == pytest.approx(0.15 - 0.10 * 0.15 / 0.90)
+    _, top2, _ = ps._scenario_perturbations(central, ["S2", "S1"], {"S1": 0.02, "S2": 0.02}); assert top2 == "S2"          # равенство → первый по order
+    perts3, top3, st3 = ps._scenario_perturbations(central, ["S1", "S2"], {"S1": 0.0, "S2": 0.0})
+    assert top3 is None and st3 == "no_adverse_scenario" and len(perts3) == 4
+    perts4, top4, st4 = ps._scenario_perturbations({"S1": 0.95, "BASE": 0.05}, ["S1"], {"S1": 0.01})
+    assert st4 == "invalid" and perts4[-1] == ("p:up10:S1", None, False, "donor_mass_below_0.10")
+    sc = ps._with_probabilities({"scenarios": [{"id": "S1", "probability": 0.1, "p_min": 0.05}, {"id": "BASE"}], "by_id": {"S2": {"probability": 0.15}}}, {"S1": 0.2, "S2": 0.3, "BASE": 0.5})
+    assert sc == {"scenarios": [{"id": "S1", "probability": 0.2, "p_min": 0.05}, {"id": "BASE"}], "by_id": {"S2": {"probability": 0.3}}}
+
+
+def test_scenario_sensitivity_run(scen):
+    """Семейство scenario (частичный перепрогон): 2 возмущения на сценарий + up10; смесь §6 и ScenarioConcentration на центральных
+    весах; оптимизатор на смеси; прогоны входят в популяцию §5–6; результат не зависит от числа процессов; конфигурация и хэш."""
+    out = ps.run(_scen_inputs(scen), 11)
+    ss = out["scenario_sensitivity"]
+    assert out["partial"] is True and out["families"] == ["scenario"] and out["runs_by_family"] == {"scenario": 5} and out["runs_total"] == 5
+    assert ss["status"] == "evaluated" and ss["central_probabilities"] == pytest.approx({"S1": 0.10, "S2": 0.15, "BASE": 0.75})
+    b = ss["burdens_at_central"]; assert b["S1"] > 0 and b["S2"] > 0 and ss["max_burden_scenario"] == max(b, key=b.get) and ss["up10_status"] == "built"
+    labels = [p["label"] for p in ss["perturbations"]]
+    assert labels == ["p:S1:x0.75", "p:S1:x1.25", "p:S2:x0.75", "p:S2:x1.25", f"p:up10:{ss['max_burden_scenario']}"]
+    for p in ss["perturbations"]:
+        assert p["valid"] and abs(sum(p["probabilities"].values()) - 1.0) < 1e-12 and p["optimizer"] is not None and p["mixture_Y5"] is not None
+        assert set(p["optimizer"]) == {"weights", "dry_powder", "feasible", "median_CAGR_5Y", "ES5"}
+        assert p["max_abs_weight_shift_vs_central"] == pytest.approx(max(abs(p["optimizer"]["weights"][t] - out["central_weights"][t]) for t in ("AAA", "BBB", "CCC")))
+        c = p["scenario_concentration"]; B = {s: p["probabilities"][s] * b[s] / ss["central_probabilities"][s] for s in ("S1", "S2")}
+        assert c["applicable"] and c["value"] == pytest.approx(max(B.values()) / sum(B.values()))
+    m = {p["label"]: p["mixture_Y5"] for p in ss["perturbations"]}
+    assert m["p:S1:x1.25"]["expected_shortfall_5pct"] < m["p:S1:x0.75"]["expected_shortfall_5pct"] and m["p:S1:x1.25"]["median_CAGR"] <= m["p:S1:x0.75"]["median_CAGR"]
+    feas = [p for p in ss["perturbations"] if p["optimizer"]["feasible"]]
+    assert ss["max_abs_weight_shift_vs_central"] == (max(p["max_abs_weight_shift_vs_central"] for p in feas) if feas else None)
+    # популяция §5–6 — сценарные прогоны
+    assert out["feasibility_rate"] == round(len(feas) / 5, 4) and out["valid_runs"] == len(feas)
+    if feas:
+        assert all(out["inclusion_frequency_by_asset"][t] is not None for t in ("AAA", "BBB", "CCC"))
+        assert out["inclusion_frequency_by_asset"]["AAA"] == round(float(np.mean([p["optimizer"]["weights"]["AAA"] >= 0.01 for p in feas])), 4)
+    assert all(0.0 < v <= 1.0 and v * 5 == pytest.approx(round(v * 5)) for v in out["binding_constraint_frequency"].values())      # доли от 5 сценарных прогонов
+    assert out["perturbation_config"]["scenario_probabilities"]["base_paths_files"] == scen["base"]
+    # workers=2 → тот же результат
+    par = ps.run(_scen_inputs(scen, workers=2), 11)
+    assert par["workers"] == 2 and json.dumps(par["scenario_sensitivity"], sort_keys=True) == json.dumps(ss, sort_keys=True)
+    assert par["inclusion_frequency_by_asset"] == out["inclusion_frequency_by_asset"] and par["weight_p10_p50_p90"] == out["weight_p10_p50_p90"] and par["turnover_distribution"] == out["turnover_distribution"]
+    # хэш отражает вероятности
+    other = ps.run(_scen_inputs(scen, probs={"S1": 0.12, "S2": 0.15}, families=("loo",)), 11)
+    assert other["assumptions_hash"] != out["assumptions_hash"] and other["scenario_sensitivity"]["status"] == "not_run" and other["scenario_sensitivity"]["perturbations"] == []
+
+
+def test_scenario_sensitivity_invalid_pending_and_absent(scen):
+    """up10 при массе доноров < 0.10 — invalid без усечения и без прогона; pending-вероятность — ни одного прогона; без входа —
+    прежний not_applicable; неверный order → ValueError."""
+    one = {"S1": 0.95}
+    inp = _scen_inputs(scen, probs=one); inp["paths_files"] = scen["base"]
+    out = ps.run(inp, 11)
+    ss = out["scenario_sensitivity"]; up = ss["perturbations"][-1]
+    assert [p["label"] for p in ss["perturbations"]] == ["p:S1:x0.75", "p:S1:x1.25", "p:up10:S1"] and ss["up10_status"] == "invalid"
+    assert up == {"label": "p:up10:S1", "probabilities": None, "valid": False, "reason": "donor_mass_below_0.10", "mixture_Y5": None, "scenario_concentration": None,
+                  "optimizer": None, "max_abs_weight_shift_vs_central": None}
+    assert out["runs_by_family"] == {"scenario": 2} and ss["perturbations"][1]["probabilities"]["S1"] == pytest.approx(0.95 * 1.25 / (0.95 * 1.25 + 0.05))
+    pend = ps.run(_scen_inputs(scen, probs={"S1": None, "S2": 0.15}), 11)
+    assert pend["scenario_sensitivity"]["status"] == "not_testable_pending_owner_probability" and pend["scenario_sensitivity"]["pending"] == ["S1"]
+    assert pend["runs_total"] == 0 and pend["scenario_sensitivity"]["perturbations"] == [] and pend["runs_by_family"] == {}
+    absent = _inputs(scen["central_files"]); absent["stability"] = {**absent["stability"], "families": ["scenario"], "workers": 1}
+    a = ps.run(absent, 11)
+    assert a["scenario_sensitivity"] == {"status": "not_applicable", "reason": "единственный сценарий BASE — вероятности сценариев не определены"} and a["runs_total"] == 0
+    bad = _scen_inputs(scen); bad["stability"]["scenario_probabilities"]["order"] = ["S1"]
+    with pytest.raises(ValueError, match="order"):
+        ps.run(bad, 11)
+
+
+def test_scenario_central_run_from_mixture_in_memory(scen):
+    """При scenario_probabilities центральный прогон (и все семейства) идут на центральной смеси build_mixture_data из первых max_paths
+    путей BASE и сценариев, а не на усечении файла-смеси (его первые max_paths путей — только BASE-отрезок): результат не зависит от
+    того, поданы в paths_files файлы-смеси или BASE-файлы; он отличается от прогона на одних BASE-путях."""
+    via_mix = ps.run(_scen_inputs(scen), 11)
+    inp = _scen_inputs(scen); inp["paths_files"] = scen["base"]
+    via_base = ps.run(inp, 11)
+    assert via_mix["paths_used"] == via_base["paths_used"] == 3000
+    assert via_mix["central"] == via_base["central"] and via_mix["central_weights"] == via_base["central_weights"]
+    assert json.dumps(via_mix["scenario_sensitivity"], sort_keys=True) == json.dumps(via_base["scenario_sensitivity"], sort_keys=True)
+    assert via_mix["assumptions_hash"] == via_base["assumptions_hash"]
+    # центральная смесь содержит сценарные пути: ES5 центра хуже, чем на одних BASE-путях (сценарии S1/S2 неблагоприятные)
+    plain = _inputs(scen["base"]); plain["stability"] = {**plain["stability"], "families": ["scenario"], "workers": 1}
+    base_only = ps.run(plain, 11)
+    assert via_mix["central"]["ES5"] < base_only["central"]["ES5"]
+    # центр = оптимизатор на смеси build_mixture_data с центральными вероятностями
+    loaded = {sid: ps._copy({t: pp.load_paths(f) for t, f in fs.items()}, 3000) for sid, fs in [("BASE", scen["base"])] + list(scen["files"].items())}
+    mix = pp.build_mixture_data(loaded, scen["probs"], ["S1", "S2"], 3000)
+    direct = ps._opt({**_scen_inputs(scen), "max_paths": 3000, "search_paths": 3000}, ps._copy(mix, 3000), None, None)
+    assert direct["weights"] == via_mix["central_weights"] and direct["ES5"] == via_mix["central"]["ES5"]

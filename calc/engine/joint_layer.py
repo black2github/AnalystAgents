@@ -1,4 +1,4 @@
-"""Joint Simulation Layer v1.0 (Joint_Simulation_Layer_Specification_v1.0, 21.09.2026) — срез 2 company_mc.
+"""Joint Simulation Layer v1.0 (Joint_Simulation_Layer_Specification_v1.0, 21.09.2026) — срез 2 company_mc; модуль 1.4.0.
 
 Root-факторы: стационарные AR(1) N(0,1), квартальный шаг: F_t = phi·F_{t-1} + sqrt(1−phi²)·u_t, u ~ MVN(0, R_root).
 Драйверы: Raw_d,t = Σ_k λ_dk F_k,t + σ_idio,d ε_d,t → стандартизация к unit variance (теоретическая, стационарная).
@@ -25,15 +25,26 @@ Root-факторы: стационарные AR(1) N(0,1), квартальны
 - корреляции корней по фазам: целевая матрица = базовая с переопределёнными парами; PSD обязательна (без авторемонта — иначе
   ValueError); на ramp/decay — выпуклая интерполяция матриц (квантованная по кварталам: конечный набор матриц, для каждой —
   своё разложение Холецкого); одни и те же iid-инновации по (path, factor, quarter) для BASE и сценариев (общие случайные числа).
+Условный прогон подтверждённой фазы (1.4.0 — Scenario_Engine_Specification v1.1 §21): conditional_scenario(scenario, P) → копия
+сценария для условного прогона и отчёт преобразования. t0 условного прогона = квартал подтверждения P = квартал 0 горизонта;
+P.effective_from = fixed_quarter 0 / t0 (ramp, длительность, decay, overrides и корреляции P — без изменений); фазы до P —
+исторические: остаются в списке, но схлопываются в квартал 0 (fixed_quarter 0 / t0, ramp 0, until_next_phase, decay 0), их
+целевое состояние — «состояние до горизонта»: фаза, стартующая в квартале 0, ramp'ится от него (у безусловных сценариев это
+BASE — прежние прогоны побитно те же); фазы после P сохраняют распределения effective_from; anchor phase:<P или позже> работает
+как раньше (старт P = 0 на всех путях), anchor phase:<историческая> заменяется на t0 (отсчёт от нового t0), anchor t0 — без
+изменений. Розыгрыши стартов по (seed, scenario_id, phase_id) не меняются. В копию добавляется conditional_run {confirmed_phase,
+historical_phases, rule}; вероятности сценариев и смесь не затрагиваются (§21 п. 6).
 """
 from __future__ import annotations
 
+import copy
 import math
 import zlib
 
 import numpy as np
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
+CONDITIONAL_RULE = "Scenario_Engine_Specification v1.1 §21"
 
 
 def root_correlation(spec: dict):
@@ -99,6 +110,42 @@ def phase_starts(scenario: dict, n: int, quarters: int, seed: int) -> dict:
     return starts
 
 
+def conditional_scenario(scenario: dict, confirmed_phase_id: str) -> tuple[dict, dict]:
+    """Сценарий условного прогона подтверждённой фазы P (§21, трактовка интегратора 30.09.2026) — чистая функция: исходный dict не
+    меняется. Возвращает (копия сценария, отчёт преобразования).
+    - t0 условного прогона = квартал, содержащий P.confirmed_at; в движке это квартал 0 горизонта (дата не нужна);
+    - P: effective_from = {fixed_quarter, quarter 0, anchor t0}; ramp/duration/decay, driver_overrides, корреляции — как были;
+    - фазы до P (исторические) не удаляются (иначе ramp P пошёл бы от BASE, а не от достигнутого состояния), а схлопываются в
+      квартал 0: fixed_quarter 0 / t0, ramp 0, until_next_phase, decay 0; scenario_schedule берёт целевое состояние последней
+      исторической фазы как состояние «до горизонта» — P ramp'ится от него, как если бы история уже произошла;
+    - фазы после P: распределение effective_from сохраняется; anchor phase:<P или более поздняя> работает сам (старт P = 0 на всех
+      путях); anchor phase:<историческая> → t0 (распределение отсчитывается от нового t0); anchor t0 — без изменений. Старт такой
+      фазы, равный старту P (0), допустим — монотонность стартов нестрогая;
+    - scenario_id не меняется; добавляется conditional_run {confirmed_phase, historical_phases, rule}."""
+    phases = scenario.get("phases") or []
+    ids = [ph["phase_id"] for ph in phases]
+    if confirmed_phase_id not in ids:
+        raise ValueError(f"условный прогон: фаза {confirmed_phase_id!r} не найдена среди фаз сценария {scenario.get('scenario_id') or scenario.get('id')}: {ids}")
+    k = ids.index(confirmed_phase_id)
+    historical = ids[:k]
+    fixed0 = {"kind": "fixed_quarter", "quarter": 0, "anchor": "t0"}
+    sc = copy.deepcopy(scenario)
+    for ph in sc["phases"][:k]:
+        ph.update({"effective_from": dict(fixed0), "ramp_quarters": 0, "duration_quarters": "until_next_phase", "decay_quarters": 0})
+    sc["phases"][k]["effective_from"] = dict(fixed0)
+    re_anchored = []
+    for ph in sc["phases"][k + 1:]:
+        ef = ph.get("effective_from") or {}
+        anchor = str(ef.get("anchor", "t0"))
+        if anchor.startswith("phase:") and anchor.split(":", 1)[1] in historical:
+            ph["effective_from"] = {**ef, "anchor": "t0"}
+            re_anchored.append({"phase_id": ph["phase_id"], "anchor_before": anchor, "anchor_after": "t0"})
+    sc["conditional_run"] = {"confirmed_phase": confirmed_phase_id, "historical_phases": historical, "rule": CONDITIONAL_RULE}
+    report = {"confirmed_phase": confirmed_phase_id, "historical_phases": historical, "state_at_t0": historical[-1] if historical else "BASE",
+              "materialized_effective_from": {confirmed_phase_id: dict(fixed0)}, "re_anchored_phases": re_anchored, "rule": CONDITIONAL_RULE}
+    return sc, report
+
+
 def scenario_schedule(spec: dict, scenario: dict, drivers: list[str], n: int, quarters: int, seed: int) -> dict:
     """Расписание сценария на путь и квартал: mu[d] (n,T), logvol[d] (n,T), corr_idx (n,T) → corr_mats (список матриц),
     starts {phase_id: (n,)}, phase_share {phase_id: доля путь-кварталов в активном состоянии (ramp+плато+decay)}."""
@@ -111,6 +158,9 @@ def scenario_schedule(spec: dict, scenario: dict, drivers: list[str], n: int, qu
     corr_idx = np.zeros((n, quarters), dtype=np.int32)
     starts = phase_starts(scenario, n, quarters, seed)
     share = {}
+    # состояние «до горизонта» (квартал −1): BASE; в условном прогоне (§21) — целевое состояние последней исторической фазы
+    historical = set((scenario.get("conditional_run") or {}).get("historical_phases") or [])
+    pre = {"mu": {d: 0.0 for d in drivers}, "lv": {d: 0.0 for d in drivers}, "rho": {d: np.nan for d in drivers}, "corr": 0}
 
     def mat_index(key, builder):
         if key not in keys:
@@ -154,8 +204,8 @@ def scenario_schedule(spec: dict, scenario: dict, drivers: list[str], n: int, qu
         for d in drivers:
             o = ov.get(d) or {}
             tm = float(o.get("mean_shift_sigma", 0.0)); tl = math.log(float(o.get("volatility_multiplier", 1.0)))
-            for S, target in ((mu[d], tm), (lv[d], tl)):
-                prev = np.where(s_i > 0, S[rows, prev_q], 0.0)[:, None]          # состояние в квартале перед стартом фазы
+            for S, target, pk in ((mu[d], tm, "mu"), (lv[d], tl, "lv")):
+                prev = np.where(s_i > 0, S[rows, prev_q], pre[pk][d])[:, None]   # состояние в квартале перед стартом фазы
                 new = S.copy()
                 new[in_ramp] = ((1.0 - lam) * prev + lam * target)[in_ramp]
                 new[in_plateau] = target
@@ -164,7 +214,7 @@ def scenario_schedule(spec: dict, scenario: dict, drivers: list[str], n: int, qu
                 S[:] = new
             # persistence_override: оба конца заданы → линейно; один null → до середины ramp старое, после — новое; decay/после → null
             R_ = rho[d]; tp_raw = o.get("persistence_override"); tp = np.nan if tp_raw is None else float(tp_raw)
-            prev_r = np.where(s_i > 0, R_[rows, prev_q], np.nan)[:, None]
+            prev_r = np.where(s_i > 0, R_[rows, prev_q], pre["rho"][d])[:, None]
             both = np.broadcast_to(~np.isnan(prev_r) & (not np.isnan(tp)), lam.shape)
             lin = (1.0 - lam) * np.where(np.isnan(prev_r), 0.0, prev_r) + lam * (0.0 if np.isnan(tp) else tp)
             ramp_val = np.where(both, lin, np.where(lam <= 0.5 + 1e-12, np.broadcast_to(prev_r, lam.shape), tp))
@@ -174,7 +224,7 @@ def scenario_schedule(spec: dict, scenario: dict, drivers: list[str], n: int, qu
             new[in_decay | after] = np.nan
             R_[:] = new
         # корреляции: ramp — смесь матрицы квартала s−1 (по пути) и целевой; плато — целевая; decay — смесь целевой и базовой
-        prev_idx = np.where(s_i > 0, corr_idx[rows, prev_q], 0)
+        prev_idx = np.where(s_i > 0, corr_idx[rows, prev_q], pre["corr"])
         if ramp > 0:
             step = np.rint(t - s + 1.0).astype(int)
             for j in range(1, ramp + 1):
@@ -199,6 +249,13 @@ def scenario_schedule(spec: dict, scenario: dict, drivers: list[str], n: int, qu
                     idx = 0 if a <= 0 else mat_index(("decay", k, j), lambda a=a, Tk=Tk: a * Tk + (1.0 - a) * R0)
                     corr_idx[m_step] = idx
         corr_idx[after] = 0
+        if pid in historical:
+            # историческая фаза условного прогона: её целевое состояние достигнуто до t0 и становится состоянием «до горизонта»
+            for d in drivers:
+                o = ov.get(d) or {}; po = o.get("persistence_override")
+                pre["mu"][d] = float(o.get("mean_shift_sigma", 0.0)); pre["lv"][d] = math.log(float(o.get("volatility_multiplier", 1.0)))
+                pre["rho"][d] = np.nan if po is None else float(po)
+            pre["corr"] = tk_idx
     return {"mu": mu, "logvol": lv, "rho": rho, "corr_idx": corr_idx, "corr_mats": mats, "starts": starts, "phase_share": share, "n_corr_states": len(mats)}
 
 

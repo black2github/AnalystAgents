@@ -1,7 +1,7 @@
-"""Обобщённый условный Монте-Карло компании v2: архетипы mature_positive_margin и capital_intensive_transition, сегменты и
+"""Обобщённый условный Монте-Карло компании v2 (модуль 2.5.0): архетипы mature_positive_margin и capital_intensive_transition, сегменты и
 форма маржи из калибровки, латентные факторы вместо общего ранга, кусочная оценка с fallback и valuation_basis, gap-метрики
-RV↔MC, robustness v1.1 (срез 1); Joint Simulation Layer + driver_parameter_mapping, knockout / adverse_driver_stress (срез 2).
-См. calc/docs/company_mc_v2_design.md.
+RV↔MC, robustness v1.1 (срез 1); Joint Simulation Layer + driver_parameter_mapping, knockout / adverse_driver_stress (срез 2);
+условный прогон подтверждённой фазы (2.5.0, Scenario_Engine_Specification v1.1 §21). См. calc/docs/company_mc_v2_design.md.
 
 inputs: {"calibration": <dict v2 | SPCX v1.0 (авто-адаптер)>, "equity_value_0": float, "paths": int|None, "chunk": 50000,
          "convergence_check": bool, "robustness": bool, "robustness_paths": int,
@@ -9,6 +9,13 @@ inputs: {"calibration": <dict v2 | SPCX v1.0 (авто-адаптер)>, "equity
          "global_seed": int (общий для всех компаний в совместном прогоне; по умолчанию = seed калибровки),
          "scenario": {"id", "driver_overrides": {DRIVER: {"mean_shift_sigma", "volatility_multiplier"}}} (BASE, если нет),
          "knockout": [driver_id], "adverse_driver_stress": [driver_id],
+         "conditional_run": {"confirmed_phase": phase_id} (2.5.0, §21; только с фазовым inputs.scenario и совместным слоем, иначе
+         ValueError) — сценарий заменяется на joint_layer.conditional_scenario(...) до построения общих шоков: P с квартала 0,
+         исторические фазы схлопнуты в состояние до горизонта, поздние фазы с принятыми распределениями timing; выходы:
+         joint_simulation.scenario_mode = conditional_confirmed_phase, блок conditional_run {confirmed_phase, historical_phases,
+         state_at_t0, materialized_effective_from, rule}, scenario_phases — по преобразованному сценарию; meta файла путей и сводка
+         joint_simulation — scenario (id) + conditional_run: P. Вероятности сценариев и смесь не затрагиваются (§21 п. 6);
+         безусловные прогоны побитно прежние,
          "store_paths": bool — записать относительные стоимости по путям в <_runs_dir>/<_run_id>-paths.npz (срез 4; для
          portfolio_paths / MPC / Optimizer); "_run_id", "_runs_dir" подставляет сайдкар}
 Интерпретация движка (срез 2): эффект драйвера на параметр — сглаженный шок (lag + half-life, в сигмах); для роста —
@@ -28,7 +35,7 @@ from scipy.stats import beta as _beta, norm as _norm
 
 from engine import joint_layer, milestone_mc
 
-VERSION = "2.4.2"
+VERSION = "2.5.0"
 SPEC_VERSION = "MC_Calibration_Archetypes_v1.0+Rules_v1.1+Joint_Simulation_Layer_v1.0+Conditional_MC_v1.1.3"
 QUARTERS = 32
 ARCHETYPES = ("mature_positive_margin", "capital_intensive_transition", "pre_service_or_milestone_driven")
@@ -530,6 +537,16 @@ def _prepare(inputs: dict, seed: int):
         joint = {"spec": spec, "drivers": drivers, "global_seed": int(inputs.get("global_seed", seed_used)), "scenario": inputs.get("scenario"), "adverse": adverse}
         if inputs.get("knockout"):
             knockout_applied = _apply_knockout(cal, list(inputs["knockout"]))
+    cr = inputs.get("conditional_run")
+    if cr:
+        # 2.5.0: условный прогон подтверждённой фазы (§21) — преобразование сценария до построения общих шоков
+        if not joint_layer.is_phased(inputs.get("scenario")):
+            raise ValueError("conditional_run: нужен фазовый inputs.scenario (scenario.phases) — условный прогон определён только для фазового сценария")
+        if joint is None:
+            raise ValueError("conditional_run: сценарий применяется только в совместном слое (driver_parameter_mapping + joint_layer_spec) — без него условный прогон не определён")
+        if not cr.get("confirmed_phase"):
+            raise ValueError("conditional_run: не задана confirmed_phase")
+        joint["scenario"], joint["conditional_run"] = joint_layer.conditional_scenario(inputs["scenario"], str(cr["confirmed_phase"]))
     return cal, E0, paths, seed_used, chunk, quantiles, P0, fixed, joint, knockout_applied
 
 
@@ -544,6 +561,8 @@ def simulate_paths(inputs: dict, seed: int) -> dict:
     meta = {"ticker": cal.get("ticker"), "model_version": VERSION, "global_seed": (joint or {}).get("global_seed", seed_used), "seed": seed_used, "chunk": chunk, "paths": paths,
             "joint": bool(joint), "scenario": _scenario_id(inputs.get("scenario")), "equity_value_0": E0, "archetype": cal["archetype"],
             "perturbation": {k: v for k, v in P.items() if v not in (0.0, 1.0)}, "knockout_applied": knockout_applied, "path_id_rule": "path_id = chunk_index*chunk + i"}
+    if (joint or {}).get("conditional_run"):
+        meta["conditional_run"] = joint["conditional_run"]["confirmed_phase"]
     return {"paths": arrays, "meta": meta, "summary": {"median_CAGR_5Y": r["return"]["median_CAGR_5Y"], "P_loss_gt_30pct_5Y": r["downside"]["P_loss_gt_30pct_5Y"], "ES5": r["downside"]["expected_shortfall_5pct_5Y"]}}
 
 
@@ -561,6 +580,8 @@ def run(inputs: dict, seed: int) -> dict:
         meta = {"ticker": cal.get("ticker"), "model_version": VERSION, "global_seed": (joint or {}).get("global_seed", seed_used), "seed": seed_used,
                 "chunk": chunk, "paths": paths, "joint": bool(joint), "scenario": _scenario_id(inputs.get("scenario")), "equity_value_0": E0,
                 "archetype": cal["archetype"], "path_id_rule": "path_id = chunk_index*chunk + i"}
+        if (joint or {}).get("conditional_run"):
+            meta["conditional_run"] = joint["conditional_run"]["confirmed_phase"]   # файлы условного прогона не путаются с нормативными
         paths_file = os.path.join(rd, f"{rid}-paths.npz")
         np.savez_compressed(paths_file, meta=np.array(json.dumps(meta, ensure_ascii=False)), **arrays)
     out = {"model_version": VERSION, "paths_file": paths_file, "spec_version": SPEC_VERSION, "ticker": cal.get("ticker"), "archetype": cal["archetype"],
@@ -573,9 +594,13 @@ def run(inputs: dict, seed: int) -> dict:
                                                         "scenario_phases": (joint_layer.scenario_diagnostics(joint["spec"], joint["scenario"], joint["drivers"], min(chunk, paths), QUARTERS,
                                                                                                              int(np.random.SeedSequence([joint["global_seed"], 0]).generate_state(1)[0]))
                                                                             if joint_layer.is_phased(joint.get("scenario")) else None),
-                                                        "scenario_mode": ("phased" if joint_layer.is_phased(joint.get("scenario")) else ("constant_legacy_non_normative" if (joint.get("scenario") or {}).get("driver_overrides") else "BASE")),
+                                                        "scenario_mode": "conditional_confirmed_phase" if joint.get("conditional_run") else ("phased" if joint_layer.is_phased(joint.get("scenario")) else ("constant_legacy_non_normative" if (joint.get("scenario") or {}).get("driver_overrides") else "BASE")),
                                                         "knockout_applied": knockout_applied, "path_id_rule": "path_id = chunk_index*chunk + i; шоки по SeedSequence([global_seed, chunk_index])"},
            "base": base}
+    if (joint or {}).get("conditional_run"):
+        rep = joint["conditional_run"]
+        out["joint_simulation"]["conditional_run"] = rep["confirmed_phase"]
+        out["conditional_run"] = {k: rep[k] for k in ("confirmed_phase", "historical_phases", "state_at_t0", "materialized_effective_from", "rule")}
     if inputs.get("convergence_check", True):
         conv = {}
         for pth in sorted({min(100_000, paths), min(250_000, paths), paths}):

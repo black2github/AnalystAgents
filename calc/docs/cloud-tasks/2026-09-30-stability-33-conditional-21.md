@@ -183,3 +183,91 @@ IMMA) живут в другом репозитории (workspace агента)
   фаз), список новых входов/выходов, как проверено. Русский язык. В конце этого файла — раздел «## Отчёт исполнителя» с теми же
   пунктами и открытыми вопросами интегратору, если трактовка норматива вызывала сомнения.
 - Никаких изменений вне `calc/engine/{portfolio_paths,portfolio_stability,joint_layer,company_mc}.py`, `calc/tests/*` и этого файла.
+
+## Отчёт исполнителя
+
+Исполнитель: облачная сессия Claude Code, 29.09.2026. Базовая проверка до изменений: `pip install -r calc/requirements.txt`
+(+ `pytest`, его нет в requirements — поставлен отдельно, в requirements не добавлен), `python -m pytest calc/tests -q` —
+108 passed, 16 skipped (в облаке нет workspace агента: все 16 пропусков — тесты валидаторов/миграций, требующие workspace;
+цифра 123/2 из постановки относится к локальной среде). После изменений: **115 passed, 16 skipped** (+7 новых тестов).
+
+### Часть 1 — Stability Test §3.3 (portfolio_stability 1.3.0, portfolio_paths 1.4.0)
+
+- `portfolio_paths.build_mixture_data(loaded, probs, order, n)` — смесь в памяти: отрезки `mixture_ranges` в порядке BASE, затем
+  сценарии по `order`; конкатенируются все массивы данных (кроме meta), поэтому на данных `load_paths` получаются r3/r5/r8/maxdd5/
+  path_id, а на полных данных файла — ещё и b3/b5/b8; meta от BASE + `mixture {ranges, probabilities}`; проверка выравнивания
+  сценариев с BASE (global_seed, chunk, path_id[:n]) перенесена сюда. `_export_mixture` собирает файлы через неё: массивы побитно
+  прежние (тест `test_build_mixture_data_equals_export` + сравнение отпечатков до/после); в meta файла меняется только строка
+  `exporter` (версия модуля).
+- `portfolio_stability`: вход `stability.scenario_probabilities`, семейство `scenario` в `FAMILIES`, операция задачи
+  `("mixture", probs)`; рабочий процесс загружает BASE и сценарии один раз в `_worker_init`; выход `scenario_sensitivity` по схеме
+  постановки + служебные поля `up10_status` (`built` | `invalid` | `no_adverse_scenario`), `es5_Y5_by_scenario_at_central_weights`,
+  `pending` (при pending). Прогоны семейства входят в популяцию §5–6 (`runs`, `feasibility_rate`, `inclusion_frequency_by_asset`,
+  `weight_p10_p50_p90`, `binding_constraint_frequency`, `turnover_distribution`). `assumptions_hash` включает cfg (в т. ч.
+  вероятности) и meta файлов сценариев; `perturbation_config` содержит `scenario_probabilities`.
+- Принятые трактовки:
+  1. ×0.75/×1.25: BASE держит центральное значение `1 − Σp`, возмущённый сценарий умножается, затем все вероятности делятся на
+     сумму (если бы BASE пересчитывался остатком после умножения, renormalize был бы пустой операцией, а ×1.25 мог бы дать
+     отрицательный BASE).
+  2. B_s — ES5 (Y5) портфеля на центральных весах по scenario-specific путям (первые max_paths), равновесно, как `optimizer._metrics`;
+     стоимость пути как в оптимизаторе: `Σ w·r + w_dp·(1+r_dp)^h + fixed` (фиксированные позиции плоско). `gap_s = max(0, ES5_BASE −
+     ES5_s)` не зависит от вероятностей, поэтому ScenarioConcentration возмущения = `scenario_concentration({s: p'_s·gap_s})`.
+  3. Смесь §6 возмущения (`mixture_Y5`) — полная взвешенная эмпирическая смесь (вес p_s/N на исход), а не разбиение; оптимизатор —
+     на смеси-разбиении `build_mixture_data`, как в нормативных файлах-смесях.
+  4. `max_abs_weight_shift_vs_central` возмущения — max по бумагам |w − w_central| (без dry powder); итоговый — максимум по
+     возмущениям с допустимым решением оптимизатора (null, если таких нет).
+  5. Невалидное up10 (масса доноров < 0.10, допуск 1e-12) — строка с `valid: false`, задача не создаётся, в популяцию и
+     `feasibility_rate` не входит (это недопустимость возмущения, а не решения).
+  6. Вход задан, но семейство не запрошено (`families` без `scenario`) — статус `not_run` (по аналогии с driver knockout); B_s
+     считаются и показываются. `partial`: без входа §3.3 полным считается прогон семейств v1.2.1 (прежнее поведение); `families`
+     в выходе при `families: null` теперь содержит и `scenario`.
+- Исправлена существующая недетерминированность (обнаружена при проверке, не связана с новыми входами): `_turnover` суммировал
+  по `set` бумаг, порядок которого зависит от PYTHONHASHSEED процесса → последний ULP `turnover_from_central` различался между
+  процессами, и существующий тест `test_stability_run_structure_and_classification` падал на исходном коде примерно в половине
+  запусков (4 из 8, сравнение LOO при workers=1 и workers=2). Теперь порядок суммирования фиксирован (sorted); при
+  фиксированном PYTHONHASHSEED выходы до/после совпадают побитно.
+
+### Часть 2 — §21 условный прогон (joint_layer 1.4.0, company_mc 2.5.0)
+
+- `joint_layer.conditional_scenario(scenario, P)` — чистая функция по трактовке постановки: исторические фазы схлопнуты в квартал 0
+  (fixed 0 / t0, ramp 0, until_next_phase, decay 0), P = fixed_quarter 0 / t0, поздние фазы с прежними распределениями;
+  anchor `phase:<историческая>` → t0 (в отчёте `re_anchored_phases`); в копию — `conditional_run`. Отчёт: `confirmed_phase`,
+  `historical_phases`, `state_at_t0`, `materialized_effective_from`, `re_anchored_phases`, `rule`.
+- **Потребовалось изменение `scenario_schedule`** (не описано в постановке, но без него трактовка не работает): схлопнутая в
+  квартал 0 историческая фаза с `until_next_phase` имеет пустую область активности (старт 0 = старт P), а ramp фазы со стартом 0
+  шёл от BASE (`np.where(s_i > 0, …, 0.0)`). Добавлено «состояние до горизонта» (квартал −1): BASE по умолчанию; для фаз из
+  `scenario.conditional_run.historical_phases` после их обработки — их целевое состояние (сдвиг, log-волатильность,
+  persistence_override, матрица корреляций). Фаза со стартом 0 ramp'ится от него. Без `conditional_run` состояние = BASE —
+  безусловные прогоны побитно прежние (проверено отпечатками путей, расписаний и шоков).
+- `company_mc.run`: вход `conditional_run {confirmed_phase}`; ValueError без фазового `scenario` и без совместного слоя (сценарий
+  без mapping/joint_layer_spec не применяется вовсе — условный прогон был бы тихо пустым). Выходы: `joint_simulation.scenario_mode
+  = conditional_confirmed_phase`, `joint_simulation.conditional_run = P`, блок `outputs.conditional_run`, `scenario_phases` по
+  преобразованному сценарию; meta файла путей (`store_paths`) и `simulate_paths` — `scenario` (id) + `conditional_run: P`.
+  Замечание: `scenario_mode` и `scenario_phases` в движке лежат внутри `outputs.joint_simulation` (так было и раньше), блок
+  `conditional_run` — на верхнем уровне, как в постановке.
+
+### Проверки
+
+- Новые тесты: `test_conditional_scenario_transform_and_timing` (joint_layer: а, ramp от исторического состояния, re-anchor,
+  ошибки), `test_conditional_run_confirmed_phase` (company_mc: б, в, г), `test_build_mixture_data_equals_export` (а части 1),
+  `test_scenario_perturbation_rules`, `test_scenario_sensitivity_run`, `test_scenario_sensitivity_invalid_pending_and_absent`
+  (б–ж части 1). Существующие тесты не менялись.
+- Побитность: отпечатки (sha256) 132 выходов — пути company_mc BASE/фазовый/legacy по трём компаниям (r3/r5/r8/maxdd5/path_id,
+  meta и сводки), расписания и шоки фазового сценария, массивы mixture_export, все поля выхода Stability — совпадают с исходным
+  кодом при нормализации строк версий (и фиксированном PYTHONHASHSEED — см. `_turnover`).
+
+### Открытые вопросы интегратору
+
+1. `portfolio_optimizer` в репозитории — 1.0.2, `scenario_constraints` (1.1.0) и хелпера `_shocked` в `test_portfolio_optimizer.py`
+   нет ни в одной ветке. Реализована сквозная передача: если во входах теста есть `scenario_constraints`, в возмущённый прогон
+   уходит копия с заменёнными `probability` (элементы вида `{"id": sid, "probability": …}` или `{sid: {"probability": …}}`);
+   оптимизатор 1.0.2 этот ключ игнорирует. После слияния 1.1.0 стоит проверить форму `scenario_constraints` и добавить тест.
+2. ~~Центральный прогон на файлах-смесях~~ — **решено (правка владельца)**: при заданных вероятностях центральный прогон и все
+   семейства идут на центральной смеси `build_mixture_data` из первых max_paths путей `base_paths_files` и файлов сценариев
+   (`_base_data`), а не на усечении файла-смеси: его первые max_paths путей — только BASE-отрезок разбиения. `paths_files` задают
+   компании и число путей; при pending — прежнее усечение. Тест `test_scenario_central_run_from_mixture_in_memory`: центр не
+   зависит от того, поданы файлы-смеси или BASE-файлы, и совпадает с оптимизатором на смеси. Сторож пересимуляции
+   (`resimulate`) при этом сверяется с BASE-путями сценарного входа. Итог тестов: 115 passed, 16 skipped.
+3. §21 п. 4 для поздних фаз с anchor `t0`: распределение сохраняется и отсчитывается от нового t0 (квартал подтверждения P).
+   Это смещает их календарно на «возраст» P к моменту подтверждения; альтернатива (вычесть наблюдённый квартал старта P из
+   распределения) требует даты, которой в движке нет. Трактовка постановки реализована как есть.

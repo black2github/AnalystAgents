@@ -175,3 +175,47 @@ def test_scenario_phase_correlation_overrides():
     import pytest
     with pytest.raises(ValueError):
         jl.phase_correlation(SPEC, _ph("X", quarter=0, corr=[{"root_a": a, "root_b": b, "correlation": 0.99}, {"root_a": a, "root_b": roots[2], "correlation": 0.99}, {"root_a": b, "root_b": roots[2], "correlation": -0.99}]))
+
+
+def _three_phases(d="AI_COMPUTE_DEMAND", corr_a=None):
+    a, b = list(SPEC["root_factors"]["factors"])[:2]
+    return {"scenario_id": "CND", "phases": [
+        _ph("A", tri=(1, 3, 6), ramp=2, dur="until_next_phase", ov={d: (-1.0, 1.6)}, corr=[{"root_a": a, "root_b": b, "correlation": 0.8}] if corr_a else None),
+        _ph("P", tri=(2, 4, 8), anchor="phase:A", ramp=3, dur=6, decay=2, ov={d: (-0.4, 1.1)}),
+        _ph("C", tri=(1, 2, 3), anchor="phase:P", ramp=1, ov={d: (0.3, 1.0)})]}
+
+
+def test_conditional_scenario_transform_and_timing():
+    """§21 (joint_layer 1.4.0): P — вторая из трёх фаз → первая схлопнута в квартал 0 (ramp 0, until_next_phase), P = fixed_quarter 0,
+    третья сохранила распределение и anchor phase:P; старт P = 0 на всех путях, смещения третьей — те же розыгрыши, что у исходного
+    anchor phase:P; P ramp'ится от целевого состояния исторической фазы (сдвиг, волатильность, корреляции); исходник не меняется."""
+    import copy
+    n, T, d = 3000, 32, "AI_COMPUTE_DEMAND"
+    sc = _three_phases(corr_a=True); orig = copy.deepcopy(sc)
+    cs, rep = jl.conditional_scenario(sc, "P")
+    assert sc == orig                                                                                       # чистая функция
+    A, P, C = cs["phases"]
+    assert A["effective_from"] == {"kind": "fixed_quarter", "quarter": 0, "anchor": "t0"} and A["ramp_quarters"] == 0 and A["decay_quarters"] == 0 and A["duration_quarters"] == "until_next_phase"
+    assert P["effective_from"] == {"kind": "fixed_quarter", "quarter": 0, "anchor": "t0"} and (P["ramp_quarters"], P["duration_quarters"], P["decay_quarters"]) == (3, 6, 2)
+    assert P["driver_overrides"] == orig["phases"][1]["driver_overrides"] and C["effective_from"] == orig["phases"][2]["effective_from"]
+    assert cs["scenario_id"] == "CND" and cs["conditional_run"] == {"confirmed_phase": "P", "historical_phases": ["A"], "rule": "Scenario_Engine_Specification v1.1 §21"}
+    assert rep["state_at_t0"] == "A" and rep["historical_phases"] == ["A"] and rep["materialized_effective_from"] == {"P": {"kind": "fixed_quarter", "quarter": 0, "anchor": "t0"}} and rep["re_anchored_phases"] == []
+    st0 = jl.phase_starts(orig, n, T, 7); st1 = jl.phase_starts(cs, n, T, 7)
+    assert (st1["A"] == 0).all() and (st1["P"] == 0).all() and (st1["C"] >= 0).all()
+    assert (st0["C"] < T).all() and np.array_equal(st1["C"], st0["C"] - st0["P"])                          # те же смещения (розыгрыш по seed, scenario_id, phase_id)
+    sch = jl.scenario_schedule(SPEC, cs, [d], n, T, 7)
+    mu, vol = sch["mu"][d], np.exp(sch["logvol"][d])
+    late = st1["C"] >= 3                                                                                    # пути, где C не прервала ramp P
+    assert np.allclose(mu[:, 0], -1.0 + (-0.4 + 1.0) / 3) and late.any() and np.allclose(mu[late, 2], -0.4)  # ramp P от состояния A (−1.0σ), не от BASE
+    assert np.allclose(vol[:, 0], 1.6 * (1.1 / 1.6) ** (1 / 3))
+    mats = sch["corr_mats"]; TA = jl.phase_correlation(SPEC, A); TP = jl.phase_correlation(SPEC, P)
+    assert np.allclose(mats[sch["corr_idx"][0, 0]], (2 / 3) * TA + (1 / 3) * TP)                              # корреляции — тоже от состояния A
+    # P — первая фаза: исторических нет, состояние до горизонта — BASE
+    cs0, rep0 = jl.conditional_scenario(sc, "A")
+    assert rep0["historical_phases"] == [] and rep0["state_at_t0"] == "BASE" and (jl.phase_starts(cs0, n, T, 7)["A"] == 0).all()
+    # поздняя фаза с anchor на историческую → t0 (распределение сохранено); anchor t0 — без изменений
+    sc4 = _three_phases(); sc4["phases"].append(_ph("D", tri=(10, 12, 14), anchor="phase:A", ov={d: (0.0, 1.0)}))
+    cs4, rep4 = jl.conditional_scenario(sc4, "P")
+    assert cs4["phases"][3]["effective_from"] == {**sc4["phases"][3]["effective_from"], "anchor": "t0"} and rep4["re_anchored_phases"] == [{"phase_id": "D", "anchor_before": "phase:A", "anchor_after": "t0"}]
+    with pytest.raises(ValueError, match="не найдена"):
+        jl.conditional_scenario(sc, "NOPE")
