@@ -117,9 +117,15 @@ def test_hedge_instrument_and_scenario_constraints_v110(paths, tmp_path):
     assert not conc0["feasible"] and conc0["minimum_relaxations"]
     c0 = conc0["scenario_concentration"]
     assert "scenario_concentration_max" in conc0["minimum_relaxations"] or not c0["applicable"] or c0["value"] <= 0.30 + 1e-9
-    # невыполнимый порог — честный infeasible с минимальным ослаблением, без тихого ослабления
-    bad = po.run({**base_inp, "scenario_constraints": {**sc, "es5_min": 0.50}}, 0)
+    # невыполнимый порог: (а) без base_paths_files гейт консервативный (все p_s ≥ p_min) → честный infeasible с минимальным ослаблением;
+    # (б) с base_paths_files (contract v1.1, S_cond требует B_s > 0) оптимизатор уходит из AAA в ноль — S1 перестаёт быть adverse
+    # для портфеля и гейт снимается (gated_at_optimum пуст); тихого ослабления порога нет
+    bad = po.run({**base_inp, "scenario_constraints": {**sc, "es5_min": 0.50, "base_paths_files": None}}, 0)
     assert not bad["feasible"] and any(k.startswith("scenario:S1:es5_min") for k in bad["minimum_relaxations"])
+    esc = po.run({**base_inp, "scenario_constraints": {**sc, "es5_min": 0.50}}, 0)
+    assert esc["scenario_constraints"]["gated_at_optimum"] == [] and esc["proposed_weights"]["AAA"] == 0.0          # гейт S1 снят
+    assert not any(k.startswith("scenario:") for k in esc["minimum_relaxations"])                                     # остаток — потолок кэша (геометрия фикстуры)
+    assert esc["scenario_constraints"]["contract_version"] == "1.1"
     # поимённые пороги (вариант V3) переопределяют общие
     v3 = po.run({**base_inp, "scenario_constraints": {**sc, "thresholds": {"S1": {"es5_min": -0.90, "p_loss_gt_30_max": 0.9}}}}, 0)
     assert v3["scenario_constraints"]["config"]["thresholds"]["S1"]["es5_min"] == -0.90 and v3["feasible"]

@@ -17,7 +17,8 @@ inputs: {"paths_files": {tk: .npz}, "weights_current": {tk: w} (все пози�
          "mpc_range": {"min_weight": 0, "max_weight": 0.2, "grid_step": 0.01, "local_refinement_step": 0.005},
          "objective_tolerance_pp": 0.5, "starts": ["current","equal","empty"] (+ "given": start_weights/start_dry_powder),
          "search_paths": 100000, "max_paths": null,
-         1.1.0 (DR-2026-09-27-01, решение владельца 30.09.2026; заказ слоя действий v1.2 п. 2.3):
+         1.1.0 (DR-2026-09-27-01, решение владельца 30.09.2026; заказ слоя действий v1.2 п. 2.3), 1.1.1 — сверка с Optimizer contract v1.1
+         (партия 10: S_cond требует B_s > 0; выход scenario_constraints.gated_at_optimum, contract_version):
          "scenario_constraints": {"p_min": 0.10, "es5_min": -0.40, "p_loss_gt_30_max": 0.25, "scenario_concentration_max": 0.60,
                                   "thresholds": {sid: {"es5_min", "p_loss_gt_30_max"}} (необязательно, поимённо — вариант V3),
                                   "scenarios": [{"id", "probability", "paths_files": {tk: .npz}}] (adverse-сценарии, пути на общих path_id),
@@ -44,7 +45,7 @@ import numpy as np
 
 from engine import portfolio_paths
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 HORIZONS = (("Y3", "r3", 3), ("Y5", "r5", 5), ("Y8", "r8", 8))
 
 
@@ -261,10 +262,14 @@ class _Problem:
             V.append({"constraint": "risk_5y:p_loss_gt_50_max", "value": y5["P_loss_gt_50pct"], "bound": float(self.p50_max), "excess": y5["P_loss_gt_50pct"] - float(self.p50_max)})
         if self.es5_min is not None and y5["expected_shortfall_5pct"] < float(self.es5_min) - 1e-9:
             V.append({"constraint": "risk_5y:es5_min", "value": y5["expected_shortfall_5pct"], "bound": float(self.es5_min), "excess": float(self.es5_min) - y5["expected_shortfall_5pct"]})
-        # сценарно-условные (1.1.0): только сценарии с p_s ≥ p_min; концентрация — только при |A| ≥ 2 (вариант «а»)
+        # сценарно-условные (1.1.0): только сценарии с p_s ≥ p_min; концентрация — только при |A| ≥ 2 (вариант «а»);
+        # 1.1.1 (Optimizer contract v1.1, партия 10): S_cond дополнительно требует B_s > 0 — сценарий, не ухудшающий ES5 портфеля
+        # против BASE, гейтом не является (проверяется на каждой точке; без base_paths_files — гейт для всех p_s ≥ p_min, консервативно)
         if self.sc_cfg is not None:
             for sid in self.sc_applied:
                 m = ev["scenarios"][sid]; th = self.sc_cfg["thresholds"][sid]
+                if ev.get("base") is not None and m["expected_shortfall_5pct"] >= ev["base"]["expected_shortfall_5pct"] - 1e-12:
+                    continue                                                    # B_s = 0 → не adverse для этого портфеля
                 if th["es5_min"] is not None and m["expected_shortfall_5pct"] < float(th["es5_min"]) - 1e-9:
                     V.append({"constraint": f"scenario:{sid}:es5_min", "value": m["expected_shortfall_5pct"], "bound": float(th["es5_min"]), "excess": float(th["es5_min"]) - m["expected_shortfall_5pct"]})
                 if th["p_loss_gt_30_max"] is not None and m["P_loss_gt_30pct"] > float(th["p_loss_gt_30_max"]) + 1e-9:
@@ -424,6 +429,8 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
     if P.sc_cfg is not None:
         for sid in P.sc_applied:
             m = ev["scenarios"][sid]; th = P.sc_cfg["thresholds"][sid]
+            if ev.get("base") is not None and m["expected_shortfall_5pct"] >= ev["base"]["expected_shortfall_5pct"] - 1e-12:
+                continue
             if th["es5_min"] is not None and m["expected_shortfall_5pct"] - float(th["es5_min"]) <= 0.01:
                 binding.append(f"scenario:{sid}:es5_min")
             if th["p_loss_gt_30_max"] is not None and float(th["p_loss_gt_30_max"]) - m["P_loss_gt_30pct"] <= 0.01:
@@ -450,7 +457,8 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
     proposed = {t: round(float(w[i]), 4) for i, t in enumerate(P.tick)}
     if P.sc_cfg is not None:
         pick = lambda m: {kk: m[kk] for kk in ("median_CAGR", "P_loss_gt_30pct", "P_loss_gt_50pct", "expected_shortfall_5pct")}  # noqa: E731
-        sc_block = {"rule": "для каждого adverse-сценария s с owner-вероятностью p_s ≥ p_min: ES5_5Y(портфель | s) ≥ es5_min и P(loss>30 %)_5Y(портфель | s) ≤ p_loss_gt_30_max; ScenarioConcentration ≤ max только при |A| ≥ 2 (вариант «а»); пороги — owner_judgment (DR-2026-09-27-01)",
+        sc_block = {"rule": "Optimizer contract v1.1 (партия 10): S_cond = {s ≠ BASE | p_s ≥ p_min, B_s > 0}; для s ∈ S_cond: ES5_5Y(портфель | s) ≥ es5_min и P(loss>30 %)_5Y(портфель | s) ≤ p_loss_gt_30_max; ScenarioConcentration ≤ max только при ≥ 2 положительных бременах (в бремя входят все non-BASE с известной вероятностью, в т. ч. p_s < p_min); пороги — owner_judgment (DR-2026-09-27-01)", "contract_version": "1.1",
+                    "gated_at_optimum": [sid for sid in sorted(P.sc_applied) if ev.get("base") is None or ev["scenarios"][sid]["expected_shortfall_5pct"] < ev["base"]["expected_shortfall_5pct"] - 1e-12],
                     "config": {**P.sc_cfg, "probabilities": P.sc_probs}, "applied_scenarios": sorted(P.sc_applied), "skipped_below_p_min": sorted(P.sc_skipped),
                     "at_optimum": {"by_scenario": {sid: pick(m) for sid, m in ev["scenarios"].items()}, "base": (pick(ev["base"]) if ev.get("base") else None),
                                    "burdens_B": ev.get("scenario_burdens"), "scenario_concentration": ev.get("scenario_concentration")},

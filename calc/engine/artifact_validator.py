@@ -37,7 +37,7 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.8.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
+VERSION = "1.8.1"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
 #                    измерение в квартале применения — мода сроков вехи, как в движке), пример-фикстуры v1.0.2
 SCHEMA_VERSION = "1.0.5"            # Company Artifact Schema (v1.0.5: kpi_observations[].verification_run_ids — история прогонов дозора)
 CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
@@ -679,7 +679,7 @@ def _scenario_semantics(scen: list, ws: Path, per: dict) -> list:
     entry/exit_criteria, event_id есть в каталоге (events ∪ external), fact_id — в fact_catalog сценариев набора, иначе
     system_condition; SCN-015 — includes ∩ excludes = ∅; modeled-событие, не упомянутое ни в scope (includes/excludes/base_when) ни в
     outcome_mapping → warning scenario_event_coverage_gap. Файл состояния portfolio/_scenarios/state.json (если есть) — по
-    Scenario_State_Schema_v1.0.yaml (info/error)."""
+    Scenario_State_Schema_v<schema_version>.yaml (1.0 | 1.1 — партия 10; info/error)."""
     with_scope = [sc for sc in scen if isinstance(sc.get("scope"), dict)]
     if not with_scope:
         return []
@@ -757,10 +757,15 @@ def _scenario_semantics(scen: list, ws: Path, per: dict) -> list:
     if gap:
         F.append(_f("SCN-015", "catalog/events", f"scenario_event_coverage_gap: {gap}", "warning"))
     # состояние сценариев (runtime) — по схеме, если файл есть
-    sp = ws / "portfolio" / "_scenarios" / "state.json"; ss = ws / "methodology" / "Scenario_State_Schema_v1.0.yaml"
-    if sp.exists() and ss.exists():
-        errs = _schema_errors(_load(ss), _load(sp))
-        F.append(_f("SCN-016", "portfolio/_scenarios/state.json", "scenario_state по схеме" if not errs else f"scenario_state не по схеме: {errs[0]['message'][:160]}", "info" if not errs else "error"))
+    sp = ws / "portfolio" / "_scenarios" / "state.json"
+    if sp.exists():
+        st = _load(sp); sv = str(st.get("schema_version") or "1.0")               # 1.8.1: схема по schema_version файла (1.0 | 1.1, партия 10)
+        ss = ws / "methodology" / f"Scenario_State_Schema_v{sv}.yaml"
+        if not ss.exists():
+            F.append(_f("SCN-016", "portfolio/_scenarios/state.json", f"scenario_state: нет схемы Scenario_State_Schema_v{sv}.yaml в methodology", "error"))
+        else:
+            errs = _schema_errors(_load(ss), st)
+            F.append(_f("SCN-016", "portfolio/_scenarios/state.json", f"scenario_state по схеме v{sv}" if not errs else f"scenario_state не по схеме v{sv}: {errs[0]['message'][:160]}", "info" if not errs else "error"))
     if not any(f["rule"] in ("SCN-012", "SCN-013", "SCN-014", "SCN-015") and f["severity"] != "info" for f in F):
         F.insert(0, _f("SCN-012", "scope", f"семантический слой v1.1: SCN-012…015 pass (каталог {cat_name}: {len(events)} событий, {len(external)} внешних)", "info"))
     return F
