@@ -282,3 +282,42 @@ def test_scenario_semantics_v11_scn012_015():
     if old:
         o3 = av.run({"mode": "scenario", "workspace": str(ws), "scenarios": old, "joint_layer_spec_path": spec, "taxonomy_version": "1.2.1", "replay_paths": 500}, 0)
         assert o3["pass"] and not any(f["rule"] in ("SCN-012", "SCN-013", "SCN-014", "SCN-015") for f in o3["set_findings"])
+
+
+@needs_ws
+def test_strategy_mode_act_rules_on_workspace(tmp_path):
+    """Режим strategy (1.9.0): три стратегии партии 10 (часть B) проходят ACT-001…020 на workspace; дельты воспроизводятся по §5 от базы C2;
+    порча величины действия ловится ACT-013, чужой тикер — ACT-005, отсутствие cap — ACT-014."""
+    import shutil
+    import yaml
+    files = [f"portfolio/_scenarios/strategies/{s}_strategy_v1.0.yaml" for s in ("TAIWAN_SEIZURE", "TAIWAN_QUARANTINE", "CHIP_COLD_WAR")]
+    if not all((WS / f).exists() for f in files):
+        pytest.skip("стратегии части B не интегрированы")
+    base = "20260929T225008Z-portfolio_optimizer-5a6da6"
+    out = av.run({"mode": "strategy", "workspace": str(WS), "strategy_files": files, "base_optimum_run_id": base}, 0)
+    assert out["pass"] and out["mode"] == "strategy" and len(out["strategies"]) == 3
+    rules = {f["rule"] for s in out["strategies"] for f in s["findings"]}
+    assert {"ACT-001", "ACT-002", "ACT-003", "ACT-004", "ACT-013", "ACT-015", "ACT-016", "ACT-020"} <= rules
+    assert all(f["severity"] == "info" for s in out["strategies"] for f in s["findings"] if f["rule"] == "ACT-013")
+    # негатив: копия стратегии с испорченной величиной, чужим тикером и без cap
+    st = yaml.safe_load((WS / files[0]).read_text(encoding="utf-8"))
+    ph = st["phase_strategies"][1]
+    ph["actions"][0]["magnitude"]["amount"] = -0.03                 # вместо −0.06 → ACT-013
+    ph["actions"][1]["target"] = {"kind": "ticker", "id": "ZZZZ"}  # → ACT-005
+    ph["turnover_cap_nav"] = None                                   # → ACT-014
+    bad_dir = tmp_path / "portfolio" / "_scenarios" / "strategies"; bad_dir.mkdir(parents=True)
+    (bad_dir / "TAIWAN_SEIZURE_strategy_v1.0.yaml").write_text(yaml.safe_dump(st, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    # остальное workspace — ссылками на реальные файлы (копируем только нужное)
+    for sub in ("methodology", "portfolio/_runs"):
+        (tmp_path / sub).mkdir(parents=True, exist_ok=True)
+    shutil.copy2(WS / "methodology" / "Scenario_Strategy_Schema_v1.0.yaml", tmp_path / "methodology" / "Scenario_Strategy_Schema_v1.0.yaml")
+    shutil.copy2(WS / "methodology" / "Portfolio_Optimizer_Scenario_Conditional_Policy_v1.0.yaml", tmp_path / "methodology" / "Portfolio_Optimizer_Scenario_Conditional_Policy_v1.0.yaml")
+    shutil.copy2(WS / "portfolio" / "_portfolio.yaml", tmp_path / "portfolio" / "_portfolio.yaml")
+    shutil.copy2(WS / "portfolio" / "_scenarios" / "TAIWAN_SEIZURE_v1.1.1.yaml", tmp_path / "portfolio" / "_scenarios" / "TAIWAN_SEIZURE_v1.1.1.yaml")
+    shutil.copy2(WS / "portfolio" / "_scenarios" / "owner_hedge_instrument_constraints_v1.0.yaml", tmp_path / "portfolio" / "_scenarios" / "owner_hedge_instrument_constraints_v1.0.yaml")
+    for rid in [base, ph["conditional_optimum_ref"]] + [p["conditional_optimum_ref"] for p in st["phase_strategies"] if p.get("conditional_optimum_ref")]:
+        shutil.copy2(WS / "portfolio" / "_runs" / f"{rid}.json", tmp_path / "portfolio" / "_runs" / f"{rid}.json")
+    bad = av.run({"mode": "strategy", "workspace": str(tmp_path), "strategy_files": [files[0]], "base_optimum_run_id": base}, 0)
+    assert not bad["pass"]
+    errs = {f["rule"] for f in bad["strategies"][0]["findings"] if f["severity"] == "error"}
+    assert {"ACT-013", "ACT-005", "ACT-014"} <= errs

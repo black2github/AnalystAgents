@@ -31,13 +31,14 @@ from __future__ import annotations
 
 import datetime
 import json
+import math
 import os
 import re
 from pathlib import Path
 
 import yaml
 
-VERSION = "1.8.1"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
+VERSION = "1.9.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
 #                    измерение в квартале применения — мода сроков вехи, как в движке), пример-фикстуры v1.0.2
 SCHEMA_VERSION = "1.0.5"            # Company Artifact Schema (v1.0.5: kpi_observations[].verification_run_ids — история прогонов дозора)
 CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
@@ -771,6 +772,212 @@ def _scenario_semantics(scen: list, ws: Path, per: dict) -> list:
     return F
 
 
+# ------------------------------------------------------------------------------------------- стратегии слоя действий (ACT-001…020)
+STRATEGY_SCHEMA_VERSION = "1.0"
+TRADE_ACTIONS = ("reduce", "add", "hedge", "cash_target")
+
+
+def _round_toward_zero(x: float, step: float) -> float:
+    return math.copysign(math.floor(abs(x) / step + 1e-9) * step, x)
+
+
+def _validate_strategy(inputs: dict, ws: Path, rules: dict) -> dict:
+    """Режим strategy (1.9.0, партия 10 часть B): ACT-001…020 по Scenario_Action_Validation_Rules v1.0 для файлов стратегий
+    `inputs.strategy_files` (пути относительно workspace или абсолютные). Машинно проверяется всё, что проверяемо по файлам хоста:
+    схема (001), сценарий в _scenarios с тем же scenario_id/set (002), фазы (003), strategy_ref калибровки → этот файл (004), цели
+    действий — тикеры реестра портфеля, инструменты allowlist владельца, CASH (005), GLD ≤ лимита и допустимость весов условного
+    оптимума по прогону (006), происхождение чисел (007 — схема), статусы active/executed без одобрения (008), conditional_optimum_ref →
+    запись _runs portfolio_optimizer (009), candidate без торговых действий и политика владельца (010), set_state ≠ ambiguous при active
+    (011), staleness: max_abs_target_diff > порога без review_required (012), воспроизведение дельт по §5 от базы
+    `inputs.base_optimum_run_id` (веса бумаг прогона + фиксированные GLD/UFO из реестра, кэш — остаток) с deadband/округлением к нулю
+    (013), turnover cap владельца и порядок «сокращения раньше докупок» (014), risk budget before/after = значения прогона (015),
+    пороги policy = решение владельца (016), применимость концентрации — по policy (017, info), exit_rule (018), GLD только owner_rule/review
+    без принятой hedge-модели (019), ACT-020 — свойство сигнала агента, не файла (info: шаблон в AGENTS.md)."""
+    files = inputs.get("strategy_files") or []
+    if not files:
+        raise ValueError("mode=strategy требует inputs.strategy_files (список путей)")
+    schema = _schema(inputs, "strategy_schema_path", f"Scenario_Strategy_Schema_v{STRATEGY_SCHEMA_VERSION}.yaml")
+    reg = _load(ws / "portfolio" / "_portfolio.yaml")
+    positions = {str(x.get("ticker")) for x in (reg.get("portfolio") or {}).get("positions") or []}
+    cur_w = ((reg.get("machine_outputs") or {}).get("current_weights") or {})
+    lim11 = ((reg.get("constraints") or {}).get("approved_limits_v1_1") or {})
+    sc_lim = lim11.get("scenario_conditional") or {}; exec_lim = lim11.get("strategy_execution") or {}
+    hedge_p = ws / "portfolio" / "_scenarios" / "owner_hedge_instrument_constraints_v1.0.yaml"
+    hedge = _load(hedge_p) if hedge_p.exists() else {}
+    allowed = {str(i.get("instrument_id")): i for i in hedge.get("allowed_instruments") or []}
+    hedge_models = {}
+    for hp in (ws / "portfolio" / "_scenarios").glob("hedge_model_*.yaml"):
+        hm = _load(hp); hedge_models[str(hm.get("ticker") or hm.get("instrument_id"))] = hm.get("status")
+    pol_p = ws / "methodology" / "Portfolio_Optimizer_Scenario_Conditional_Policy_v1.0.yaml"
+    policy = _load(pol_p) if pol_p.exists() else None
+    state_p = ws / "portfolio" / "_scenarios" / "state.json"
+    state = _load(state_p) if state_p.exists() else None
+    base_id = inputs.get("base_optimum_run_id")
+    base_w = None
+    if base_id:
+        br = _load(ws / "portfolio" / "_runs" / f"{base_id}.json"); bo = br.get("outputs") or {}
+        base_w = {t: float(w) for t, w in (bo.get("proposed_weights") or {}).items()}
+        for t in ("GLD", "UFO"):                                              # фиксированные позиции — по текущим весам реестра
+            base_w[t] = float(cur_w.get(t, 0.0))
+        base_w["CASH"] = 1.0 - sum(v for k, v in base_w.items() if k != "CASH")
+    per = []
+    for fp in files:
+        path = Path(fp) if Path(fp).is_absolute() else ws / fp
+        try:
+            rel = str(path.resolve().relative_to(ws.resolve())).replace("\\", "/")
+        except ValueError:
+            rel = str(fp).replace("\\", "/")
+        F: list = []
+        st = _norm(_load(path))
+        errs = _schema_errors(schema, st)
+        F.append(_f("ACT-001", rel, "по Scenario_Strategy_Schema v1.0" if not errs else f"схема: {errs[0]['message'][:160]}", "info" if not errs else "error"))
+        sid = str(st.get("scenario_id")); sref = ws / str(st.get("scenario_ref") or "")
+        scen = _norm(_load(sref)) if sref.exists() else None
+        if scen is None or str(scen.get("scenario_id")) != sid:
+            F.append(_f("ACT-002", f"{rel}/scenario_ref", f"сценарий {st.get('scenario_ref')} не найден или scenario_id не совпадает"))
+        else:
+            F.append(_f("ACT-002", rel, f"сценарий {sid} (schema_version {scen.get('schema_version')}) найден", "info"))
+        phases = [str(ph.get("phase_id")) for ph in (scen or {}).get("phases") or []]
+        sp = [str(ph.get("phase_id")) for ph in st.get("phase_strategies") or []]
+        if len(set(sp)) != len(sp) or any(x not in phases for x in sp):
+            F.append(_f("ACT-003", f"{rel}/phase_strategies", f"фазы стратегии {sp} не разрешаются уникально в фазах сценария {phases}"))
+        else:
+            F.append(_f("ACT-003", rel, f"{len(sp)} фаз разрешены", "info"))
+        if scen is not None:
+            refs = [scen.get("strategy_ref")] + [ph.get("strategy_ref") for ph in scen.get("phases") or []]
+            bad = [r for r in refs if r is not None and str(r) != rel]
+            if bad:
+                F.append(_f("ACT-004", f"{rel}/strategy_ref", f"strategy_ref калибровки указывает не на этот файл: {bad[:2]}"))
+            elif all(r is None for r in refs):
+                F.append(_f("ACT-004", f"{rel}/strategy_ref", "калибровка сценария ещё не ссылается на стратегию (strategy_ref null) — патч v1.1.1 не применён", "warning"))
+            else:
+                F.append(_f("ACT-004", rel, "strategy_ref калибровки → этот файл", "info"))
+        gld_max = float((allowed.get("GLD") or {}).get("max_weight", 0.10))
+        for ph in st.get("phase_strategies") or []:
+            pid = ph.get("phase_id"); pp = f"{rel}/{pid}"
+            acts = ph.get("actions") or []
+            trade = [a for a in acts if a.get("action_type") in TRADE_ACTIONS]
+            for a in acts:                                                     # ACT-005 цели
+                tg = a.get("target") or {}; k, i = tg.get("kind"), str(tg.get("id"))
+                ok = (k == "ticker" and i in positions) or (k == "instrument" and i in allowed) or (k == "cash" and i == "CASH")
+                if not ok:
+                    F.append(_f("ACT-005", f"{pp}/{a.get('action_id')}", f"цель {k}:{i} вне реестра портфеля / allowlist / CASH"))
+            stt = (ph.get("status") or {}); sstate = stt.get("state")          # ACT-008 / 010 / 011
+            if sstate in ("active", "executed") and not (stt.get("owner_approved_at") and stt.get("owner_approval_ref") and stt.get("activation_decision_ref")):
+                F.append(_f("ACT-008", f"{pp}/status", f"статус {sstate} без owner_approved_at / owner_approval_ref / activation_decision_ref"))
+            trig = ph.get("trigger") or {}
+            if trig.get("candidate_policy") not in (None, "none", "signal_only", "prepare_only") or trig.get("activate_on_phase_status") != "confirmed":
+                F.append(_f("ACT-010", f"{pp}/trigger", f"trigger {trig} — активация только по confirmed; candidate — none/signal_only/prepare_only"))
+            if exec_lim.get("candidate_policy") and trig.get("candidate_policy") != exec_lim["candidate_policy"]:
+                F.append(_f("ACT-010", f"{pp}/trigger/candidate_policy", f"{trig.get('candidate_policy')} ≠ решение владельца {exec_lim['candidate_policy']}", "warning"))
+            if state is not None:
+                set_state = ((state.get("set_state") or {}).get("status"))
+                if set_state == "ambiguous_set_conflict" and sstate == "active":
+                    F.append(_f("ACT-011", f"{pp}/status", "набор в ambiguous_set_conflict — стратегия не может быть active"))
+            opt_ref = ph.get("conditional_optimum_ref"); run_o = None           # ACT-009 условный оптимум
+            if any(a.get("basis") == "conditional_optimum" for a in acts):
+                rp = ws / "portfolio" / "_runs" / f"{opt_ref}.json" if opt_ref else None
+                if not rp or not rp.exists():
+                    F.append(_f("ACT-009", f"{pp}/conditional_optimum_ref", f"прогон {opt_ref} не найден в _runs"))
+                else:
+                    run_o = _load(rp)
+                    if run_o.get("model") != "portfolio_optimizer":
+                        F.append(_f("ACT-009", f"{pp}/conditional_optimum_ref", f"{opt_ref}: модель {run_o.get('model')} ≠ portfolio_optimizer")); run_o = None
+                    else:
+                        files_in = ((run_o.get("inputs") or {}).get("paths_files") or {})
+                        F.append(_f("ACT-009", pp, f"условный оптимум {opt_ref} ({len(files_in)} файлов путей; conditional_run_ref {str(ph.get('conditional_run_ref'))[:70]})", "info"))
+            for a in acts:                                                     # ACT-006 GLD-лимит
+                tg = a.get("target") or {}
+                if str(tg.get("id")) == "GLD" and a.get("action_type") in TRADE_ACTIONS:
+                    mag = a.get("magnitude") or {}; amt = float(mag.get("amount", 0.0))
+                    tot = amt if mag.get("kind") == "target_weight_nav" else float(cur_w.get("GLD", 0.0)) + amt
+                    if tot > gld_max + 1e-9:
+                        F.append(_f("ACT-006", f"{pp}/{a.get('action_id')}", f"GLD {tot:.4f} > лимит {gld_max}"))
+            if run_o is not None:
+                viol = (run_o.get("outputs") or {}).get("violations_at_optimum") or []
+                if viol or not (run_o.get("outputs") or {}).get("feasible", True):
+                    F.append(_f("ACT-006", f"{pp}/conditional_optimum_ref", f"условный оптимум нарушает лимиты владельца: {[v.get('constraint') for v in viol][:4]}"))
+            dp = st.get("derivation_policy") or {}                              # ACT-013 дельты по §5
+            dead = float(dp.get("min_action_delta_weight", 0.005)); step = float(dp.get("rounding_increment_weight", 0.0025))
+            if run_o is not None and base_w is not None and trade:
+                ow = {t: float(w) for t, w in ((run_o.get("outputs") or {}).get("proposed_weights") or {}).items()}
+                ow["CASH"] = float((run_o.get("outputs") or {}).get("dry_powder_weight", 0.0))
+                exp = {}
+                for t in set(ow) | set(base_w):
+                    if t in ("GLD", "UFO"):
+                        continue
+                    d = ow.get(t, 0.0) - base_w.get(t, 0.0)
+                    if abs(d) >= dead - 1e-12:
+                        exp[t] = round(_round_toward_zero(d, step), 6)
+                got = {}
+                for a in trade:
+                    mag = a.get("magnitude") or {}; tid = str((a.get("target") or {}).get("id"))
+                    if mag.get("kind") == "delta_weight_nav":
+                        got[tid] = round(float(mag.get("amount", 0.0)), 6)
+                diff = {t: (exp.get(t), got.get(t)) for t in set(exp) | set(got) if abs((exp.get(t) or 0.0) - (got.get(t) or 0.0)) > 1e-6}
+                if diff:
+                    F.append(_f("ACT-013", pp, f"дельты не воспроизводятся по §5 от базы {base_id}: {diff}"))
+                else:
+                    F.append(_f("ACT-013", pp, f"дельты воспроизведены по §5 (deadband {dead}, шаг {step}) от базы {base_id}: {len(got)} действий", "info"))
+            cap = ph.get("turnover_cap_nav")                                    # ACT-014 cap и порядок
+            if trade:
+                if not cap or (cap.get("provenance") != "owner_judgment"):
+                    F.append(_f("ACT-014", f"{pp}/turnover_cap_nav", "у фазы с торговыми действиями нет turnover_cap_nav (owner_judgment)"))
+                else:
+                    gross = sum(abs(float((a.get("magnitude") or {}).get("amount", 0.0))) for a in trade if (a.get("magnitude") or {}).get("kind") == "delta_weight_nav")
+                    if gross > float(cap.get("value")) + 1e-9:
+                        F.append(_f("ACT-014", f"{pp}/turnover_cap_nav", f"валовый оборот {gross:.4f} > cap {cap.get('value')}"))
+                    if exec_lim.get("turnover_cap_nav_per_signal") is not None and abs(float(cap.get("value")) - float(exec_lim["turnover_cap_nav_per_signal"])) > 1e-9:
+                        F.append(_f("ACT-014", f"{pp}/turnover_cap_nav", f"cap {cap.get('value')} ≠ решение владельца {exec_lim['turnover_cap_nav_per_signal']}", "warning"))
+                red_start = [int((a.get("timing") or {}).get("start_after_trading_days", 0)) for a in trade if a.get("action_type") == "reduce"]
+                add_start = [int((a.get("timing") or {}).get("start_after_trading_days", 0)) for a in trade if a.get("action_type") == "add"]
+                if red_start and add_start and max(red_start) > min(add_start):
+                    F.append(_f("ACT-014", f"{pp}/actions", "докупки стартуют раньше сокращений — сокращения должны быть забюджетированы первыми"))
+            rb = ph.get("risk_budget_under_scenario")                          # ACT-015 risk budget = прогон
+            if rb and run_o is not None:
+                o = run_o.get("outputs") or {}; cur = (o.get("current_portfolio") or {}).get("return_distribution_Y5") or {}
+                y5 = (o.get("portfolio_return_distribution") or {}).get("Y5") or {}; d5 = (o.get("portfolio_downside") or {}).get("Y5") or {}
+                pairs = {("before", "median_cagr_5y"): cur.get("median_CAGR"), ("before", "es5_5y"): cur.get("expected_shortfall_5pct"), ("before", "p_loss_30_5y"): cur.get("P_loss_gt_30pct"),
+                         ("after", "median_cagr_5y"): y5.get("median_CAGR"), ("after", "es5_5y"): d5.get("expected_shortfall_5pct"), ("after", "p_loss_30_5y"): d5.get("P_loss_gt_30pct")}
+                bad = []
+                for (side, key), ref in pairs.items():
+                    m = (rb.get(side) or {}).get(key) or {}
+                    if ref is None or m.get("provenance") != "derived_fact" or abs(float(m.get("value", 9)) - float(ref)) > 5e-4:
+                        bad.append(f"{side}.{key}: {m.get('value')} vs прогон {ref}")
+                if bad:
+                    F.append(_f("ACT-015", f"{pp}/risk_budget_under_scenario", f"risk budget не равен значениям прогона {opt_ref}: {bad[:3]}"))
+                else:
+                    F.append(_f("ACT-015", pp, f"risk budget before/after = прогон {opt_ref} (derived_fact)", "info"))
+            elif trade and not rb:
+                F.append(_f("ACT-015", f"{pp}/risk_budget_under_scenario", "у фазы с торговыми действиями нет risk_budget_under_scenario"))
+            ex = ph.get("exit_rule") or {}                                      # ACT-018
+            if not ex.get("mode"):
+                F.append(_f("ACT-018", f"{pp}/exit_rule", "exit_rule отсутствует"))
+            elif ex.get("mode") == "owner_defined_reversal" and not ex.get("owner_rule_ref"):
+                F.append(_f("ACT-018", f"{pp}/exit_rule", "owner_defined_reversal без owner_rule_ref"))
+            for a in acts:                                                     # ACT-019 GLD
+                if str((a.get("target") or {}).get("id")) == "GLD" and a.get("basis") == "conditional_optimum" and hedge_models.get("GLD") != "accepted":
+                    F.append(_f("ACT-019", f"{pp}/{a.get('action_id')}", "GLD с basis conditional_optimum без принятой Hedge_Instrument_Model"))
+            sl = ph.get("staleness") or {}                                      # ACT-012
+            thr = float(dp.get("live_optimum_review_threshold", 0.02))
+            if sl.get("max_abs_target_diff") is not None and float(sl["max_abs_target_diff"]) > thr and not sl.get("review_required"):
+                F.append(_f("ACT-012", f"{pp}/staleness", f"max_abs_target_diff {sl['max_abs_target_diff']} > {thr}, но review_required = false"))
+        if policy is not None:                                                 # ACT-016 / 017
+            cc = policy.get("conditional_constraints") or {}
+            want = {"probability_min": sc_lim.get("p_min"), "es5_5y_min": sc_lim.get("es5_min"), "p_loss_30_5y_max": sc_lim.get("p_loss_gt_30_max")}
+            bad = [k for k, v in want.items() if v is not None and abs(float((cc.get(k) or {}).get("value", 9)) - float(v)) > 1e-9]
+            cmax = ((policy.get("scenario_concentration") or {}).get("hard_max") or {}).get("value")
+            if sc_lim.get("scenario_concentration_max") is not None and (cmax is None or abs(float(cmax) - float(sc_lim["scenario_concentration_max"])) > 1e-9):
+                bad.append("scenario_concentration_max")
+            F.append(_f("ACT-016", "methodology/Portfolio_Optimizer_Scenario_Conditional_Policy_v1.0.yaml", "пороги policy = решение владельца" if not bad else f"расхождение policy и решения владельца: {bad}", "info" if not bad else "error"))
+            F.append(_f("ACT-017", "policy/scenario_concentration", str((policy.get("scenario_concentration") or {}).get("applicability"))[:120], "info"))
+        F.append(_f("ACT-020", rel, "свойство сигнала агента, не файла: шаблон с «Решение за владельцем. Автоисполнение запрещено.» — AGENTS.md", "info"))
+        n_err = sum(1 for f in F if f["severity"] == "error")
+        per.append({"file": rel, "strategy_id": st.get("strategy_id"), "scenario_id": sid, "phases": sp, "findings": F, "errors": n_err, "pass": not errs and n_err == 0})
+    return {"model_version": VERSION, "mode": "strategy", "strategy_schema_version": STRATEGY_SCHEMA_VERSION, "base_optimum_run_id": base_id, "strategies": per,
+            "pass": all(x["pass"] for x in per), "rules": {**rules, "act": [f"ACT-{i:03d}" for i in range(1, 21)]}, "decision": "none"}
+
+
 def run(inputs: dict, seed: int) -> dict:
     mode = inputs.get("mode", "workspace")
     ws = _workspace(inputs)
@@ -838,6 +1045,8 @@ def run(inputs: dict, seed: int) -> dict:
                 "note": "MC-G5-013 — hard gate по Joint_Simulation_Layer_Rules_v1.1 (strict_aggregate=false → warning); MC-G5-009 (антицикличность) и MC-G5-010 (полнота provenance сверх схемы) статически не проверяются", "decision": "none"}
     if mode == "scenario":
         return _validate_scenario(inputs, ws, rules)
+    if mode == "strategy":
+        return _validate_strategy(inputs, ws, rules)
     if mode == "dozor_report":
         rep = inputs.get("report")
         if not isinstance(rep, dict):
