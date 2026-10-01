@@ -1,0 +1,1820 @@
+{
+ "TAIWAN_SEIZURE|RESTRICTIONS": {
+  "companies": {
+   "SPCX": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T204251Z-company_mc-227acd-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "NBIS": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T132442Z-company_mc-cc4c7b-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "NVDA": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T132706Z-company_mc-b183d7-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "HOOD": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T133012Z-company_mc-68dd8f-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "RKLB": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T133227Z-company_mc-c5b6a6-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "LLY": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T133526Z-company_mc-5b0f28-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "META": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T133825Z-company_mc-37ea96-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "ASML": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134220Z-company_mc-319a55-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "MSFT": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134524Z-company_mc-f162c6-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "PLTR": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134713Z-company_mc-8d8b95-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "NET": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134818Z-company_mc-b24c52-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "ETN": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134919Z-company_mc-004eab-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "ASTS": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T135043Z-company_mc-5b3a3a-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "CRWV": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T135209Z-company_mc-a2a418-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "SPOT": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T135336Z-company_mc-5dcb6e-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   }
+  },
+  "optimum": {
+   "run_id": "20260930T230041Z-portfolio_optimizer-ea1b90",
+   "feasible": true,
+   "weights": {
+    "ASML": 0.0,
+    "ASTS": 0.03,
+    "CRWV": 0.105,
+    "ETN": 0.0,
+    "HOOD": 0.0,
+    "LLY": 0.14,
+    "META": 0.035,
+    "MSFT": 0.0,
+    "NBIS": 0.115,
+    "NET": 0.0,
+    "NVDA": 0.11,
+    "PLTR": 0.02,
+    "RKLB": 0.08,
+    "SPCX": 0.01,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1963,
+   "start_used": "given",
+   "turnover": 0.5563,
+   "median_CAGR_5Y": 0.1338303272518726,
+   "ES5": 0.1011570417694958,
+   "P_loss_gt_30pct": 8e-06,
+   "binding": [
+    "per_name_cap:CRWV",
+    "per_name_cap:LLY",
+    "per_name_cap:RKLB",
+    "per_name_cap:SPOT"
+   ],
+   "violations": [],
+   "current_under_phase": {
+    "median_CAGR_5Y": 0.12360454679567956,
+    "ES5": -0.31040975824633626,
+    "P_loss_gt_30pct": 0.023214
+   },
+   "candidates": [
+    [
+     "current",
+     true,
+     0.13137573003526715,
+     -0.0018946528804190425
+    ],
+    [
+     "equal",
+     true,
+     0.09493312622874617,
+     0.024889100360632747
+    ],
+    [
+     "empty",
+     true,
+     0.07417542189275383,
+     -0.13415248252021958
+    ],
+    [
+     "given",
+     true,
+     0.1338303272518726,
+     0.1011570417694958
+    ]
+   ]
+  }
+ },
+ "TAIWAN_SEIZURE|BLOCKADE": {
+  "companies": {
+   "SPCX": {
+    "run_id": "20260930T210726Z-company_mc-9bb539",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T210726Z-company_mc-9bb539-paths.npz",
+    "median_CAGR_5Y": -0.06948871679962781,
+    "q05": -0.25793364195935814,
+    "q95": 0.13828598208120377,
+    "P_loss_gt_30pct_5Y": 0.50217,
+    "ES5": -0.8300150086074324,
+    "P_2x_5Y": 0.042192,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "NBIS": {
+    "run_id": "20260930T211014Z-company_mc-eb36b1",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T211014Z-company_mc-eb36b1-paths.npz",
+    "median_CAGR_5Y": 0.22977598832202684,
+    "q05": -0.09835050321851546,
+    "q95": 0.5872486357614548,
+    "P_loss_gt_30pct_5Y": 0.06889,
+    "ES5": -0.5865463852626625,
+    "P_2x_5Y": 0.648188,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "NVDA": {
+    "run_id": "20260930T211217Z-company_mc-71bac3",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T211217Z-company_mc-71bac3-paths.npz",
+    "median_CAGR_5Y": 0.042205964304977805,
+    "q05": -0.18665623440023926,
+    "q95": 0.3054158163439654,
+    "P_loss_gt_30pct_5Y": 0.221124,
+    "ES5": -0.7346555343563221,
+    "P_2x_5Y": 0.24269,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "HOOD": {
+    "run_id": "20260930T211420Z-company_mc-759268",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T211420Z-company_mc-759268-paths.npz",
+    "median_CAGR_5Y": -0.11920634935486724,
+    "q05": -0.24453842246883156,
+    "q95": 0.02676484332162255,
+    "P_loss_gt_30pct_5Y": 0.725876,
+    "ES5": -0.7943766071395558,
+    "P_2x_5Y": 0.001952,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "RKLB": {
+    "run_id": "20260930T211545Z-company_mc-7da24b",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T211545Z-company_mc-7da24b-paths.npz",
+    "median_CAGR_5Y": 0.05553000093646887,
+    "q05": -0.3341842415341419,
+    "q95": 0.21709373190583803,
+    "P_loss_gt_30pct_5Y": 0.144548,
+    "ES5": -0.894251850118437,
+    "P_2x_5Y": 0.173772,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "LLY": {
+    "run_id": "20260930T211716Z-company_mc-a5283c",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T211716Z-company_mc-a5283c-paths.npz",
+    "median_CAGR_5Y": 0.0652218061437142,
+    "q05": -0.07574081714876421,
+    "q95": 0.22228102465527552,
+    "P_loss_gt_30pct_5Y": 0.05963,
+    "ES5": -0.42727051214730905,
+    "P_2x_5Y": 0.18982,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "META": {
+    "run_id": "20260930T211831Z-company_mc-9671d1",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T211831Z-company_mc-9671d1-paths.npz",
+    "median_CAGR_5Y": 0.0654025217733527,
+    "q05": -0.10303301319296364,
+    "q95": 0.2345331214939215,
+    "P_loss_gt_30pct_5Y": 0.096394,
+    "ES5": -0.5305494131049939,
+    "P_2x_5Y": 0.211182,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "ASML": {
+    "run_id": "20260930T212005Z-company_mc-495e4f",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212005Z-company_mc-495e4f-paths.npz",
+    "median_CAGR_5Y": -0.14262127131864039,
+    "q05": -0.3069100579779592,
+    "q95": 0.04408477304335569,
+    "P_loss_gt_30pct_5Y": 0.747492,
+    "ES5": -0.8754317925723888,
+    "P_2x_5Y": 0.00595,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "MSFT": {
+    "run_id": "20260930T212200Z-company_mc-0813b3",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212200Z-company_mc-0813b3-paths.npz",
+    "median_CAGR_5Y": 0.027538114275218795,
+    "q05": -0.122906256749068,
+    "q95": 0.17092862001385353,
+    "P_loss_gt_30pct_5Y": 0.144072,
+    "ES5": -0.5776523659973711,
+    "P_2x_5Y": 0.083874,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "PLTR": {
+    "run_id": "20260930T212333Z-company_mc-700f15",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212333Z-company_mc-700f15-paths.npz",
+    "median_CAGR_5Y": 0.00018127155442282383,
+    "q05": -0.1595023577210859,
+    "q95": 0.16853973037420392,
+    "P_loss_gt_30pct_5Y": 0.242284,
+    "ES5": -0.6621088540680177,
+    "P_2x_5Y": 0.072714,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "NET": {
+    "run_id": "20260930T212434Z-company_mc-d236f4",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212434Z-company_mc-d236f4-paths.npz",
+    "median_CAGR_5Y": -0.19859261252340416,
+    "q05": -0.36206943507478356,
+    "q95": -0.026088011159716314,
+    "P_loss_gt_30pct_5Y": 0.894316,
+    "ES5": -0.9209893143162472,
+    "P_2x_5Y": 0.00097,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "ETN": {
+    "run_id": "20260930T212527Z-company_mc-9044aa",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212527Z-company_mc-9044aa-paths.npz",
+    "median_CAGR_5Y": 0.016589161317106527,
+    "q05": -0.14976179641995696,
+    "q95": 0.18795357263332751,
+    "P_loss_gt_30pct_5Y": 0.200384,
+    "ES5": -0.6451086546230473,
+    "P_2x_5Y": 0.100696,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "ASTS": {
+    "run_id": "20260930T212639Z-company_mc-5df42f",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212639Z-company_mc-5df42f-paths.npz",
+    "median_CAGR_5Y": 0.02164879202965264,
+    "q05": -0.9915177352238763,
+    "q95": 0.3189419037785229,
+    "P_loss_gt_30pct_5Y": 0.338288,
+    "ES5": -0.9999999999560905,
+    "P_2x_5Y": 0.247448,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "CRWV": {
+    "run_id": "20260930T212758Z-company_mc-174c8a",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212758Z-company_mc-174c8a-paths.npz",
+    "median_CAGR_5Y": 0.2670788800013647,
+    "q05": -0.06036515837722635,
+    "q95": 0.5981232448062702,
+    "P_loss_gt_30pct_5Y": 0.045508,
+    "ES5": -0.4843969852659895,
+    "P_2x_5Y": 0.71769,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "SPOT": {
+    "run_id": "20260930T212920Z-company_mc-66ed80",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212920Z-company_mc-66ed80-paths.npz",
+    "median_CAGR_5Y": 0.11095482490555453,
+    "q05": -0.0027831611666696197,
+    "q95": 0.22663373902507344,
+    "P_loss_gt_30pct_5Y": 0.003522,
+    "ES5": -0.1366416918980755,
+    "P_2x_5Y": 0.294172,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   }
+  },
+  "optimum": {
+   "run_id": "20260930T230630Z-portfolio_optimizer-052179",
+   "feasible": true,
+   "weights": {
+    "ASML": 0.0,
+    "ASTS": 0.025,
+    "CRWV": 0.105,
+    "ETN": 0.0,
+    "HOOD": 0.0,
+    "LLY": 0.14,
+    "META": 0.025,
+    "MSFT": 0.005,
+    "NBIS": 0.125,
+    "NET": 0.0,
+    "NVDA": 0.11,
+    "PLTR": 0.02,
+    "RKLB": 0.08,
+    "SPCX": 0.01,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1963,
+   "start_used": "given",
+   "turnover": 0.5513,
+   "median_CAGR_5Y": 0.13295763951995376,
+   "ES5": 0.08206748281440693,
+   "P_loss_gt_30pct": 1.2e-05,
+   "binding": [
+    "per_name_cap:CRWV",
+    "per_name_cap:LLY",
+    "per_name_cap:RKLB",
+    "per_name_cap:SPOT"
+   ],
+   "violations": [],
+   "current_under_phase": {
+    "median_CAGR_5Y": 0.11725354934520982,
+    "ES5": -0.3411636917986469,
+    "P_loss_gt_30pct": 0.030126
+   },
+   "candidates": [
+    [
+     "current",
+     true,
+     0.12729996699778645,
+     -0.022486812277026254
+    ],
+    [
+     "equal",
+     true,
+     0.09731399007474262,
+     0.011298551387937412
+    ],
+    [
+     "empty",
+     true,
+     0.07252815952131164,
+     -0.14461528687876077
+    ],
+    [
+     "given",
+     true,
+     0.13295763951995376,
+     0.08206748281440693
+    ]
+   ]
+  }
+ },
+ "TAIWAN_SEIZURE|CONFLICT": {
+  "companies": {
+   "SPCX": {
+    "run_id": "20260930T213015Z-company_mc-c9868a",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T213015Z-company_mc-c9868a-paths.npz",
+    "median_CAGR_5Y": -0.0683543745952655,
+    "q05": -0.2567871661711075,
+    "q95": 0.13935509263999044,
+    "P_loss_gt_30pct_5Y": 0.49833,
+    "ES5": -0.8285161542409184,
+    "P_2x_5Y": 0.043076,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "NBIS": {
+    "run_id": "20260930T213228Z-company_mc-abc512",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T213228Z-company_mc-abc512-paths.npz",
+    "median_CAGR_5Y": 0.23271435089965598,
+    "q05": -0.09590609751870864,
+    "q95": 0.5896029114734912,
+    "P_loss_gt_30pct_5Y": 0.066918,
+    "ES5": -0.5803208512258986,
+    "P_2x_5Y": 0.653528,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "NVDA": {
+    "run_id": "20260930T213420Z-company_mc-c83ee9",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T213420Z-company_mc-c83ee9-paths.npz",
+    "median_CAGR_5Y": 0.04726727672618258,
+    "q05": -0.18319667127607797,
+    "q95": 0.3106916344214564,
+    "P_loss_gt_30pct_5Y": 0.212178,
+    "ES5": -0.7297541664233969,
+    "P_2x_5Y": 0.254032,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "HOOD": {
+    "run_id": "20260930T213618Z-company_mc-f565c7",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T213618Z-company_mc-f565c7-paths.npz",
+    "median_CAGR_5Y": -0.11697474785136269,
+    "q05": -0.24222503031534384,
+    "q95": 0.027742693328981313,
+    "P_loss_gt_30pct_5Y": 0.71793,
+    "ES5": -0.7909941910099897,
+    "P_2x_5Y": 0.001836,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "RKLB": {
+    "run_id": "20260930T213735Z-company_mc-ee07b8",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T213735Z-company_mc-ee07b8-paths.npz",
+    "median_CAGR_5Y": 0.05596833833085679,
+    "q05": -0.3338314649302703,
+    "q95": 0.21758483129806647,
+    "P_loss_gt_30pct_5Y": 0.143572,
+    "ES5": -0.894030772436313,
+    "P_2x_5Y": 0.17491,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "LLY": {
+    "run_id": "20260930T213909Z-company_mc-4999eb",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T213909Z-company_mc-4999eb-paths.npz",
+    "median_CAGR_5Y": 0.06476087575257372,
+    "q05": -0.07617806551238857,
+    "q95": 0.22186995399683856,
+    "P_loss_gt_30pct_5Y": 0.060136,
+    "ES5": -0.4286115867442389,
+    "P_2x_5Y": 0.18883,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "META": {
+    "run_id": "20260930T214037Z-company_mc-7a6db8",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214037Z-company_mc-7a6db8-paths.npz",
+    "median_CAGR_5Y": 0.06589877950453438,
+    "q05": -0.10279619335325112,
+    "q95": 0.2353938392900739,
+    "P_loss_gt_30pct_5Y": 0.09585,
+    "ES5": -0.5300016843230215,
+    "P_2x_5Y": 0.212966,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "ASML": {
+    "run_id": "20260930T214220Z-company_mc-222838",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214220Z-company_mc-222838-paths.npz",
+    "median_CAGR_5Y": -0.13957356392110615,
+    "q05": -0.30514636312656457,
+    "q95": 0.048584320272948955,
+    "P_loss_gt_30pct_5Y": 0.736966,
+    "ES5": -0.8741471570746764,
+    "P_2x_5Y": 0.006678,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "MSFT": {
+    "run_id": "20260930T214412Z-company_mc-f40c35",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214412Z-company_mc-f40c35-paths.npz",
+    "median_CAGR_5Y": 0.0293463223032272,
+    "q05": -0.12105918833948943,
+    "q95": 0.17301337755840562,
+    "P_loss_gt_30pct_5Y": 0.13986,
+    "ES5": -0.5729916684848295,
+    "P_2x_5Y": 0.087726,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "PLTR": {
+    "run_id": "20260930T214542Z-company_mc-b3ae91",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214542Z-company_mc-b3ae91-paths.npz",
+    "median_CAGR_5Y": 0.0025086137100226447,
+    "q05": -0.15717635260594584,
+    "q95": 0.17073942985568208,
+    "P_loss_gt_30pct_5Y": 0.234718,
+    "ES5": -0.6575693257548174,
+    "P_2x_5Y": 0.075902,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "NET": {
+    "run_id": "20260930T214637Z-company_mc-81ada3",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214637Z-company_mc-81ada3-paths.npz",
+    "median_CAGR_5Y": -0.1968774213864095,
+    "q05": -0.3603154019895331,
+    "q95": -0.024021622335165388,
+    "P_loss_gt_30pct_5Y": 0.890886,
+    "ES5": -0.9198507607388637,
+    "P_2x_5Y": 0.000988,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "ETN": {
+    "run_id": "20260930T214729Z-company_mc-375acb",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214729Z-company_mc-375acb-paths.npz",
+    "median_CAGR_5Y": 0.01680895667316784,
+    "q05": -0.14963196428223005,
+    "q95": 0.18809325267681384,
+    "P_loss_gt_30pct_5Y": 0.19987,
+    "ES5": -0.6447406127123028,
+    "P_2x_5Y": 0.101106,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "ASTS": {
+    "run_id": "20260930T214837Z-company_mc-1d2fe6",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214837Z-company_mc-1d2fe6-paths.npz",
+    "median_CAGR_5Y": 0.020798836007003496,
+    "q05": -0.9915177352238763,
+    "q95": 0.31753486030474676,
+    "P_loss_gt_30pct_5Y": 0.33946,
+    "ES5": -0.9999999999560905,
+    "P_2x_5Y": 0.245608,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "CRWV": {
+    "run_id": "20260930T214949Z-company_mc-45123b",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214949Z-company_mc-45123b-paths.npz",
+    "median_CAGR_5Y": 0.27063674601269927,
+    "q05": -0.057450747435450915,
+    "q95": 0.6016313618255223,
+    "P_loss_gt_30pct_5Y": 0.04387,
+    "ES5": -0.4754489895608084,
+    "P_2x_5Y": 0.72323,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "SPOT": {
+    "run_id": "20260930T215110Z-company_mc-2cf9a3",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T215110Z-company_mc-2cf9a3-paths.npz",
+    "median_CAGR_5Y": 0.11163904395753843,
+    "q05": -0.002306676280968726,
+    "q95": 0.22771093722066107,
+    "P_loss_gt_30pct_5Y": 0.003456,
+    "ES5": -0.13471291564798982,
+    "P_2x_5Y": 0.297926,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   }
+  },
+  "optimum": {
+   "run_id": "20260930T231229Z-portfolio_optimizer-e0569e",
+   "feasible": true,
+   "weights": {
+    "ASML": 0.0,
+    "ASTS": 0.025,
+    "CRWV": 0.105,
+    "ETN": 0.0,
+    "HOOD": 0.0,
+    "LLY": 0.14,
+    "META": 0.025,
+    "MSFT": 0.01,
+    "NBIS": 0.12,
+    "NET": 0.0,
+    "NVDA": 0.11,
+    "PLTR": 0.02,
+    "RKLB": 0.08,
+    "SPCX": 0.01,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1963,
+   "start_used": "given",
+   "turnover": 0.5513,
+   "median_CAGR_5Y": 0.1335997174492497,
+   "ES5": 0.08900570543954942,
+   "P_loss_gt_30pct": 1e-05,
+   "binding": [
+    "per_name_cap:CRWV",
+    "per_name_cap:LLY",
+    "per_name_cap:RKLB",
+    "per_name_cap:SPOT"
+   ],
+   "violations": [],
+   "current_under_phase": {
+    "median_CAGR_5Y": 0.11992061426664613,
+    "ES5": -0.3348120141996746,
+    "P_loss_gt_30pct": 0.028464
+   },
+   "candidates": [
+    [
+     "current",
+     true,
+     0.12927393096747297,
+     -0.016535401165130102
+    ],
+    [
+     "equal",
+     true,
+     0.09605641288764333,
+     0.017826389971906935
+    ],
+    [
+     "empty",
+     true,
+     0.07343631088992941,
+     -0.1416098218720009
+    ],
+    [
+     "given",
+     true,
+     0.1335997174492497,
+     0.08900570543954942
+    ]
+   ]
+  }
+ },
+ "TAIWAN_SEIZURE|RECOVERY": {
+  "companies": {
+   "SPCX": {
+    "run_id": "20260930T215213Z-company_mc-d44a73",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T215213Z-company_mc-d44a73-paths.npz",
+    "median_CAGR_5Y": -0.042481806710919,
+    "q05": -0.2360571444684643,
+    "q95": 0.1684345686812745,
+    "P_loss_gt_30pct_5Y": 0.41397,
+    "ES5": -0.8032657147857186,
+    "P_2x_5Y": 0.067798,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "NBIS": {
+    "run_id": "20260930T215443Z-company_mc-e5fdb5",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T215443Z-company_mc-e5fdb5-paths.npz",
+    "median_CAGR_5Y": 0.310563251807507,
+    "q05": 0.003095634087369693,
+    "q95": 0.648622443249359,
+    "P_loss_gt_30pct_5Y": 0.017656,
+    "ES5": -0.24555130948350035,
+    "P_2x_5Y": 0.794734,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "NVDA": {
+    "run_id": "20260930T215651Z-company_mc-563048",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T215651Z-company_mc-563048-paths.npz",
+    "median_CAGR_5Y": 0.14977986650685204,
+    "q05": -0.046448384724798744,
+    "q95": 0.3660113665835896,
+    "P_loss_gt_30pct_5Y": 0.032392,
+    "ES5": -0.3700453792673447,
+    "P_2x_5Y": 0.503588,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "HOOD": {
+    "run_id": "20260930T215901Z-company_mc-722935",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T215901Z-company_mc-722935-paths.npz",
+    "median_CAGR_5Y": -0.09565637718824432,
+    "q05": -0.22025840856584197,
+    "q95": 0.041975706126681486,
+    "P_loss_gt_30pct_5Y": 0.630476,
+    "ES5": -0.7581057585062868,
+    "P_2x_5Y": 0.0018,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "RKLB": {
+    "run_id": "20260930T220022Z-company_mc-c87515",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T220022Z-company_mc-c87515-paths.npz",
+    "median_CAGR_5Y": 0.04691814706780406,
+    "q05": -0.3339143314813415,
+    "q95": 0.20287191040742708,
+    "P_loss_gt_30pct_5Y": 0.15127,
+    "ES5": -0.8941015553716009,
+    "P_2x_5Y": 0.143982,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "LLY": {
+    "run_id": "20260930T220213Z-company_mc-a75f58",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T220213Z-company_mc-a75f58-paths.npz",
+    "median_CAGR_5Y": 0.07106154728874947,
+    "q05": -0.07000060823705452,
+    "q95": 0.22793709875360094,
+    "P_loss_gt_30pct_5Y": 0.05146,
+    "ES5": -0.4084265151047585,
+    "P_2x_5Y": 0.206824,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "META": {
+    "run_id": "20260930T220343Z-company_mc-860795",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T220343Z-company_mc-860795-paths.npz",
+    "median_CAGR_5Y": 0.10651922710876516,
+    "q05": -0.05676623862599609,
+    "q95": 0.26739568981945283,
+    "P_loss_gt_30pct_5Y": 0.038246,
+    "ES5": -0.3870738139430318,
+    "P_2x_5Y": 0.336262,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "ASML": {
+    "run_id": "20260930T220542Z-company_mc-37134d",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T220542Z-company_mc-37134d-paths.npz",
+    "median_CAGR_5Y": -0.0667596740164611,
+    "q05": -0.21872509573235369,
+    "q95": 0.09978486171525844,
+    "P_loss_gt_30pct_5Y": 0.491452,
+    "ES5": -0.7649693426898302,
+    "P_2x_5Y": 0.017234,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "MSFT": {
+    "run_id": "20260930T220747Z-company_mc-0bd84e",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T220747Z-company_mc-0bd84e-paths.npz",
+    "median_CAGR_5Y": 0.06148235502501409,
+    "q05": -0.09122893959485535,
+    "q95": 0.20638421072883195,
+    "P_loss_gt_30pct_5Y": 0.079654,
+    "ES5": -0.494484728372286,
+    "P_2x_5Y": 0.165338,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "PLTR": {
+    "run_id": "20260930T220942Z-company_mc-2497bb",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T220942Z-company_mc-2497bb-paths.npz",
+    "median_CAGR_5Y": 0.0022499704019066646,
+    "q05": -0.1527316265462683,
+    "q95": 0.1631967115412852,
+    "P_loss_gt_30pct_5Y": 0.22838,
+    "ES5": -0.6456098239801773,
+    "P_2x_5Y": 0.067226,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "NET": {
+    "run_id": "20260930T221050Z-company_mc-4393ea",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T221050Z-company_mc-4393ea-paths.npz",
+    "median_CAGR_5Y": -0.1617776665041472,
+    "q05": -0.3200187918986193,
+    "q95": 0.003578589511542795,
+    "P_loss_gt_30pct_5Y": 0.82588,
+    "ES5": -0.8888468211831105,
+    "P_2x_5Y": 0.001634,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "ETN": {
+    "run_id": "20260930T221145Z-company_mc-23625a",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T221145Z-company_mc-23625a-paths.npz",
+    "median_CAGR_5Y": 0.025122051359151687,
+    "q05": -0.14112810122946073,
+    "q95": 0.19510555004304353,
+    "P_loss_gt_30pct_5Y": 0.176988,
+    "ES5": -0.6263295855397953,
+    "P_2x_5Y": 0.113996,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "ASTS": {
+    "run_id": "20260930T221304Z-company_mc-994cd5",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T221304Z-company_mc-994cd5-paths.npz",
+    "median_CAGR_5Y": 0.013829259125190285,
+    "q05": -0.9915177352238763,
+    "q95": 0.3085787592094096,
+    "P_loss_gt_30pct_5Y": 0.348658,
+    "ES5": -0.9999999999560905,
+    "P_2x_5Y": 0.231792,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "CRWV": {
+    "run_id": "20260930T221414Z-company_mc-378195",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T221414Z-company_mc-378195-paths.npz",
+    "median_CAGR_5Y": 0.3170475942283162,
+    "q05": -0.004941897192213939,
+    "q95": 0.6397961866445956,
+    "P_loss_gt_30pct_5Y": 0.021598,
+    "ES5": -0.2908971407510841,
+    "P_2x_5Y": 0.797956,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "SPOT": {
+    "run_id": "20260930T221524Z-company_mc-439f32",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T221524Z-company_mc-439f32-paths.npz",
+    "median_CAGR_5Y": 0.11335068873795284,
+    "q05": -0.0010889966611906529,
+    "q95": 0.2310001210281742,
+    "P_loss_gt_30pct_5Y": 0.003312,
+    "ES5": -0.12988376729662654,
+    "P_2x_5Y": 0.308012,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   }
+  },
+  "optimum": {
+   "run_id": "20260930T231749Z-portfolio_optimizer-cad140",
+   "feasible": true,
+   "weights": {
+    "ASML": 0.0,
+    "ASTS": 0.005,
+    "CRWV": 0.105,
+    "ETN": 0.0,
+    "HOOD": 0.0,
+    "LLY": 0.125,
+    "META": 0.07,
+    "MSFT": 0.0,
+    "NBIS": 0.165,
+    "NET": 0.0,
+    "NVDA": 0.085,
+    "PLTR": 0.02,
+    "RKLB": 0.08,
+    "SPCX": 0.01,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1763,
+   "start_used": "given",
+   "turnover": 0.5168,
+   "median_CAGR_5Y": 0.1805799164130416,
+   "ES5": 0.30140888037720737,
+   "P_loss_gt_30pct": 0.0,
+   "binding": [
+    "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+    "per_name_cap:CRWV",
+    "per_name_cap:RKLB",
+    "per_name_cap:SPOT"
+   ],
+   "violations": [],
+   "current_under_phase": {
+    "median_CAGR_5Y": 0.182114313641214,
+    "ES5": -0.01377297169803117,
+    "P_loss_gt_30pct": 0.001082
+   },
+   "candidates": [
+    [
+     "current",
+     true,
+     0.17192775796484638,
+     0.20065667149955516
+    ],
+    [
+     "equal",
+     true,
+     0.16433789865190496,
+     0.20739304915517742
+    ],
+    [
+     "empty",
+     true,
+     0.0946257530282808,
+     -0.03299255214402293
+    ],
+    [
+     "given",
+     true,
+     0.1805799164130416,
+     0.30140888037720737
+    ]
+   ]
+  }
+ },
+ "TAIWAN_QUARANTINE|RESTRICTIONS": {
+  "companies": {
+   "SPCX": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T201905Z-company_mc-b0ff51-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "NBIS": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T202109Z-company_mc-d77132-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "NVDA": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T202253Z-company_mc-7b00b3-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "HOOD": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T202443Z-company_mc-999d79-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "RKLB": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T202554Z-company_mc-685099-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "LLY": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T202716Z-company_mc-47eee3-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "META": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T202910Z-company_mc-9ea02b-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "ASML": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T203149Z-company_mc-85292a-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "MSFT": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T203356Z-company_mc-d49736-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "PLTR": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T203523Z-company_mc-9c382f-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "NET": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T203624Z-company_mc-db5b00-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "ETN": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T203724Z-company_mc-6ab9cf-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "ASTS": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T203839Z-company_mc-466cbd-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "CRWV": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T203955Z-company_mc-e9208b-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   },
+   "SPOT": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T204147Z-company_mc-99c133-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
+   }
+  },
+  "optimum": {
+   "run_id": "20260930T232346Z-portfolio_optimizer-9ef262",
+   "feasible": true,
+   "weights": {
+    "ASML": 0.0,
+    "ASTS": 0.005,
+    "CRWV": 0.105,
+    "ETN": 0.0,
+    "HOOD": 0.0,
+    "LLY": 0.13,
+    "META": 0.05,
+    "MSFT": 0.0,
+    "NBIS": 0.16,
+    "NET": 0.0,
+    "NVDA": 0.105,
+    "PLTR": 0.02,
+    "RKLB": 0.08,
+    "SPCX": 0.01,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1763,
+   "start_used": "given",
+   "turnover": 0.5065,
+   "median_CAGR_5Y": 0.17788867909441475,
+   "ES5": 0.28913622755667895,
+   "P_loss_gt_30pct": 2e-06,
+   "binding": [
+    "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+    "per_name_cap:CRWV",
+    "per_name_cap:RKLB",
+    "per_name_cap:SPOT"
+   ],
+   "violations": [],
+   "current_under_phase": {
+    "median_CAGR_5Y": 0.18298734072506717,
+    "ES5": -0.017098205225414848,
+    "P_loss_gt_30pct": 0.00124
+   },
+   "candidates": [
+    [
+     "current",
+     true,
+     0.172973510046592,
+     0.20816781697614228
+    ],
+    [
+     "equal",
+     true,
+     0.16314308975457403,
+     0.18873235912621472
+    ],
+    [
+     "empty",
+     true,
+     0.08975756295081361,
+     -0.04966771468054917
+    ],
+    [
+     "given",
+     true,
+     0.17788867909441475,
+     0.28913622755667895
+    ]
+   ]
+  }
+ },
+ "TAIWAN_QUARANTINE|QUARANTINE": {
+  "companies": {
+   "SPCX": {
+    "run_id": "20260930T221614Z-company_mc-9f3fcf",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T221614Z-company_mc-9f3fcf-paths.npz",
+    "median_CAGR_5Y": -0.042890554493605904,
+    "q05": -0.23685496855478996,
+    "q95": 0.1685425523062559,
+    "P_loss_gt_30pct_5Y": 0.415432,
+    "ES5": -0.8044004512467104,
+    "P_2x_5Y": 0.067888,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "NBIS": {
+    "run_id": "20260930T221805Z-company_mc-c64413",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T221805Z-company_mc-c64413-paths.npz",
+    "median_CAGR_5Y": 0.31013382274766077,
+    "q05": 0.0020118869728736576,
+    "q95": 0.6489118910900947,
+    "P_loss_gt_30pct_5Y": 0.01807,
+    "ES5": -0.251416209689147,
+    "P_2x_5Y": 0.793426,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "NVDA": {
+    "run_id": "20260930T222011Z-company_mc-38a9f0",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T222011Z-company_mc-38a9f0-paths.npz",
+    "median_CAGR_5Y": 0.16406772243294399,
+    "q05": -0.03482549236052921,
+    "q95": 0.38308210320317665,
+    "P_loss_gt_30pct_5Y": 0.025672,
+    "ES5": -0.3315041460236735,
+    "P_2x_5Y": 0.54821,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "HOOD": {
+    "run_id": "20260930T222152Z-company_mc-042f22",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T222152Z-company_mc-042f22-paths.npz",
+    "median_CAGR_5Y": -0.0996761456509831,
+    "q05": -0.2247053899217997,
+    "q95": 0.0396791872082914,
+    "P_loss_gt_30pct_5Y": 0.648084,
+    "ES5": -0.7651055061903888,
+    "P_2x_5Y": 0.001864,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "RKLB": {
+    "run_id": "20260930T222259Z-company_mc-31c185",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T222259Z-company_mc-31c185-paths.npz",
+    "median_CAGR_5Y": 0.04478236704535277,
+    "q05": -0.3343979997800922,
+    "q95": 0.19968918149860151,
+    "P_loss_gt_30pct_5Y": 0.154188,
+    "ES5": -0.8943563238092425,
+    "P_2x_5Y": 0.13742,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "LLY": {
+    "run_id": "20260930T222418Z-company_mc-412627",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T222418Z-company_mc-412627-paths.npz",
+    "median_CAGR_5Y": 0.0753517337672901,
+    "q05": -0.06616997355383784,
+    "q95": 0.2326104248845199,
+    "P_loss_gt_30pct_5Y": 0.046684,
+    "ES5": -0.3960432590426519,
+    "P_2x_5Y": 0.220316,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "META": {
+    "run_id": "20260930T222529Z-company_mc-7018b4",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T222529Z-company_mc-7018b4-paths.npz",
+    "median_CAGR_5Y": 0.10235467066819481,
+    "q05": -0.06091741755691181,
+    "q95": 0.2632735412912043,
+    "P_loss_gt_30pct_5Y": 0.04198,
+    "ES5": -0.40041261818510654,
+    "P_2x_5Y": 0.321288,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "ASML": {
+    "run_id": "20260930T222658Z-company_mc-fabc3d",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T222658Z-company_mc-fabc3d-paths.npz",
+    "median_CAGR_5Y": -0.07463379161671024,
+    "q05": -0.2249383772486821,
+    "q95": 0.08944063902069468,
+    "P_loss_gt_30pct_5Y": 0.52375,
+    "ES5": -0.7740916734671782,
+    "P_2x_5Y": 0.013048,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "MSFT": {
+    "run_id": "20260930T222838Z-company_mc-ffd97c",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T222838Z-company_mc-ffd97c-paths.npz",
+    "median_CAGR_5Y": 0.05304178897083045,
+    "q05": -0.09843172233630709,
+    "q95": 0.19701499877063666,
+    "P_loss_gt_30pct_5Y": 0.09194,
+    "ES5": -0.5142312828856567,
+    "P_2x_5Y": 0.140718,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "PLTR": {
+    "run_id": "20260930T222957Z-company_mc-620802",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T222957Z-company_mc-620802-paths.npz",
+    "median_CAGR_5Y": -0.009382316305177829,
+    "q05": -0.16222600133519402,
+    "q95": 0.14854366138727232,
+    "P_loss_gt_30pct_5Y": 0.264024,
+    "ES5": -0.6649062603087676,
+    "P_2x_5Y": 0.049812,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "NET": {
+    "run_id": "20260930T223054Z-company_mc-4136d3",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T223054Z-company_mc-4136d3-paths.npz",
+    "median_CAGR_5Y": -0.1734680488574904,
+    "q05": -0.33057128511435835,
+    "q95": -0.010283674014673934,
+    "P_loss_gt_30pct_5Y": 0.856738,
+    "ES5": -0.8973613954861599,
+    "P_2x_5Y": 0.001022,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "ETN": {
+    "run_id": "20260930T223149Z-company_mc-0ce224",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T223149Z-company_mc-0ce224-paths.npz",
+    "median_CAGR_5Y": 0.022423893047725962,
+    "q05": -0.1434390032983306,
+    "q95": 0.19208908397228783,
+    "P_loss_gt_30pct_5Y": 0.183456,
+    "ES5": -0.631308947533941,
+    "P_2x_5Y": 0.10872,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "ASTS": {
+    "run_id": "20260930T223257Z-company_mc-cbfbbd",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T223257Z-company_mc-cbfbbd-paths.npz",
+    "median_CAGR_5Y": 0.012347437516906479,
+    "q05": -0.9915177352238763,
+    "q95": 0.30671248306235666,
+    "P_loss_gt_30pct_5Y": 0.350724,
+    "ES5": -0.9999999999560905,
+    "P_2x_5Y": 0.22888,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "CRWV": {
+    "run_id": "20260930T223420Z-company_mc-1fc564",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T223420Z-company_mc-1fc564-paths.npz",
+    "median_CAGR_5Y": 0.30205928332320686,
+    "q05": -0.018919435507368264,
+    "q95": 0.6238529032490153,
+    "P_loss_gt_30pct_5Y": 0.026244,
+    "ES5": -0.3418035438683267,
+    "P_2x_5Y": 0.77689,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "SPOT": {
+    "run_id": "20260930T223548Z-company_mc-e01cac",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T223548Z-company_mc-e01cac-paths.npz",
+    "median_CAGR_5Y": 0.11310507082703414,
+    "q05": -0.0012235744884026229,
+    "q95": 0.2305334814712378,
+    "P_loss_gt_30pct_5Y": 0.003314,
+    "ES5": -0.13047664011453475,
+    "P_2x_5Y": 0.30649,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   }
+  },
+  "optimum": {
+   "run_id": "20260930T233041Z-portfolio_optimizer-49f452",
+   "feasible": true,
+   "weights": {
+    "ASML": 0.0,
+    "ASTS": 0.005,
+    "CRWV": 0.105,
+    "ETN": 0.0,
+    "HOOD": 0.0,
+    "LLY": 0.13,
+    "META": 0.045,
+    "MSFT": 0.0,
+    "NBIS": 0.16,
+    "NET": 0.0,
+    "NVDA": 0.11,
+    "PLTR": 0.02,
+    "RKLB": 0.08,
+    "SPCX": 0.01,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1763,
+   "start_used": "given",
+   "turnover": 0.5065,
+   "median_CAGR_5Y": 0.17922845993262126,
+   "ES5": 0.29425508087164276,
+   "P_loss_gt_30pct": 0.0,
+   "binding": [
+    "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+    "per_name_cap:CRWV",
+    "per_name_cap:RKLB",
+    "per_name_cap:SPOT"
+   ],
+   "violations": [],
+   "current_under_phase": {
+    "median_CAGR_5Y": 0.18451119403677463,
+    "ES5": -0.010530204290552183,
+    "P_loss_gt_30pct": 0.001148
+   },
+   "candidates": [
+    [
+     "current",
+     true,
+     0.17227641733445231,
+     0.21195453914458187
+    ],
+    [
+     "equal",
+     true,
+     0.15896219181989246,
+     0.1936147316463904
+    ],
+    [
+     "empty",
+     true,
+     0.09024165257025996,
+     -0.04765955468375711
+    ],
+    [
+     "given",
+     true,
+     0.17922845993262126,
+     0.29425508087164276
+    ]
+   ]
+  }
+ },
+ "TAIWAN_QUARANTINE|NORMALIZATION_OR_FROZEN": {
+  "companies": {
+   "SPCX": {
+    "run_id": "20260930T223703Z-company_mc-ea768f",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T223703Z-company_mc-ea768f-paths.npz",
+    "median_CAGR_5Y": -0.03415342029505136,
+    "q05": -0.22954989449515772,
+    "q95": 0.17808526893760707,
+    "P_loss_gt_30pct_5Y": 0.38876,
+    "ES5": -0.7948511760536636,
+    "P_2x_5Y": 0.078084,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "NBIS": {
+    "run_id": "20260930T224015Z-company_mc-2dd160",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T224015Z-company_mc-2dd160-paths.npz",
+    "median_CAGR_5Y": 0.3315613866671645,
+    "q05": 0.027709590676323267,
+    "q95": 0.6660495974271702,
+    "P_loss_gt_30pct_5Y": 0.011078,
+    "ES5": -0.1370399834870449,
+    "P_2x_5Y": 0.828126,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "NVDA": {
+    "run_id": "20260930T224245Z-company_mc-267623",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T224245Z-company_mc-267623-paths.npz",
+    "median_CAGR_5Y": 0.1951147014898027,
+    "q05": 0.005157511054156441,
+    "q95": 0.4025165006711289,
+    "P_loss_gt_30pct_5Y": 0.00931,
+    "ES5": -0.16550621528842774,
+    "P_2x_5Y": 0.649934,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "HOOD": {
+    "run_id": "20260930T224519Z-company_mc-f68d45",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T224519Z-company_mc-f68d45-paths.npz",
+    "median_CAGR_5Y": -0.09218996838227428,
+    "q05": -0.2170772326978291,
+    "q95": 0.04540021853625918,
+    "P_loss_gt_30pct_5Y": 0.614,
+    "ES5": -0.7530413689928845,
+    "P_2x_5Y": 0.002008,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "RKLB": {
+    "run_id": "20260930T224624Z-company_mc-4d7d0c",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T224624Z-company_mc-4d7d0c-paths.npz",
+    "median_CAGR_5Y": 0.043915598708873294,
+    "q05": -0.3342206606505871,
+    "q95": 0.19842850944423182,
+    "P_loss_gt_30pct_5Y": 0.154996,
+    "ES5": -0.8942772262680292,
+    "P_2x_5Y": 0.134898,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "LLY": {
+    "run_id": "20260930T224740Z-company_mc-a9b5f5",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T224740Z-company_mc-a9b5f5-paths.npz",
+    "median_CAGR_5Y": 0.07714418114499388,
+    "q05": -0.0644983754282825,
+    "q95": 0.2344851835150572,
+    "P_loss_gt_30pct_5Y": 0.044548,
+    "ES5": -0.3905558440459271,
+    "P_2x_5Y": 0.225904,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "META": {
+    "run_id": "20260930T224851Z-company_mc-e44c14",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T224851Z-company_mc-e44c14-paths.npz",
+    "median_CAGR_5Y": 0.11281447276831069,
+    "q05": -0.049173546720931834,
+    "q95": 0.2716271541802152,
+    "P_loss_gt_30pct_5Y": 0.031796,
+    "ES5": -0.3599116870103994,
+    "P_2x_5Y": 0.358192,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "ASML": {
+    "run_id": "20260930T225019Z-company_mc-ef2331",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225019Z-company_mc-ef2331-paths.npz",
+    "median_CAGR_5Y": -0.05404803946916659,
+    "q05": -0.20212597190603035,
+    "q95": 0.1061102013412928,
+    "P_loss_gt_30pct_5Y": 0.437316,
+    "ES5": -0.7369524200206771,
+    "P_2x_5Y": 0.018984,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "MSFT": {
+    "run_id": "20260930T225214Z-company_mc-c15a48",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225214Z-company_mc-c15a48-paths.npz",
+    "median_CAGR_5Y": 0.061353831003487236,
+    "q05": -0.0906575632657482,
+    "q95": 0.20555082784360187,
+    "P_loss_gt_30pct_5Y": 0.07877,
+    "ES5": -0.4926593615298721,
+    "P_2x_5Y": 0.163466,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "PLTR": {
+    "run_id": "20260930T225343Z-company_mc-014256",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225343Z-company_mc-014256-paths.npz",
+    "median_CAGR_5Y": -0.007335215752818092,
+    "q05": -0.15992067410445537,
+    "q95": 0.15006410696922476,
+    "P_loss_gt_30pct_5Y": 0.256478,
+    "ES5": -0.6599888863975578,
+    "P_2x_5Y": 0.05148,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "NET": {
+    "run_id": "20260930T225445Z-company_mc-52b287",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225445Z-company_mc-52b287-paths.npz",
+    "median_CAGR_5Y": -0.1659582646954572,
+    "q05": -0.32158498066175156,
+    "q95": -0.0051464459023724835,
+    "P_loss_gt_30pct_5Y": 0.84215,
+    "ES5": -0.8897262907741521,
+    "P_2x_5Y": 0.001072,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "ETN": {
+    "run_id": "20260930T225545Z-company_mc-7af7cf",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225545Z-company_mc-7af7cf-paths.npz",
+    "median_CAGR_5Y": 0.024247088466095468,
+    "q05": -0.14142828321157377,
+    "q95": 0.1933286814159905,
+    "P_loss_gt_30pct_5Y": 0.178272,
+    "ES5": -0.6268142957382659,
+    "P_2x_5Y": 0.111266,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "ASTS": {
+    "run_id": "20260930T225658Z-company_mc-99feaf",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225658Z-company_mc-99feaf-paths.npz",
+    "median_CAGR_5Y": 0.011994627651442547,
+    "q05": -0.9915177352238763,
+    "q95": 0.3063531940569303,
+    "P_loss_gt_30pct_5Y": 0.35119,
+    "ES5": -0.9999999999560905,
+    "P_2x_5Y": 0.228102,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "CRWV": {
+    "run_id": "20260930T225815Z-company_mc-69277c",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225815Z-company_mc-69277c-paths.npz",
+    "median_CAGR_5Y": 0.3121304009000878,
+    "q05": -0.0070595482382800594,
+    "q95": 0.6318140208271986,
+    "P_loss_gt_30pct_5Y": 0.022034,
+    "ES5": -0.2962332785570672,
+    "P_2x_5Y": 0.792772,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "SPOT": {
+    "run_id": "20260930T225938Z-company_mc-ada38c",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225938Z-company_mc-ada38c-paths.npz",
+    "median_CAGR_5Y": 0.11360056572895694,
+    "q05": -0.0009066209700394003,
+    "q95": 0.23144568022142922,
+    "P_loss_gt_30pct_5Y": 0.003266,
+    "ES5": -0.12914827849399305,
+    "P_2x_5Y": 0.309348,
+    "scenario_mode": "conditional_confirmed_phase",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   }
+  },
+  "optimum": {
+   "run_id": "20260930T233619Z-portfolio_optimizer-f449b4",
+   "feasible": true,
+   "weights": {
+    "ASML": 0.0,
+    "ASTS": 0.02,
+    "CRWV": 0.105,
+    "ETN": 0.0,
+    "HOOD": 0.0,
+    "LLY": 0.14,
+    "META": 0.045,
+    "MSFT": 0.0,
+    "NBIS": 0.17,
+    "NET": 0.0,
+    "NVDA": 0.11,
+    "PLTR": 0.0,
+    "RKLB": 0.055,
+    "SPCX": 0.0,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1963,
+   "start_used": "given",
+   "turnover": 0.5155,
+   "median_CAGR_5Y": 0.19459901001865698,
+   "ES5": 0.38903718513597296,
+   "P_loss_gt_30pct": 0.0,
+   "binding": [
+    "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+    "per_name_cap:CRWV",
+    "per_name_cap:LLY",
+    "per_name_cap:SPOT"
+   ],
+   "violations": [],
+   "current_under_phase": {
+    "median_CAGR_5Y": 0.2030051067183266,
+    "ES5": 0.11153301839778972,
+    "P_loss_gt_30pct": 0.00021
+   },
+   "candidates": [
+    [
+     "current",
+     true,
+     0.18719920952226599,
+     0.3009448499129374
+    ],
+    [
+     "equal",
+     true,
+     0.1710998092791095,
+     0.2669681601010715
+    ],
+    [
+     "empty",
+     true,
+     0.09579997610304047,
+     -0.015977642423768635
+    ],
+    [
+     "given",
+     true,
+     0.19459901001865698,
+     0.38903718513597296
+    ]
+   ]
+  }
+ }
+}
