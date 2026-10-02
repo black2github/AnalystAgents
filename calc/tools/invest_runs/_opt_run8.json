@@ -1,0 +1,110 @@
+{
+ "S8": {
+  "run_id": "20261001T222051Z-portfolio_optimizer-56bdcc",
+  "weights": {
+   "ASML": 0.0,
+   "ASTS": 0.0,
+   "CRWV": 0.105,
+   "ETN": 0.0,
+   "HOOD": 0.0,
+   "LLY": 0.135,
+   "META": 0.015,
+   "MSFT": 0.0,
+   "NBIS": 0.19,
+   "NET": 0.0,
+   "NVDA": 0.11,
+   "PLTR": 0.02,
+   "RKLB": 0.08,
+   "SPCX": 0.01,
+   "SPOT": 0.135
+  },
+  "dp": 0.1763,
+  "feasible": true,
+  "binding": [
+   "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+   "per_name_cap:CRWV",
+   "per_name_cap:RKLB",
+   "per_name_cap:SPOT"
+  ],
+  "median_CAGR_5Y": 0.20020929761923156,
+  "ES5": 0.32544190765148306,
+  "scenario_constraints": {
+   "by_scenario": {
+    "TAIWAN_SEIZURE": {
+     "median_CAGR": 0.1490618574946896,
+     "P_loss_gt_30pct": 4.2e-05,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.07989661589138919
+    },
+    "CHIP_COLD_WAR": {
+     "median_CAGR": 0.21965310075433897,
+     "P_loss_gt_30pct": 0.0,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.4754462182767569
+    },
+    "TAIWAN_QUARANTINE": {
+     "median_CAGR": 0.18520272735134902,
+     "P_loss_gt_30pct": 2e-06,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.2857857411719129
+    }
+   },
+   "base": {
+    "median_CAGR": 0.20869246965976496,
+    "P_loss_gt_30pct": 0.0,
+    "P_loss_gt_50pct": 0.0,
+    "expected_shortfall_5pct": 0.44610618640240873
+   },
+   "burdens_B": {
+    "TAIWAN_SEIZURE": 0.03662095705110196,
+    "CHIP_COLD_WAR": 0.0,
+    "TAIWAN_QUARANTINE": 0.028056077915336767
+   },
+   "scenario_concentration": {
+    "value": 0.566212676108371,
+    "raw_value": 0.566212676108371,
+    "adverse_scenarios": [
+     "TAIWAN_QUARANTINE",
+     "TAIWAN_SEIZURE"
+    ],
+    "applicable": true,
+    "status": "applicable",
+    "warning": true,
+    "hard_limit_breach": false,
+    "rule": "A = {s: B_s > 0}; |A| < 2 \u2192 \u043b\u0438\u043c\u0438\u0442 \u043d\u0435 \u043f\u0440\u0438\u043c\u0435\u043d\u044f\u0435\u0442\u0441\u044f (raw \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0435\u0442\u0441\u044f); |A| \u2265 2 \u2192 max B_s / \u03a3 B_s \u2264 0.60 (warning > 0.50); BASE \u0432\u043d\u0435 \u0437\u043d\u0430\u043c\u0435\u043d\u0430\u0442\u0435\u043b\u044f (IMMA 25.09.2026, \u0432\u0430\u0440\u0438\u0430\u043d\u0442 \u0430)"
+   }
+  },
+  "start_used": "given",
+  "turnover": 0.5115
+ },
+ "mixture_S8": {
+  "run_id": "20261001T224257Z-portfolio_paths-af5fc4",
+  "Y5": {
+   "median_CAGR": 0.20374497319305584,
+   "P_2x": 0.76128618,
+   "P_loss_gt_30pct": 5.550000000000002e-06,
+   "P_loss_gt_50pct": 0.0,
+   "expected_shortfall_5pct": 0.3332508774390213,
+   "CAGR_quantiles": {
+    "0.05": 0.08446310519219269,
+    "0.25": 0.1513313504814262,
+    "0.5": 0.20374497319305584,
+    "0.75": 0.26179088939381656,
+    "0.95": 0.35404134470710136
+   }
+  },
+  "concentration": {
+   "value": 0.5662126761083707,
+   "raw_value": 0.5662126761083707,
+   "adverse_scenarios": [
+    "TAIWAN_QUARANTINE",
+    "TAIWAN_SEIZURE"
+   ],
+   "applicable": true,
+   "status": "applicable",
+   "warning": true,
+   "hard_limit_breach": false,
+   "rule": "A = {s: B_s > 0}; |A| < 2 \u2192 \u043b\u0438\u043c\u0438\u0442 \u043d\u0435 \u043f\u0440\u0438\u043c\u0435\u043d\u044f\u0435\u0442\u0441\u044f (raw \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0435\u0442\u0441\u044f); |A| \u2265 2 \u2192 max B_s / \u03a3 B_s \u2264 0.60 (warning > 0.50); BASE \u0432\u043d\u0435 \u0437\u043d\u0430\u043c\u0435\u043d\u0430\u0442\u0435\u043b\u044f (IMMA 25.09.2026, \u0432\u0430\u0440\u0438\u0430\u043d\u0442 \u0430)"
+  }
+ }
+}

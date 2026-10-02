@@ -1,7 +1,8 @@
 """Portfolio Stability Test v1.0 (Portfolio_Stability_Test_Specification_v1.0, схема v1.0; модуль 1.3.0): устойчивость включения и веса бумаг
 к малым правдоподобным изменениям предпосылок — серия повторных прогонов portfolio_optimizer на возмущённых совместных путях.
 
-Центральный прогон = optimizer на тех же входах (тёплый старт «current», как в нормативном прогоне). Каждое возмущение меняет
+Центральный прогон = optimizer на тех же входах (тёплый старт «current»; 1.3.1 — или «given» от stability.central_start_weights /
+central_start_dry_powder, чтобы возмущать окрестность принятого нормативного оптимума, когда ландшафт имеет несколько локальных оптимумов). Каждое возмущение меняет
 ровно один слой (§2), возмущённые пути живут в памяти, на диск не пишутся. Слои v1.0.0 (все величины — model_assumption):
 - return: сдвиг медианного CAGR ±3 / ±5 п.п. по компании — масштаб относительной стоимости пути (1+δ)^h на всех горизонтах (§3.1);
 - terminal multiple ±20 %: лог-множитель к стоимости пути на всех горизонтах (§3.4; точно для базы FCF_multiple, прокси для смеси);
@@ -71,7 +72,7 @@ from engine import company_mc
 from engine import portfolio_optimizer as po
 from engine import portfolio_paths
 
-VERSION = "1.3.0"
+VERSION = "1.3.1"
 HKEYS = (("r3", 3), ("r5", 5), ("r8", 8))
 DEFAULTS = {"combined_runs": 500, "max_paths": 100_000, "search_paths": 100_000, "return_shift_pp": [3, 5], "multiple_pct": 0.20, "margin_pp": 0.05,
             "corr_delta": [0.10, 0.15], "loo_min_weight": 0.05, "inclusion_threshold": 0.01, "material_driver_min": 0.30, "combined_return_pp": 3,
@@ -412,7 +413,11 @@ def run(inputs: dict, seed: int) -> dict:
         resim_check = {"company": tick[0], "reproduced": True}
 
     # --- центральный прогон
-    central = _opt(inp, _copy(base, n), None, None)
+    # 1.3.1: центральный прогон — тёплый старт от нормативного оптимума (stability.central_start_weights / central_start_dry_powder),
+    # иначе от текущих весов (как раньше): ландшафт оптимизатора имеет несколько локальных оптимумов (заход 8: старт current → NBIS 23 %,
+    # старт given от C2 → CRWV 10.5 %), и тест должен возмущать окрестность именно принятого оптимума
+    csw = cfg.get("central_start_weights")
+    central = _opt(inp, _copy(base, n), ({t: float(w) for t, w in csw.items()} if csw else None), (float(cfg.get("central_start_dry_powder", 0.0)) if csw else None))
     cw, cdp = central["weights"], central["dry_powder"]
     if not central["feasible"]:
         raise ValueError(f"центральный прогон недопустим: {central['violations']} — Stability Test не определён")
