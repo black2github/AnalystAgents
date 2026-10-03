@@ -181,3 +181,22 @@ def test_theme_policy_constraint_v130(paths):
     assert hard["theme_lookthrough"]["value_at_optimum"] <= free_t - 0.10 + 1e-6 + 1e-9
     assert hard["proposed_weights"]["AAA"] < rep["proposed_weights"]["AAA"]
     assert "theme_policy:AI_TOTAL" in hard["binding_constraints"] or hard["theme_lookthrough"]["value_at_optimum"] < free_t - 0.10 - 0.005
+
+
+def test_global_search_v140(paths):
+    """1.4.0: случайные старты и basin hopping детерминированы по seed, результат не хуже стандартных стартов (лексикографически), блок search."""
+    base = _inputs(paths)
+    std = po.run({**base, "search": {"random_starts": 0, "basin_kicks": 0}}, 0)
+    assert std["search"]["exploration_paths"] is None and std["search"]["best_source"] in ("current", "equal", "empty")
+    g1 = po.run({**base, "search": {"random_starts": 5, "basin_kicks": 4, "exploration_paths": 1500, "polish_top": 2}}, 7)
+    g2 = po.run({**base, "search": {"random_starts": 5, "basin_kicks": 4, "exploration_paths": 1500, "polish_top": 2}}, 7)
+    assert g1["proposed_weights"] == g2["proposed_weights"] and g1["dry_powder_weight"] == g2["dry_powder_weight"]   # детерминизм по seed
+    sb = g1["search"]
+    assert sb["exploration_paths"] == 1500 and len(sb["exploration_candidates"]) == 9 and sb["distinct_local_optima"] >= 1
+    assert g1["feasible"]
+    P = po._Problem(base)
+    assert not P.better(std_ev := {"horizons": std["portfolio_return_distribution"] | {"Y5": {**std["portfolio_return_distribution"]["Y5"], **std["portfolio_downside"]["Y5"]}}, "turnover": std["turnover_from_current"]},
+                        {"horizons": g1["portfolio_return_distribution"] | {"Y5": {**g1["portfolio_return_distribution"]["Y5"], **g1["portfolio_downside"]["Y5"]}}, "turnover": g1["turnover_from_current"]}) or sb["improvement_vs_standard_pp"] >= -1e-9
+    # другой seed — тоже допустимый результат
+    g3 = po.run({**base, "search": {"random_starts": 3, "basin_kicks": 2, "exploration_paths": 1500}}, 99)
+    assert g3["feasible"] and g3["search"]["best_source"]

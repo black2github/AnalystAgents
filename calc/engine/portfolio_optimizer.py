@@ -39,10 +39,20 @@ inputs: {"paths_files": {tk: .npz}, "weights_current": {tk: w} (все пози�
                               переменная оптимизации с ПЛОСКОЙ доходностью (1+r)^h без калибровки и без отклика на сценарий
                               (model_assumption: движок видит хедж только как не-акционерный балласт, рост золота под шоком не смоделирован);
                               тикер берётся из weights_current (не из fixed_weights).}
+         1.4.0 — ГЛОБАЛЬНЫЙ ПОИСК (03.10.2026, после трёх случаев застревания покоординатного подъёма: два бассейна NBIS 23 / CRWV 10.5, оптимум с
+         лимитом числа бумаг лучше оптимума без лимита): "search": {"random_starts": 8, "basin_kicks": 6, "exploration_paths": 50000,
+         "polish_top": 3}. Фазы: (1) стандартные старты current/equal/empty/given — как раньше, на search_paths; (2) random_starts
+         случайных стартов (поддержка 4…8 бумаг или [positions_min, positions_max], веса Дирихле в потолках, dp в [min, preferred]) — локальный
+         поиск на первых exploration_paths путях; (3) basin hopping: от лучшей точки basin_kicks «толчков» (перенос случайной доли позиции в
+         другую бумагу/dp, закрытие/открытие позиции) + локальный поиск, принимается при улучшении; (4) polish_top лучших различных локальных
+         оптимумов дошлифовываются на search_paths, итог — на всех путях. Случайность — только из seed запроса (детерминирована); ходы
+         «закрыть/открыть позицию» включены всегда (не только при cardinality). Выход search {distinct_local_optima, candidates, best_source,
+         improvement_vs_standard_pp}. random_starts = 0 и basin_kicks = 0 → поведение 1.3.0.
 outputs: proposed_weights, dry_powder_weight, feasible_weight_bands, portfolio_return_distribution (3/5/8Y), portfolio_downside,
   sector/common_cause/top3 concentrations, binding_constraints, constraint_gaps_vs_current, marginal_curves (MPC-сетка по бумаге),
   evaluations, infeasible (+ minimum_relaxations), scenario_constraints (метрики портфеля под каждым сценарием на оптимуме и на текущих
-  весах, ScenarioConcentration по варианту «а»), hedge_instruments, decision: none. Детерминирован (перебор без случайности; seed не используется).
+  весах, ScenarioConcentration по варианту «а»), hedge_instruments, search, decision: none. Детерминирован при фиксированном seed (1.4.0: seed —
+  генератор случайных стартов и толчков).
 Сценарно-условные ограничения (1.1.0): для каждого adverse-сценария s с owner-вероятностью p_s ≥ p_min — ES5_5Y(портфель | s) ≥ es5_min и
 P(loss>30 %)_5Y(портфель | s) ≤ p_loss_gt_30_max (пороги — owner_judgment); ScenarioConcentration ≤ scenario_concentration_max только при
 |A| ≥ 2 (вариант «а» IMMA). Жёсткие, в той же лексикографической схеме §3 (без тихого ослабления); в цели — как тай-брейк после ES5 (§3:
@@ -57,7 +67,7 @@ import numpy as np
 
 from engine import portfolio_paths
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 HORIZONS = (("Y3", "r3", 3), ("Y5", "r5", 5), ("Y8", "r8", 8))
 
 
@@ -246,10 +256,15 @@ class _Problem:
 
     def use_full_paths(self) -> None:
         """Переключить поиск на все совместные пути (после нарушения риск-ограничений только на полном наборе)."""
-        self.R5s = self.R["r5"]; self.n_search = self.n
-        self.SRs = dict(self.SR)
+        self.set_search_paths(self.n)
+
+    def set_search_paths(self, n: int) -> None:
+        """1.4.0: поиск на первых n совместных путях (разведка — exploration_paths, шлифовка — search_paths, итог — все)."""
+        n = int(min(max(n, 1), self.n)); self.n_search = n
+        self.R5s = self.R["r5"][:n]
+        self.SRs = {sid: m[:n] for sid, m in self.SR.items()}
         if self.sc_cfg is not None and self.BR is not None:
-            self.BRs = self.BR
+            self.BRs = self.BR[:n]
 
     def concentrations(self, w: np.ndarray, wdp: float) -> dict:
         w = np.asarray(w, dtype=float)
@@ -412,11 +427,12 @@ def _search(P: _Problem, w0: np.ndarray, wdp0: float, step: float, max_iter: int
                     break
             if improved:
                 break
-        if not improved and P.card_on:
-            # 1.2.0: ходы через запретную зону (0, min_position_weight): закрыть позицию целиком / открыть на минимальном весе
+        if not improved:
+            # 1.2.0: ходы через запретную зону (0, min_position_weight): закрыть позицию целиком / открыть на минимальном весе;
+            # 1.4.0: включены всегда (без лимита числа бумаг min = шаг сетки) — покоординатные шаги не закрывают символические позиции
             cand_moves = []
             for i in range(k):
-                if not P._card_mask[i]:
+                if P.card_on and not P._card_mask[i]:
                     continue
                 if w[i] > 1e-9:
                     for j in slots:
@@ -432,19 +448,22 @@ def _search(P: _Problem, w0: np.ndarray, wdp0: float, step: float, max_iter: int
                                 continue
                             dp2 = round(dp2 + amt, 9)
                         cand_moves.append((w2, round(P.budget - w2.sum(), 9) if j < k else dp2))
-                elif P.min_pos is not None and P.cap[i] >= P.min_pos - 1e-9:
+                else:
+                    open_w = P.min_pos if P.min_pos is not None else max(step, 0.01)
+                    if P.cap[i] < open_w - 1e-9:
+                        continue
                     for j in slots:
                         if j == i:
                             continue
-                        w2, dp2 = w.copy(), wdp; w2[i] = _snap(P.min_pos, step)
+                        w2, dp2 = w.copy(), wdp; w2[i] = _snap(open_w, step)
                         if j < k:
-                            if w2[j] - P.min_pos < -1e-9 or (P._card_mask[j] and 1e-9 < w2[j] - P.min_pos < (P.min_pos or 0.0) - 1e-9):
+                            if w2[j] - open_w < -1e-9 or (P.min_pos is not None and P._card_mask[j] and 1e-9 < w2[j] - open_w < P.min_pos - 1e-9):
                                 continue
-                            w2[j] = _snap(w2[j] - P.min_pos, step)
+                            w2[j] = _snap(w2[j] - open_w, step)
                         else:
-                            if dp2 - P.min_pos < P.dp_min - 1e-9:
+                            if dp2 - open_w < P.dp_min - 1e-9:
                                 continue
-                            dp2 = round(dp2 - P.min_pos, 9)
+                            dp2 = round(dp2 - open_w, 9)
                         cand_moves.append((w2, round(P.budget - w2.sum(), 9) if j < k else dp2))
             for w2, dp2 in cand_moves:
                 if abs(w2.sum() + dp2 - P.budget) > 1e-6 or dp2 < P.dp_min - 1e-9 or dp2 > P.dp_max + 1e-9:
@@ -466,6 +485,8 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
     P = _Problem(inputs, data)
     k = len(P.tick)
     starts = inputs.get("starts") or ["current", "equal", "empty"]
+    scfg = {"random_starts": 8, "basin_kicks": 6, "exploration_paths": 50_000, "polish_top": 3, **(inputs.get("search") or {})}
+    rng = np.random.default_rng(np.random.SeedSequence([int(seed) & 0xFFFFFFFF, 0x5EA7C4]))
     cands = []
     for s in starts:
         if s == "current":
@@ -486,6 +507,96 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
             w, wdp, nf2 = _search(P, w, wdp, P.fine, max_iter=30); nf += nf2
             ev = P.evaluate(w, wdp, full=True); V = P.violations(w, wdp, ev)
         cands.append({"start": s, "w": w, "wdp": wdp, "ev": ev, "feasible": not V, "violations": V, "evals": ne + nf})
+    n_std = len(cands)
+    # --- 1.4.0: глобальный поиск — случайные старты и basin hopping на разведочной выборке, шлифовка лучших на search_paths
+    n_rand, n_kick = int(scfg["random_starts"]), int(scfg["basin_kicks"])
+    search_block = {"random_starts": n_rand, "basin_kicks": n_kick, "exploration_paths": None, "polish_top": int(scfg["polish_top"]), "standard_starts": list(starts)}
+    if n_rand > 0 or n_kick > 0:
+        n_full_search = P.n_search
+        n_expl = int(min(P.n_search, int(scfg["exploration_paths"])))
+        search_block["exploration_paths"] = n_expl
+        P.set_search_paths(n_expl)
+
+        def local(w0, dp0):
+            w1, dp1, e1 = _search(P, w0, dp0, P.step); w1, dp1, e2 = _search(P, w1, dp1, P.fine, max_iter=30)
+            ev1 = P.evaluate(w1, dp1); V1 = P.violations(w1, dp1, ev1)
+            return {"w": w1, "wdp": dp1, "ev": ev1, "feasible": not V1, "violations": V1, "evals": e1 + e2}
+
+        def key_of(c):
+            return (tuple(np.round(c["w"], 3)), round(c["wdp"], 3))
+
+        def is_better(a, b):
+            if a["feasible"] != b["feasible"]:
+                return a["feasible"]
+            if not a["feasible"]:
+                return sum(v["excess"] for v in a["violations"]) < sum(v["excess"] for v in b["violations"]) - 1e-9
+            return P.better(a["ev"], b["ev"])
+
+        expl = []
+        lo = P.card_min if P.card_min is not None else min(4, k); hi = P.card_max if P.card_max is not None else min(8, k)
+        lo, hi = max(1, min(lo, k)), max(1, min(hi, k)); lo = min(lo, hi)
+        idx_all = [i for i in range(k) if P.cap[i] > 1e-9 and (not P.card_on or P._card_mask[i])]
+        for r in range(n_rand):
+            m = int(rng.integers(lo, hi + 1)); m = min(m, len(idx_all))
+            probs = np.array([P.cap[i] for i in idx_all]); probs = probs / probs.sum()
+            sup = rng.choice(idx_all, size=m, replace=False, p=probs) if m < len(idx_all) else np.array(idx_all)
+            dp0 = float(rng.uniform(P.dp_min, max(P.dp_min, P.dp_pref)))
+            w0 = np.zeros(k); raw = rng.dirichlet(np.ones(m)) * (P.budget - dp0)
+            w0[sup] = np.minimum(raw, P.cap[sup])
+            if P.min_pos is not None:
+                w0[sup] = np.maximum(w0[sup], P.min_pos)
+            c = local(w0, dp0); c["start"] = f"random:{r}"; expl.append(c)
+        pool = cands + expl
+        best_e = pool[0]
+        for c in pool[1:]:
+            if is_better(c, best_e):
+                best_e = c
+        for kk in range(n_kick):
+            w0, dp0 = best_e["w"].copy(), best_e["wdp"]
+            held = [i for i in range(k) if w0[i] > 1e-9]
+            if not held:
+                break
+            mode = rng.integers(0, 3)
+            i = int(rng.choice(held))
+            if mode == 0:                                                      # перенос случайной доли позиции в другую бумагу
+                j = int(rng.choice([x for x in idx_all if x != i])) if len(idx_all) > 1 else i
+                amt = float(w0[i] * rng.uniform(0.25, 1.0)); amt = min(amt, max(0.0, P.cap[j] - w0[j]))
+                w0[i] -= amt; w0[j] += amt
+            elif mode == 1:                                                    # закрыть позицию в dry powder / открыть другую
+                amt = float(w0[i]); w0[i] = 0.0
+                room = max(0.0, P.dp_max - dp0); to_dp = min(amt, room); dp0 += to_dp; rest = amt - to_dp
+                if rest > 1e-9:
+                    cands_j = [x for x in idx_all if x != i and P.cap[x] - w0[x] > 1e-9]
+                    if cands_j:
+                        j = int(rng.choice(cands_j)); w0[j] += min(rest, P.cap[j] - w0[j])
+            else:                                                              # открыть незанятую бумагу за счёт держателя
+                free = [x for x in idx_all if w0[x] <= 1e-9]
+                if free:
+                    j = int(rng.choice(free)); amt = float(min(w0[i] * rng.uniform(0.3, 0.7), P.cap[j]))
+                    w0[i] -= amt; w0[j] += amt
+            dp0 = round(P.budget - w0.sum(), 9)
+            c = local(w0, dp0); c["start"] = f"kick:{kk}"; expl.append(c)
+            if is_better(c, best_e):
+                best_e = c
+        # шлифовка лучших различных локальных оптимумов на полной поисковой выборке
+        P.set_search_paths(n_full_search)
+        seen = set(); ranked = sorted(pool + expl, key=lambda c: (not c["feasible"], -(c["ev"]["horizons"]["Y5"]["median_CAGR"]) if c["feasible"] else sum(v["excess"] for v in c["violations"])))
+        polished = []
+        for c in ranked:
+            kk_ = key_of(c)
+            if kk_ in seen:
+                continue
+            seen.add(kk_)
+            if c["start"] in starts:
+                continue                                                       # стандартные старты уже посчитаны на search_paths
+            w1, dp1, e2 = _search(P, c["w"], c["wdp"], P.fine, max_iter=30)
+            ev1 = P.evaluate(w1, dp1, full=True); V1 = P.violations(w1, dp1, ev1)
+            polished.append({"start": c["start"], "w": w1, "wdp": dp1, "ev": ev1, "feasible": not V1, "violations": V1, "evals": c["evals"] + e2})
+            if len(polished) >= int(scfg["polish_top"]):
+                break
+        cands += polished
+        search_block["distinct_local_optima"] = len({key_of(c) for c in pool + expl})
+        search_block["exploration_candidates"] = [{"start": c["start"], "feasible": c["feasible"], "median_CAGR_5Y": c["ev"]["horizons"]["Y5"]["median_CAGR"], "ES5": c["ev"]["horizons"]["Y5"]["expected_shortfall_5pct"]} for c in expl]
     feas = [c for c in cands if c["feasible"]]
     if feas:
         best = feas[0]
@@ -495,6 +606,12 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
     else:
         best = min(cands, key=lambda c: sum(v["excess"] for v in c["violations"]))
     w, wdp, ev = best["w"], best["wdp"], best["ev"]
+    std_best = None
+    for c in cands[:n_std]:
+        if c["feasible"] and (std_best is None or P.better(c["ev"], std_best["ev"])):
+            std_best = c
+    search_block["best_source"] = best["start"]
+    search_block["improvement_vs_standard_pp"] = (round(100 * (ev["horizons"]["Y5"]["median_CAGR"] - std_best["ev"]["horizons"]["Y5"]["median_CAGR"]), 3) if std_best and best["feasible"] else None)
     con = P.concentrations(w, wdp)
     # допустимые полосы: все допустимые оценённые точки в пределах допуска по медиане от оптимума
     bands = {t: [float(w[i]), float(w[i])] for i, t in enumerate(P.tick)}
@@ -588,7 +705,7 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
     hedge_block = ({t: {**cfg, "current_weight": float(P.cur[P.tick.index(t)]), "proposed_weight": proposed[t],
                         "return_assumption": "flat (1+r)^h, без калибровки и без отклика на сценарий — model_assumption"} for t, cfg in P.hedge.items()} if P.hedge else None)
     return {"model_version": VERSION, "stage": "A_continuous_target", "paths": P.n, "search_paths": P.n_search, "companies": P.tick, "regime": P.regime,
-            "scenario_constraints": sc_block, "hedge_instruments": hedge_block, "cardinality": card_block,
+            "scenario_constraints": sc_block, "hedge_instruments": hedge_block, "cardinality": card_block, "search": search_block,
             "contract_version": "1.1", "positions_count": (card_block or {}).get("positions_count", int(sum(1 for i, t in enumerate(P.tick) if w[i] > 1e-9 and t not in P.hedge))),
             "cardinality_variant": inputs.get("cardinality_variant"), "min_position_weight": P.min_pos,
             "theme_lookthrough": theme_block, "theme_constraint_status": (theme_block or {}).get("status"),

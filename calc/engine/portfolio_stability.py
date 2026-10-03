@@ -72,7 +72,7 @@ from engine import company_mc
 from engine import portfolio_optimizer as po
 from engine import portfolio_paths
 
-VERSION = "1.3.1"
+VERSION = "1.3.2"
 HKEYS = (("r3", 3), ("r5", 5), ("r8", 8))
 DEFAULTS = {"combined_runs": 500, "max_paths": 100_000, "search_paths": 100_000, "return_shift_pp": [3, 5], "multiple_pct": 0.20, "margin_pp": 0.05,
             "corr_delta": [0.10, 0.15], "loo_min_weight": 0.05, "inclusion_threshold": 0.01, "material_driver_min": 0.30, "combined_return_pp": 3,
@@ -135,6 +135,7 @@ def _iman_conover(data: dict, tick: list, target: np.ndarray, seed: int) -> None
 def _opt(inputs: dict, data: dict, start_w: dict | None, start_dp: float | None) -> dict:
     inp = dict(inputs)
     inp.pop("stability", None)
+    inp["search"] = {"random_starts": 0, "basin_kicks": 0}                 # 1.3.2: глобальный поиск optimizer 1.4.0 выключен в серии — тёплые старты, скорость
     if start_w is not None:
         inp["starts"] = ["given"]; inp["start_weights"] = start_w; inp["start_dry_powder"] = start_dp
     else:
@@ -351,7 +352,7 @@ def _run_task(task: dict) -> dict:
         t = task["exclude"]; inp2 = dict(inp); inp2.pop("stability", None)
         caps = dict(inp2.get("per_name_caps") or {}); caps[t] = 0.0; inp2["per_name_caps"] = caps
         sw = dict(cw); sw[t] = 0.0
-        r = po.run({**inp2, "starts": ["given", "equal", "empty"], "start_weights": sw, "start_dry_powder": cdp}, 0, data=d)
+        r = po.run({**inp2, "starts": ["given", "equal", "empty"], "start_weights": sw, "start_dry_powder": cdp, "search": {"random_starts": 0, "basin_kicks": 0}}, 0, data=d)
         res = {"feasible": bool(r["feasible"]), "start_used": r["start_used"], "weights": r["proposed_weights"], "dry_powder": r["dry_powder_weight"],
                "median_CAGR_5Y": r["portfolio_return_distribution"]["Y5"]["median_CAGR"], "ES5": r["portfolio_downside"]["Y5"]["expected_shortfall_5pct"],
                "violations": [v["constraint"] for v in r["violations_at_optimum"]], "binding": r["binding_constraints"]}
