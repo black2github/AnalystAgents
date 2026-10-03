@@ -71,7 +71,7 @@
     "status": "applicable",
     "warning": true,
     "hard_limit_breach": false,
-    "rule": "A = {s: B_s > 0}; |A| < 2 \u2192 \u043b\u0438\u043c\u0438\u0442 \u043d\u0435 \u043f\u0440\u0438\u043c\u0435\u043d\u044f\u0435\u0442\u0441\u044f (raw \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0435\u0442\u0441\u044f); |A| \u2265 2 \u2192 max B_s / \u03a3 B_s \u2264 0.60 (warning > 0.50); BASE \u0432\u043d\u0435 \u0437\u043d\u0430\u043c\u0435\u043d\u0430\u0442\u0435\u043b\u044f (IMMA 25.09.2026, \u0432\u0430\u0440\u0438\u0430\u043d\u0442 \u0430)"
+    "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
    }
   },
   "start_used": "given",
@@ -104,7 +104,211 @@
    "status": "applicable",
    "warning": true,
    "hard_limit_breach": false,
-   "rule": "A = {s: B_s > 0}; |A| < 2 \u2192 \u043b\u0438\u043c\u0438\u0442 \u043d\u0435 \u043f\u0440\u0438\u043c\u0435\u043d\u044f\u0435\u0442\u0441\u044f (raw \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0435\u0442\u0441\u044f); |A| \u2265 2 \u2192 max B_s / \u03a3 B_s \u2264 0.60 (warning > 0.50); BASE \u0432\u043d\u0435 \u0437\u043d\u0430\u043c\u0435\u043d\u0430\u0442\u0435\u043b\u044f (IMMA 25.09.2026, \u0432\u0430\u0440\u0438\u0430\u043d\u0442 \u0430)"
+   "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+  }
+ },
+ "stability_S8b": {
+  "run_id": "20261002T215331Z-portfolio_stability-6eb0ec",
+  "classification": {
+   "class": "structurally_stable",
+   "criteria": {
+    "hard_constraint_feasibility": {
+     "value": 0.995,
+     "limit": 0.95,
+     "pass": true
+    },
+    "median_turnover_from_central": {
+     "value": 0.055,
+     "limit": 0.25,
+     "pass": true
+    },
+    "p90_turnover_from_central": {
+     "value": 0.095,
+     "limit": 0.5,
+     "pass": true
+    },
+    "driver_knockout_feasible_replacement": {
+     "value": null,
+     "pass": null,
+     "status": "not_evaluated (driver knockout requires stability.resimulate)"
+    },
+    "median_5y_cagr_sign_flip_fraction": {
+     "value": 0.0,
+     "limit": 0.2,
+     "pass": true
+    }
+   },
+   "criteria_not_evaluated": [
+    "driver_knockout_feasible_replacement"
+   ]
+  },
+  "feasibility_rate": 0.995,
+  "turnover": {
+   "p10": 0.02,
+   "p50": 0.055,
+   "p90": 0.095,
+   "max": 0.16
+  },
+  "central": {
+   "weights": {
+    "ASML": 0.0,
+    "ASTS": 0.025,
+    "CRWV": 0.105,
+    "ETN": 0.0,
+    "HOOD": 0.0,
+    "LLY": 0.14,
+    "META": 0.035,
+    "MSFT": 0.0,
+    "NBIS": 0.175,
+    "NET": 0.0,
+    "NVDA": 0.11,
+    "PLTR": 0.0,
+    "RKLB": 0.05,
+    "SPCX": 0.005,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1963,
+   "median_CAGR_5Y": 0.1975241106361567,
+   "ES5": 0.337972475903292,
+   "binding": [
+    "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+    "per_name_cap:CRWV",
+    "per_name_cap:LLY",
+    "per_name_cap:SPOT"
+   ],
+   "start": "current",
+   "capacity": {
+    "lp_max_placeable": 1.2781,
+    "required_min_placed": 0.7763,
+    "headroom": 0.5018,
+    "structurally_infeasible": false,
+    "argmax_weights": {
+     "ASML": 0.0263,
+     "ASTS": 0.0833,
+     "CRWV": 0.0,
+     "ETN": 0.1198,
+     "HOOD": 0.0951,
+     "LLY": 0.1435,
+     "META": 0.0,
+     "MSFT": 0.145,
+     "NBIS": 0.1108,
+     "NET": 0.0844,
+     "NVDA": 0.0635,
+     "PLTR": 0.0952,
+     "RKLB": 0.0839,
+     "SPCX": 0.0911,
+     "SPOT": 0.1362
+    },
+    "note": "оценка сверху без топ-3 и риск-лимитов; structurally_infeasible=true доказывает недопустимость, false её не гарантирует"
+   }
+  },
+  "companies": {
+   "ASML": "excluded_at_central",
+   "ASTS": "conditional",
+   "CRWV": "stable",
+   "ETN": "excluded_at_central",
+   "HOOD": "excluded_at_central",
+   "LLY": "stable",
+   "META": "conditional",
+   "MSFT": "excluded_at_central",
+   "NBIS": "stable",
+   "NET": "excluded_at_central",
+   "NVDA": "stable",
+   "PLTR": "excluded_at_central",
+   "RKLB": "conditional",
+   "SPCX": "excluded_at_central",
+   "SPOT": "stable"
+  },
+  "weight_p10_p50_p90": {
+   "ASML": {
+    "p10": 0.0,
+    "p50": 0.0,
+    "p90": 0.0
+   },
+   "ASTS": {
+    "p10": 0.0,
+    "p50": 0.02,
+    "p90": 0.045
+   },
+   "CRWV": {
+    "p10": 0.1,
+    "p50": 0.105,
+    "p90": 0.105
+   },
+   "ETN": {
+    "p10": 0.0,
+    "p50": 0.0,
+    "p90": 0.015
+   },
+   "HOOD": {
+    "p10": 0.0,
+    "p50": 0.0,
+    "p90": 0.0
+   },
+   "LLY": {
+    "p10": 0.11,
+    "p50": 0.14,
+    "p90": 0.14
+   },
+   "META": {
+    "p10": 0.0,
+    "p50": 0.025,
+    "p90": 0.08
+   },
+   "MSFT": {
+    "p10": 0.0,
+    "p50": 0.0,
+    "p90": 0.021
+   },
+   "NBIS": {
+    "p10": 0.14,
+    "p50": 0.18,
+    "p90": 0.215
+   },
+   "NET": {
+    "p10": 0.0,
+    "p50": 0.0,
+    "p90": 0.0
+   },
+   "NVDA": {
+    "p10": 0.1,
+    "p50": 0.11,
+    "p90": 0.11
+   },
+   "PLTR": {
+    "p10": 0.0,
+    "p50": 0.0,
+    "p90": 0.005
+   },
+   "RKLB": {
+    "p10": 0.035,
+    "p50": 0.055,
+    "p90": 0.08
+   },
+   "SPCX": {
+    "p10": 0.0,
+    "p50": 0.0,
+    "p90": 0.0
+   },
+   "SPOT": {
+    "p10": 0.135,
+    "p50": 0.135,
+    "p90": 0.135
+   }
+  },
+  "scenario_sensitivity": {
+   "status": "evaluated",
+   "max_abs_weight_shift_vs_central": 0.005000000000000001,
+   "burdens_at_central": {
+    "TAIWAN_SEIZURE": 0.03628871674003969,
+    "CHIP_COLD_WAR": 0.0,
+    "TAIWAN_QUARANTINE": 0.027757718409095522
+   },
+   "infeasible": [
+    "p:TAIWAN_SEIZURE:x1.25",
+    "p:TAIWAN_QUARANTINE:x0.75",
+    "p:up10:TAIWAN_SEIZURE"
+   ]
   }
  }
 }
