@@ -17,8 +17,14 @@
   "NET": 0,
   "ASTS": 0,
   "RKLB": 0,
-  "SPOT": 0
+  "SPOT": 0,
+  "CRWD": 0.0,
+  "HPS.A": 0.0,
+  "S": 0.0
  },
  "baseline_2026_09_21": 0.542759298600204,
- "T_S8": 0.40004868569895724
+ "T_S8": 0.40004868569895724,
+ "notes": [
+  "2026-10-03: партия 13 — CRWD/S: CYBERSECURITY 100 % (вне AI_TOTAL, таксономия 1.0.1), HPS.A: INDUSTRIAL_POWER 100 % (fallback) → доля AI_TOTAL 0"
+ ]
 }

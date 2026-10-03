@@ -38,7 +38,7 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.10.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
+VERSION = "1.10.1"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
 #                    измерение в квартале применения — мода сроков вехи, как в движке), пример-фикстуры v1.0.2
 SCHEMA_VERSION = "1.0.5"            # Company Artifact Schema (v1.0.5: kpi_observations[].verification_run_ids — история прогонов дозора)
 CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
@@ -986,7 +986,8 @@ def _validate_theme(inputs: dict, ws: Path, rules: dict) -> dict:
     ±2 с strong_share_check → max non-fallback доля (revenue/capex) связанных тем ≥ 0.20 или явное исключение (007; 0.20 — model_assumption),
     тема ≥ 0.20 при нулевых связанных сильных драйверах → warning (008), портфельная T_theme = Σ w·share и агрегат один раз (009), покрытие
     счётных бумаг (010), сравнение T_AI_TOTAL с материализованной базой policy (011), драйвер не переводится в доли (012 — конструктивно)."""
-    tax_p = ws / "methodology" / "Theme_Taxonomy_v1.0.yaml"; sch_p = ws / "methodology" / "Theme_Exposure_Schema_v1.0.yaml"
+    tax_c = sorted((x for x in (ws / "methodology").glob("Theme_Taxonomy_v*.yaml") if "Schema" not in x.name), key=lambda x: tuple(int(n) for n in x.stem.split("_v")[-1].split(".")))
+    tax_p = tax_c[-1] if tax_c else ws / "methodology" / "Theme_Taxonomy_v1.0.yaml"; sch_p = ws / "methodology" / "Theme_Exposure_Schema_v1.0.yaml"   # 1.10.1: последняя версия таксономии (v1.0.1 — CYBERSECURITY)
     pol_p = ws / "methodology" / "Theme_Portfolio_Policy_v1.0.yaml"
     if not (tax_p.exists() and sch_p.exists()):
         raise ValueError("mode=theme: нет Theme_Taxonomy_v1.0.yaml / Theme_Exposure_Schema_v1.0.yaml в methodology")
