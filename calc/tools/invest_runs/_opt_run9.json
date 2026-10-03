@@ -1,0 +1,453 @@
+{
+ "A": {
+  "run_id": "20261003T085944Z-portfolio_optimizer-4175de",
+  "label": "A: без лимита числа бумаг (контроль)",
+  "weights": {
+   "ASML": 0.0,
+   "ASTS": 0.005,
+   "CRWV": 0.105,
+   "ETN": 0.0,
+   "HOOD": 0.0,
+   "LLY": 0.14,
+   "META": 0.02,
+   "MSFT": 0.0,
+   "NBIS": 0.185,
+   "NET": 0.0,
+   "NVDA": 0.11,
+   "PLTR": 0.02,
+   "RKLB": 0.08,
+   "SPCX": 0.01,
+   "SPOT": 0.135
+  },
+  "dp": 0.1663,
+  "feasible": true,
+  "median_CAGR_5Y": 0.19925489910083927,
+  "ES5": 0.3265717833548518,
+  "P_loss_gt_30pct": 6e-06,
+  "binding": [
+   "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+   "per_name_cap:CRWV",
+   "per_name_cap:LLY",
+   "per_name_cap:RKLB",
+   "per_name_cap:SPOT"
+  ],
+  "violations": [],
+  "cardinality": null,
+  "scenario_constraints": {
+   "by_scenario": {
+    "TAIWAN_SEIZURE": {
+     "median_CAGR": 0.14846770568360523,
+     "P_loss_gt_30pct": 3.8e-05,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.08146842182261582
+    },
+    "CHIP_COLD_WAR": {
+     "median_CAGR": 0.2185624719034518,
+     "P_loss_gt_30pct": 0.0,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.47620015537026283
+    },
+    "TAIWAN_QUARANTINE": {
+     "median_CAGR": 0.18434019744554764,
+     "P_loss_gt_30pct": 2e-06,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.2870403534045476
+    }
+   },
+   "base": {
+    "median_CAGR": 0.2076890683286694,
+    "P_loss_gt_30pct": 0.0,
+    "P_loss_gt_50pct": 0.0,
+    "expected_shortfall_5pct": 0.44706224045065523
+   },
+   "burdens_B": {
+    "TAIWAN_SEIZURE": 0.03655938186280394,
+    "CHIP_COLD_WAR": 0.0,
+    "TAIWAN_QUARANTINE": 0.028003830233068835
+   },
+   "scenario_concentration": {
+    "value": 0.5662571714758444,
+    "raw_value": 0.5662571714758444,
+    "adverse_scenarios": [
+     "TAIWAN_QUARANTINE",
+     "TAIWAN_SEIZURE"
+    ],
+    "applicable": true,
+    "status": "applicable",
+    "warning": true,
+    "hard_limit_breach": false,
+    "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+   }
+  },
+  "turnover": 0.5065
+ },
+ "B": {
+  "run_id": "20261003T094303Z-portfolio_optimizer-70844a",
+  "label": "B: CARDINALITY_8 — 6…8 бумаг, мин. 3%",
+  "variant_id": "CARDINALITY_8",
+  "theme_lookthrough": {
+   "policy_id": "AI_THEME_NOT_INCREASE_V1",
+   "aggregate_id": "AI_TOTAL",
+   "binding_basis": "revenue",
+   "value_at_optimum": 0.4217712349694973,
+   "value_at_current": 0.542759298600204,
+   "baseline_value": 0.542759298600204,
+   "baseline_status": "MATERIALIZED",
+   "tolerance": 1e-06,
+   "status": "pass",
+   "binding": false
+  },
+  "weights": {
+   "ASML": 0.0,
+   "ASTS": 0.03,
+   "CRWV": 0.105,
+   "ETN": 0.0,
+   "HOOD": 0.0,
+   "LLY": 0.14,
+   "META": 0.0,
+   "MSFT": 0.0,
+   "NBIS": 0.215,
+   "NET": 0.0,
+   "NVDA": 0.11,
+   "PLTR": 0.0,
+   "RKLB": 0.045,
+   "SPCX": 0.0,
+   "SPOT": 0.135
+  },
+  "dp": 0.1963,
+  "feasible": true,
+  "median_CAGR_5Y": 0.20760836990731812,
+  "ES5": 0.33652026481420777,
+  "P_loss_gt_30pct": 8e-06,
+  "binding": [
+   "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+   "min_position_weight:ASTS",
+   "per_name_cap:CRWV",
+   "per_name_cap:LLY",
+   "per_name_cap:SPOT"
+  ],
+  "violations": [],
+  "cardinality": {
+   "positions_count": 7,
+   "positions_min": 6,
+   "positions_max": 8,
+   "min_position_weight": 0.03,
+   "below_min": [],
+   "zeroed": [
+    "ASML",
+    "ETN",
+    "HOOD",
+    "META",
+    "MSFT",
+    "NET",
+    "PLTR",
+    "SPCX"
+   ],
+   "excluded_from_count": [
+    "GLD",
+    "UFO"
+   ],
+   "binding": [
+    "min_position_weight:ASTS"
+   ]
+  },
+  "scenario_constraints": {
+   "by_scenario": {
+    "TAIWAN_SEIZURE": {
+     "median_CAGR": 0.15466529044285404,
+     "P_loss_gt_30pct": 2.8e-05,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.08549718278898055
+    },
+    "CHIP_COLD_WAR": {
+     "median_CAGR": 0.22726297263584527,
+     "P_loss_gt_30pct": 0.0,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.48750149774654816
+    },
+    "TAIWAN_QUARANTINE": {
+     "median_CAGR": 0.19222548378098603,
+     "P_loss_gt_30pct": 0.0,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.29560054500894206
+    }
+   },
+   "base": {
+    "median_CAGR": 0.21645027570783903,
+    "P_loss_gt_30pct": 0.0,
+    "P_loss_gt_50pct": 0.0,
+    "expected_shortfall_5pct": 0.459642864727106
+   },
+   "burdens_B": {
+    "TAIWAN_SEIZURE": 0.03741456819381255,
+    "CHIP_COLD_WAR": 0.0,
+    "TAIWAN_QUARANTINE": 0.02870740595067869
+   },
+   "scenario_concentration": {
+    "value": 0.5658416687930912,
+    "raw_value": 0.5658416687930912,
+    "adverse_scenarios": [
+     "TAIWAN_QUARANTINE",
+     "TAIWAN_SEIZURE"
+    ],
+    "applicable": true,
+    "status": "applicable",
+    "warning": true,
+    "hard_limit_breach": false,
+    "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+   }
+  },
+  "turnover": 0.5155,
+  "constraint_price_vs_no_cardinality_limit": {
+   "reference": "20261003T105058Z-portfolio_optimizer-97502f",
+   "MedianCost_pp": 1.325486607035553,
+   "ES5Cost_pp": 1.2478025750723043
+  }
+ },
+ "C": {
+  "run_id": "20261003T100625Z-portfolio_optimizer-5b06a5",
+  "label": "C: CARDINALITY_6 — 6 бумаг, мин. 3%",
+  "variant_id": "CARDINALITY_6",
+  "theme_lookthrough": {
+   "policy_id": "AI_THEME_NOT_INCREASE_V1",
+   "aggregate_id": "AI_TOTAL",
+   "binding_basis": "revenue",
+   "value_at_optimum": 0.4217712349694973,
+   "value_at_current": 0.542759298600204,
+   "baseline_value": 0.542759298600204,
+   "baseline_status": "MATERIALIZED",
+   "tolerance": 1e-06,
+   "status": "pass",
+   "binding": false
+  },
+  "weights": {
+   "ASML": 0.0,
+   "ASTS": 0.0,
+   "CRWV": 0.105,
+   "ETN": 0.0,
+   "HOOD": 0.0,
+   "LLY": 0.14,
+   "META": 0.0,
+   "MSFT": 0.0,
+   "NBIS": 0.215,
+   "NET": 0.0,
+   "NVDA": 0.11,
+   "PLTR": 0.0,
+   "RKLB": 0.075,
+   "SPCX": 0.0,
+   "SPOT": 0.135
+  },
+  "dp": 0.1963,
+  "feasible": true,
+  "median_CAGR_5Y": 0.20745640963503476,
+  "ES5": 0.33486311163285265,
+  "P_loss_gt_30pct": 6e-06,
+  "binding": [
+   "cardinality:positions_max",
+   "cardinality:positions_min",
+   "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+   "per_name_cap:CRWV",
+   "per_name_cap:LLY",
+   "per_name_cap:SPOT"
+  ],
+  "violations": [],
+  "cardinality": {
+   "positions_count": 6,
+   "positions_min": 6,
+   "positions_max": 6,
+   "min_position_weight": 0.03,
+   "below_min": [],
+   "zeroed": [
+    "ASML",
+    "ASTS",
+    "ETN",
+    "HOOD",
+    "META",
+    "MSFT",
+    "NET",
+    "PLTR",
+    "SPCX"
+   ],
+   "excluded_from_count": [
+    "GLD",
+    "UFO"
+   ],
+   "binding": [
+    "cardinality:positions_max",
+    "cardinality:positions_min"
+   ]
+  },
+  "scenario_constraints": {
+   "by_scenario": {
+    "TAIWAN_SEIZURE": {
+     "median_CAGR": 0.15450211487317445,
+     "P_loss_gt_30pct": 4.2e-05,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.08360674640043841
+    },
+    "CHIP_COLD_WAR": {
+     "median_CAGR": 0.22729195349489428,
+     "P_loss_gt_30pct": 0.0,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.48670014657964233
+    },
+    "TAIWAN_QUARANTINE": {
+     "median_CAGR": 0.19209525818931783,
+     "P_loss_gt_30pct": 2e-06,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.29390363770375516
+    }
+   },
+   "base": {
+    "median_CAGR": 0.21630298926122715,
+    "P_loss_gt_30pct": 0.0,
+    "P_loss_gt_50pct": 0.0,
+    "expected_shortfall_5pct": 0.4578351541391734
+   },
+   "burdens_B": {
+    "TAIWAN_SEIZURE": 0.0374228407738735,
+    "CHIP_COLD_WAR": 0.0,
+    "TAIWAN_QUARANTINE": 0.02868801537619819
+   },
+   "scenario_concentration": {
+    "value": 0.5660619594597841,
+    "raw_value": 0.5660619594597841,
+    "adverse_scenarios": [
+     "TAIWAN_QUARANTINE",
+     "TAIWAN_SEIZURE"
+    ],
+    "applicable": true,
+    "status": "applicable",
+    "warning": true,
+    "hard_limit_breach": false,
+    "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+   }
+  },
+  "turnover": 0.5257,
+  "constraint_price_vs_no_cardinality_limit": {
+   "reference": "20261003T105058Z-portfolio_optimizer-97502f",
+   "MedianCost_pp": 1.3102905798072162,
+   "ES5Cost_pp": 1.0820872569367923
+  }
+ },
+ "D": {
+  "run_id": "20261003T105058Z-portfolio_optimizer-97502f",
+  "label": "D: NO_CARDINALITY_LIMIT — без лимита числа, мин. 3% (Optimizer v1.1 §15.1)",
+  "variant_id": "NO_CARDINALITY_LIMIT",
+  "theme_lookthrough": {
+   "policy_id": "AI_THEME_NOT_INCREASE_V1",
+   "aggregate_id": "AI_TOTAL",
+   "binding_basis": "revenue",
+   "value_at_optimum": 0.3777256914802184,
+   "value_at_current": 0.542759298600204,
+   "baseline_value": 0.542759298600204,
+   "baseline_status": "MATERIALIZED",
+   "tolerance": 1e-06,
+   "status": "pass",
+   "binding": false
+  },
+  "weights": {
+   "ASML": 0.0,
+   "ASTS": 0.03,
+   "CRWV": 0.105,
+   "ETN": 0.0,
+   "HOOD": 0.0,
+   "LLY": 0.14,
+   "META": 0.03,
+   "MSFT": 0.0,
+   "NBIS": 0.175,
+   "NET": 0.0,
+   "NVDA": 0.095,
+   "PLTR": 0.0,
+   "RKLB": 0.04,
+   "SPCX": 0.03,
+   "SPOT": 0.135
+  },
+  "dp": 0.1963,
+  "feasible": true,
+  "median_CAGR_5Y": 0.1943535038369626,
+  "ES5": 0.3240422390634847,
+  "P_loss_gt_30pct": 6e-06,
+  "binding": [
+   "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+   "min_position_weight:ASTS",
+   "min_position_weight:META",
+   "min_position_weight:SPCX",
+   "per_name_cap:CRWV",
+   "per_name_cap:LLY",
+   "per_name_cap:SPOT"
+  ],
+  "violations": [],
+  "cardinality": {
+   "positions_count": 9,
+   "positions_min": null,
+   "positions_max": null,
+   "min_position_weight": 0.03,
+   "below_min": [],
+   "zeroed": [
+    "ASML",
+    "ETN",
+    "HOOD",
+    "MSFT",
+    "NET",
+    "PLTR"
+   ],
+   "excluded_from_count": [
+    "GLD",
+    "UFO"
+   ],
+   "binding": [
+    "min_position_weight:ASTS",
+    "min_position_weight:META",
+    "min_position_weight:SPCX"
+   ]
+  },
+  "scenario_constraints": {
+   "by_scenario": {
+    "TAIWAN_SEIZURE": {
+     "median_CAGR": 0.14545334840030155,
+     "P_loss_gt_30pct": 2.2e-05,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.08922432051578477
+    },
+    "CHIP_COLD_WAR": {
+     "median_CAGR": 0.2126592865628001,
+     "P_loss_gt_30pct": 0.0,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.46340698012117465
+    },
+    "TAIWAN_QUARANTINE": {
+     "median_CAGR": 0.1801405208682174,
+     "P_loss_gt_30pct": 0.0,
+     "P_loss_gt_50pct": 0.0,
+     "expected_shortfall_5pct": 0.28645016789782285
+    }
+   },
+   "base": {
+    "median_CAGR": 0.20245390979861488,
+    "P_loss_gt_30pct": 0.0,
+    "P_loss_gt_50pct": 0.0,
+    "expected_shortfall_5pct": 0.438597117901252
+   },
+   "burdens_B": {
+    "TAIWAN_SEIZURE": 0.034937279738546725,
+    "CHIP_COLD_WAR": 0.0,
+    "TAIWAN_QUARANTINE": 0.0266257162506001
+   },
+   "scenario_concentration": {
+    "value": 0.5675045403038207,
+    "raw_value": 0.5675045403038207,
+    "adverse_scenarios": [
+     "TAIWAN_QUARANTINE",
+     "TAIWAN_SEIZURE"
+    ],
+    "applicable": true,
+    "status": "applicable",
+    "warning": true,
+    "hard_limit_breach": false,
+    "rule": "A = {s: B_s > 0}; |A| < 2 → лимит не применяется (raw показывается); |A| ≥ 2 → max B_s / Σ B_s ≤ 0.60 (warning > 0.50); BASE вне знаменателя (IMMA 25.09.2026, вариант а)"
+   }
+  },
+  "turnover": 0.5338
+ }
+}
