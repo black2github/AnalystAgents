@@ -38,7 +38,7 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.9.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
+VERSION = "1.10.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
 #                    измерение в квартале применения — мода сроков вехи, как в движке), пример-фикстуры v1.0.2
 SCHEMA_VERSION = "1.0.5"            # Company Artifact Schema (v1.0.5: kpi_observations[].verification_run_ids — история прогонов дозора)
 CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
@@ -978,6 +978,176 @@ def _validate_strategy(inputs: dict, ws: Path, rules: dict) -> dict:
             "pass": all(x["pass"] for x in per), "rules": {**rules, "act": [f"ACT-{i:03d}" for i in range(1, 21)]}, "decision": "none"}
 
 
+# ------------------------------------------------------------------------------------------- Theme Look-through (THM) и Capital Allocation Risk (CAR), партия 12
+def _validate_theme(inputs: dict, ws: Path, rules: dict) -> dict:
+    """Режим theme (1.10.0): THM-001…012 по Theme_Lookthrough_Rules v1.0 для файлов portfolio/*/theme_exposure_v1.0.yaml (или inputs.theme_files):
+    схема и ссылки на таксономию (001), Σ долей = 1 по каждой базе (002), доля = allocation/total у раскрытых баз (003), OI по модулю (004),
+    нераскрытая база = одна строка 100 % первичной темы model_assumption с причиной (005), binding basis = revenue (006), сильные драйверы
+    ±2 с strong_share_check → max non-fallback доля (revenue/capex) связанных тем ≥ 0.20 или явное исключение (007; 0.20 — model_assumption),
+    тема ≥ 0.20 при нулевых связанных сильных драйверах → warning (008), портфельная T_theme = Σ w·share и агрегат один раз (009), покрытие
+    счётных бумаг (010), сравнение T_AI_TOTAL с материализованной базой policy (011), драйвер не переводится в доли (012 — конструктивно)."""
+    tax_p = ws / "methodology" / "Theme_Taxonomy_v1.0.yaml"; sch_p = ws / "methodology" / "Theme_Exposure_Schema_v1.0.yaml"
+    pol_p = ws / "methodology" / "Theme_Portfolio_Policy_v1.0.yaml"
+    if not (tax_p.exists() and sch_p.exists()):
+        raise ValueError("mode=theme: нет Theme_Taxonomy_v1.0.yaml / Theme_Exposure_Schema_v1.0.yaml в methodology")
+    tax = _load(tax_p); schema = _load(sch_p); policy = _load(pol_p) if pol_p.exists() else None
+    themes = {t["theme_id"] for t in tax.get("themes") or []}
+    aggs = {a["aggregate_id"]: list(a.get("member_theme_ids") or []) for a in tax.get("aggregates") or []}
+    links = {d["driver_id"]: d for d in tax.get("driver_theme_links") or []}
+    files = inputs.get("theme_files") or sorted(str(x.relative_to(ws)).replace("\\", "/") for x in ws.glob("portfolio/*/theme_exposure_v1.0.yaml"))
+    reg = _load(ws / "portfolio" / "_portfolio.yaml")
+    cur_w = ((reg.get("machine_outputs") or {}).get("current_weights") or {})
+    excl = set(((((reg.get("constraints") or {}).get("approved_limits_v1_1") or {}).get("cardinality") or {}).get("excludes")) or ["GLD", "UFO"])
+    F: list = []; per = {}; shares_agg = {}
+    rules_p = ws / "methodology" / "Theme_Lookthrough_Rules_v1.0.yaml"
+    thm_rules = _load(rules_p) if rules_p.exists() else {}
+    materiality = float((((thm_rules.get("model_assumptions") or {}).get("strong_driver_minimum_materiality_share") or {}).get("value")) or 0.20)
+    for fp in files:
+        path = Path(fp) if Path(fp).is_absolute() else ws / fp
+        d = _norm(_load(path)); tk = str(d.get("ticker")); rel = str(fp).replace("\\", "/")
+        errs = _schema_errors(schema, d)
+        if errs:
+            F.append(_f("THM-001", rel, f"схема: {errs[0]['message'][:150]}"))
+        bad_ids = [r.get("theme_id") for b in (d.get("basis_allocations") or {}).values() for r in b.get("rows") or [] if r.get("theme_id") not in themes]
+        if bad_ids or d.get("primary_theme_id") not in themes:
+            F.append(_f("THM-001", rel, f"theme_id вне таксономии: {bad_ids or d.get('primary_theme_id')}"))
+        ba = d.get("basis_allocations") or {}
+        for bname, b in ba.items():
+            rows = b.get("rows") or []; tot = sum(float(r.get("share", 0.0)) for r in rows)
+            if abs(tot - 1.0) > 1e-9:
+                F.append(_f("THM-002", f"{rel}/{bname}", f"Σ долей = {tot:.12f} ≠ 1"))
+            if b.get("disclosure_status") == "disclosed":
+                ta = float(b.get("total_allocation_value") or 0.0)
+                for r in rows:
+                    if ta > 0 and abs(float(r.get("share", 0.0)) - float(r.get("allocation_value", 0.0)) / ta) > 1e-9:
+                        F.append(_f("THM-003", f"{rel}/{bname}/{r.get('segment_id')}", f"share {r.get('share')} ≠ allocation {r.get('allocation_value')} / total {ta}"))
+                if bname == "operating_income_abs":
+                    for r in rows:
+                        if r.get("raw_value") is not None and abs(abs(float(r["raw_value"])) - float(r.get("allocation_value", 0.0))) > 1e-9:
+                            F.append(_f("THM-004", f"{rel}/{bname}/{r.get('segment_id')}", f"allocation {r.get('allocation_value')} ≠ |raw {r.get('raw_value')}|"))
+            else:
+                ok = len(rows) == 1 and abs(float(rows[0].get("share", 0.0)) - 1.0) < 1e-9 and rows[0].get("provenance") == "model_assumption" and rows[0].get("theme_id") == d.get("primary_theme_id") and bool(b.get("fallback_reason"))
+                if not ok:
+                    F.append(_f("THM-005", f"{rel}/{bname}", "нераскрытая база должна быть одной строкой 100 % первичной темы (model_assumption) с причиной"))
+        if d.get("owner_policy_binding_basis") != "revenue":
+            F.append(_f("THM-006", rel, f"binding basis {d.get('owner_policy_binding_basis')} ≠ revenue"))
+        # THM-007/008: согласованность с сильными драйверами MPC
+        mpc_p = ws / Path(str((d.get("driver_consistency") or {}).get("canonical_mpc_inputs_ref") or ""))
+        folder = path.parent
+        if not mpc_p.exists():
+            mpc_p = folder / "mpc_inputs.yaml"
+        if mpc_p.exists():
+            mpc = _load(mpc_p); vec = mpc.get("driver_exposure_vector") or mpc.get("driver_vector") or {}
+            exc = {e.get("driver_id") for e in ((d.get("driver_consistency") or {}).get("exceptions") or []) if isinstance(e, dict)}
+
+            def nonfb_share(theme_ids, bases=("revenue", "capex")):
+                best = 0.0
+                for bname in bases:
+                    b = ba.get(bname) or {}
+                    if b.get("disclosure_status") != "disclosed":
+                        continue
+                    best = max(best, sum(float(r.get("share", 0.0)) for r in b.get("rows") or [] if r.get("theme_id") in theme_ids and r.get("fallback", "none") == "none"))
+                return best
+            any_disclosed = any((b or {}).get("disclosure_status") == "disclosed" for b in ba.values())
+            for drv, score in vec.items():
+                lk = links.get(drv)
+                if not lk or lk.get("consistency_mode") != "strong_share_check" or abs(int(score)) < 2 or drv in exc:
+                    continue
+                if not any_disclosed:
+                    F.append(_f("THM-007", f"{rel}/driver/{drv}", f"сильный драйвер {drv} (±2): все базы — заглушки, сильная доля не подтверждаема (fallback не засчитывается)", "warning")); continue
+                sh = nonfb_share(set(lk.get("theme_ids") or []))
+                if sh < materiality - 1e-12:
+                    F.append(_f("THM-007", f"{rel}/driver/{drv}", f"сильный драйвер {drv} (±2): max non-fallback доля связанных тем {sh:.3f} < {materiality} и нет исключения"))
+            rev = ba.get("revenue") or {}
+            if rev.get("disclosure_status") == "disclosed":
+                for r in rev.get("rows") or []:
+                    if float(r.get("share", 0.0)) >= 0.20:
+                        strong = [drv for drv, lk in links.items() if lk.get("consistency_mode") == "strong_share_check" and r.get("theme_id") in (lk.get("theme_ids") or []) and abs(int(vec.get(drv, 0))) == 2]
+                        linked = [drv for drv, lk in links.items() if lk.get("consistency_mode") == "strong_share_check" and r.get("theme_id") in (lk.get("theme_ids") or [])]
+                        if linked and not strong:
+                            F.append(_f("THM-008", f"{rel}/revenue/{r.get('theme_id')}", f"тема {r.get('theme_id')} ≥ 0.20 выручки, но связанные сильные драйверы {linked} не ±2 — пересмотр MPC без автоправки", "warning"))
+        # доли агрегатов по выручке
+        rev_rows = (ba.get("revenue") or {}).get("rows") or []
+        shares_agg[tk] = {aid: sum(float(r.get("share", 0.0)) for r in rev_rows if r.get("theme_id") in members) for aid, members in aggs.items()}
+        per[tk] = {"file": rel, "primary_theme": d.get("primary_theme_id"), "revenue_disclosed": (ba.get("revenue") or {}).get("disclosure_status") == "disclosed", "aggregate_revenue_shares": shares_agg[tk]}
+    # THM-009/010/011 — портфельный уровень
+    counted = [t for t in cur_w if t not in excl]
+    missing = [t for t in counted if t not in shares_agg]
+    if missing:
+        F.append(_f("THM-010", "portfolio", f"нет ThemeExposure для счётных бумаг: {missing} (требуется явная заглушка, не пропуск)"))
+    T = {aid: float(sum(float(cur_w.get(t, 0.0)) * shares_agg.get(t, {}).get(aid, 0.0) for t in counted)) for aid in aggs}
+    F.append(_f("THM-009", "portfolio", f"T_theme(текущие веса) по агрегатам: { {k: round(v, 4) for k, v in T.items()} }", "info"))
+    pol_block = None
+    if policy is not None:
+        aid = policy.get("aggregate_theme_id"); bl = policy.get("baseline") or {}; tol = float((policy.get("constraint") or {}).get("tolerance", 1e-6))
+        tw = inputs.get("target_weights")
+        pol_block = {"policy_id": policy.get("policy_id"), "aggregate_id": aid, "baseline_status": bl.get("status"), "baseline_value": bl.get("value"), "T_current": T.get(aid)}
+        if bl.get("status") == "MATERIALIZED" and bl.get("value") is not None and tw:
+            tt = float(sum(float(tw.get(t, 0.0)) * shares_agg.get(t, {}).get(aid, 0.0) for t in tw))
+            pol_block["T_target"] = tt
+            F.append(_f("THM-011", "policy", f"T_{aid}(target) = {tt:.4f} {'≤' if tt <= float(bl['value']) + tol else '>'} baseline {float(bl['value']):.4f} + {tol}", "info" if tt <= float(bl["value"]) + tol else "error"))
+        elif bl.get("status") != "MATERIALIZED":
+            F.append(_f("THM-011", "policy", f"база {aid} не материализована ({bl.get('status')}) — политика не применяется жёстко", "warning"))
+    n_err = sum(1 for f in F if f["severity"] == "error")
+    return {"model_version": VERSION, "mode": "theme", "files": len(files), "companies": per, "portfolio_theme_exposure": T, "policy": pol_block, "findings": F,
+            "pass": n_err == 0, "rules": {**rules, "thm": [f"THM-{i:03d}" for i in range(1, 13)]}, "decision": "none"}
+
+
+def _validate_car(inputs: dict, ws: Path, rules: dict) -> dict:
+    """Режим car (1.10.0): Capital_Allocation_Risk_Rules v1.0 — реестр правил по схеме и уникальность ID (CAR-001), все численные пороги
+    model_assumption + pending_owner_judgment до решения владельца (CAR-002), сегментные факты с источником/происхождением, производные — с
+    формулой (CAR-003), реализация триггера — только review/DR (CAR-004, конструктивно: статусы не fired без одобренных порогов), SOTP только
+    диагностика (CAR-006), арифметика долей и отношений в оценках (CAR-003 derived), для файлов portfolio/*/capital_allocation_risk_v1.0.yaml."""
+    rules_p = ws / "methodology" / "Capital_Allocation_Risk_Rules_v1.0.yaml"; rs_p = ws / "methodology" / "Capital_Allocation_Risk_Rules_Schema_v1.0.yaml"; as_p = ws / "methodology" / "Capital_Allocation_Risk_Assessment_Schema_v1.0.yaml"
+    if not (rules_p.exists() and rs_p.exists() and as_p.exists()):
+        raise ValueError("mode=car: нет нормативов Capital_Allocation_Risk_* в methodology")
+    R = _load(rules_p); F: list = []
+    errs = _schema_errors(_load(rs_p), R)
+    ids = [t.get("id") for t in R.get("trigger_rules") or []]
+    if errs or len(set(ids)) != len(ids):
+        F.append(_f("CAR-001", "rules", f"схема/ID: {errs[0]['message'][:120] if errs else 'дубликаты ID'}"))
+    owner_ok = set(inputs.get("owner_approved_thresholds") or [])
+    for t in R.get("trigger_rules") or []:
+        if t.get("id") not in owner_ok and (t.get("provenance") != "model_assumption" or t.get("threshold_status") != "pending_owner_judgment"):
+            F.append(_f("CAR-002", f"rules/{t.get('id')}", "численный порог без решения владельца должен быть model_assumption + pending_owner_judgment"))
+    if not (R.get("principles") or {}).get("sotp_diagnostic_only", False):
+        F.append(_f("CAR-006", "rules/principles", "sotp_diagnostic_only должен быть true"))
+    files = inputs.get("car_files") or sorted(str(x.relative_to(ws)).replace("\\", "/") for x in ws.glob("portfolio/*/capital_allocation_risk_v1.0.yaml"))
+    a_schema = _load(as_p); per = {}
+    for fp in files:
+        d = _norm(_load(ws / fp if not Path(fp).is_absolute() else Path(fp))); rel = str(fp).replace("\\", "/"); tk = d.get("ticker")
+        e2 = _schema_errors(a_schema, d)
+        if e2:
+            F.append(_f("CAR-001", rel, f"схема оценки: {e2[0]['message'][:150]}"))
+        for per_ in d.get("periods") or []:
+            segs = per_.get("segments") or []
+            tot_rev = sum(float((sg.get("revenue") or {}).get("value") or 0.0) for sg in segs); tot_cx = sum(float((sg.get("capex") or {}).get("value") or 0.0) for sg in segs)
+            for sg in segs:
+                for key in ("revenue", "operating_income", "capex"):
+                    m = sg.get(key) or {}
+                    if m.get("value") is not None and (not m.get("provenance") or not m.get("source_ref")):
+                        F.append(_f("CAR-003", f"{rel}/{per_.get('period_end')}/{sg.get('segment_id')}/{key}", "факт без источника/происхождения"))
+                    if m.get("provenance") == "derived_fact" and not m.get("formula"):
+                        F.append(_f("CAR-003", f"{rel}/{per_.get('period_end')}/{sg.get('segment_id')}/{key}", "derived_fact без формулы"))
+                rv = float((sg.get("revenue") or {}).get("value") or 0.0); cx = float((sg.get("capex") or {}).get("value") or 0.0); oi = (sg.get("operating_income") or {}).get("value")
+                checks = {"revenue_share": (rv / tot_rev if tot_rev else None), "capex_share": (cx / tot_cx if tot_cx else None), "operating_margin": (float(oi) / rv if oi is not None and rv else None),
+                          "capex_to_revenue": (cx / rv if rv else None), "capex_share_minus_revenue_share": ((cx / tot_cx) - (rv / tot_rev) if tot_cx and tot_rev else None)}
+                for key, ref in checks.items():
+                    m = sg.get(key) or {}
+                    if ref is not None and m.get("value") is not None and abs(float(m["value"]) - ref) > 1e-6:
+                        F.append(_f("CAR-003", f"{rel}/{per_.get('period_end')}/{sg.get('segment_id')}/{key}", f"арифметика: {m['value']} ≠ {ref:.9f}"))
+        statuses = {}
+        for ev in d.get("trigger_evaluations") or []:
+            st = ev.get("status") or ev.get("result"); tid = ev.get("trigger_id") or ev.get("rule_id") or ev.get("id")
+            statuses[str(tid)] = st
+            if st == "fired" and tid not in owner_ok:
+                F.append(_f("CAR-004", f"{rel}/{tid}", "fired без одобренного владельцем порога — допустимо только candidate_if_threshold_approved"))
+        per[str(tk)] = {"file": rel, "periods": [p_.get("period_end") for p_ in d.get("periods") or []], "trigger_statuses": statuses, "sotp": ((d.get("sotp_diagnostic") or {}).get("status") or (d.get("sotp_diagnostic") or {}).get("computed"))}
+    n_err = sum(1 for f in F if f["severity"] == "error")
+    return {"model_version": VERSION, "mode": "car", "rules_triggers": ids, "assessments": per, "findings": F, "pass": n_err == 0,
+            "rules": {**rules, "car": [f"CAR-{i:03d}" for i in range(1, 9)]}, "decision": "none"}
+
+
 def run(inputs: dict, seed: int) -> dict:
     mode = inputs.get("mode", "workspace")
     ws = _workspace(inputs)
@@ -1047,6 +1217,10 @@ def run(inputs: dict, seed: int) -> dict:
         return _validate_scenario(inputs, ws, rules)
     if mode == "strategy":
         return _validate_strategy(inputs, ws, rules)
+    if mode == "theme":
+        return _validate_theme(inputs, ws, rules)
+    if mode == "car":
+        return _validate_car(inputs, ws, rules)
     if mode == "dozor_report":
         rep = inputs.get("report")
         if not isinstance(rep, dict):

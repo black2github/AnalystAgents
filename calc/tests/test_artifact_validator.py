@@ -321,3 +321,24 @@ def test_strategy_mode_act_rules_on_workspace(tmp_path):
     assert not bad["pass"]
     errs = {f["rule"] for f in bad["strategies"][0]["findings"] if f["severity"] == "error"}
     assert {"ACT-013", "ACT-005", "ACT-014"} <= errs
+
+
+@needs_ws
+def test_theme_and_car_modes_on_workspace():
+    """Режимы theme (THM-001…011) и car (CAR-001…006), 1.10.0, партия 12: файлы ThemeExposure (IMMA + заглушки хоста), политика AI_TOTAL с
+    материализованной базой, оценка CAR SPCX. THM-007 ожидаемо даёт ошибки у файлов IMMA (SPCX Space 12 % при драйверах ±2, META) и
+    предупреждения у заглушек — замечания переданы IMMA; остальные правила — pass."""
+    if not (WS / "methodology" / "Theme_Taxonomy_v1.0.yaml").exists():
+        pytest.skip("партия 12 не интегрирована")
+    out = av.run({"mode": "theme", "workspace": str(WS), "target_weights": {"NBIS": 0.19, "CRWV": 0.105, "NVDA": 0.11}}, 0)
+    assert out["mode"] == "theme" and out["files"] >= 15 and "AI_TOTAL" in out["portfolio_theme_exposure"]
+    assert out["policy"]["baseline_status"] == "MATERIALIZED" and out["policy"]["T_current"] == pytest.approx(out["policy"]["baseline_value"], abs=1e-6)
+    errs = {(f["rule"], f["path"].split("/")[1]) for f in out["findings"] if f["severity"] == "error"}
+    assert all(r == "THM-007" for r, _ in errs)                                            # только согласованность драйверов — к IMMA
+    assert any(f["rule"] == "THM-011" and f["severity"] == "info" for f in out["findings"])  # цель 40 % ниже базы 54 %
+    car = av.run({"mode": "car", "workspace": str(WS)}, 0)
+    assert car["pass"] and "SPCX" in car["assessments"] and car["assessments"]["SPCX"]["trigger_statuses"].get("CAR-X1") == "candidate_if_threshold_approved"
+    # пороги без решения владельца не могут давать fired
+    import copy
+    bad = copy.deepcopy(car)
+    assert "CAR-002" in car["rules"]["car"]

@@ -163,3 +163,21 @@ def test_cardinality_and_min_position_weight_v120(paths):
     # исключения не идут в счёт
     exc = po.run({**base, "limits": {**lim, "cardinality": {"positions_max": 1, "min_position_weight": 0.05, "excludes": ["AAA"]}}}, 0)
     assert exc["feasible"] and sum(1 for t, x in exc["proposed_weights"].items() if t != "AAA" and x > 0) <= 1
+
+
+def test_theme_policy_constraint_v130(paths):
+    """1.3.0 (Optimizer v1.1 §16): T_AI(w) = Σ w_i·share_i ≤ baseline + tol — жёсткое при MATERIALIZED, отчётное при PENDING; поля §19."""
+    base = _inputs(paths)
+    shares = {"AAA": 1.0, "BBB": 0.0, "CCC": 0.5}
+    rep = po.run({**base, "limits": {**LIMITS, "theme_policy": {"policy_id": "AI_THEME_NOT_INCREASE_V1", "aggregate_id": "AI_TOTAL", "shares": shares, "baseline_status": "PENDING_HOST_COMPUTE"}}}, 0)
+    tl = rep["theme_lookthrough"]
+    assert tl["status"] == "not_enforced_pending_baseline" and rep["theme_constraint_status"] == "not_enforced_pending_baseline"
+    assert tl["value_at_optimum"] == pytest.approx(sum(rep["proposed_weights"][t] * shares[t] for t in shares), abs=1e-9)
+    assert rep["contract_version"] == "1.1" and rep["positions_count"] >= 1
+    free_t = tl["value_at_optimum"]
+    # жёсткий лимит ниже свободного значения → ограничение связывает и выполняется
+    hard = po.run({**base, "limits": {**LIMITS, "theme_policy": {"policy_id": "AI_THEME_NOT_INCREASE_V1", "aggregate_id": "AI_TOTAL", "shares": shares, "baseline_value": free_t - 0.10, "tolerance": 1e-6, "baseline_status": "MATERIALIZED"}}}, 0)
+    assert hard["feasible"] and hard["theme_lookthrough"]["status"] == "pass"
+    assert hard["theme_lookthrough"]["value_at_optimum"] <= free_t - 0.10 + 1e-6 + 1e-9
+    assert hard["proposed_weights"]["AAA"] < rep["proposed_weights"]["AAA"]
+    assert "theme_policy:AI_TOTAL" in hard["binding_constraints"] or hard["theme_lookthrough"]["value_at_optimum"] < free_t - 0.10 - 0.005

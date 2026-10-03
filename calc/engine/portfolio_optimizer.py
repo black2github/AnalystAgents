@@ -17,6 +17,12 @@ inputs: {"paths_files": {tk: .npz}, "weights_current": {tk: w} (все пози�
          "mpc_range": {"min_weight": 0, "max_weight": 0.2, "grid_step": 0.01, "local_refinement_step": 0.005},
          "objective_tolerance_pp": 0.5, "starts": ["current","equal","empty"] (+ "given": start_weights/start_dry_powder),
          "search_paths": 100000, "max_paths": null,
+         1.3.0 (Portfolio_Optimizer_Specification v1.1, партия 12, §16/§19): "limits": {..., "theme_policy": {"policy_id": "AI_THEME_NOT_INCREASE_V1",
+         "aggregate_id": "AI_TOTAL", "shares": {tk: revenue_share_AI_TOTAL}, "baseline_value": T_baseline, "tolerance": 1e-6, "baseline_status":
+         "MATERIALIZED" | "PENDING_HOST_COMPUTE"}} — owner structural constraint T(w) = Σ w_i·share_i ≤ baseline + tolerance (доли — Theme Look-through
+         по выручке; fixed/хедж — доля 0, если не задана); жёсткое только при MATERIALIZED, иначе отчётный показатель. Выход по §19: contract_version,
+         positions_count, cardinality_variant (из inputs), theme_lookthrough / theme_constraint_status, scenario_concentration_warning /
+         scenario_concentration_hard_status.
          1.2.0 (DR-2026-10-02-01/В1, решение владельца 03.10.2026): "limits": {..., "cardinality": {"positions_min": 6, "positions_max": 8,
          "min_position_weight": 0.03, "excludes": ["GLD", "UFO"]}} — число оптимизируемых бумаг с весом > 0 в [min, max] (исключения, fixed и
          dry powder вне счёта), вес позиции либо 0, либо ≥ min_position_weight. Жёсткие структурные ограничения владельца; в поиске —
@@ -51,7 +57,7 @@ import numpy as np
 
 from engine import portfolio_paths
 
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 HORIZONS = (("Y3", "r3", 3), ("Y5", "r5", 5), ("Y8", "r8", 8))
 
 
@@ -169,6 +175,13 @@ class _Problem:
         self.min_pos = float(card["min_position_weight"]) if card.get("min_position_weight") is not None else None
         self.card_excl = set(card.get("excludes") or [])
         self.card_on = any(x is not None for x in (self.card_min, self.card_max, self.min_pos))
+        tp = L.get("theme_policy") or {}                                     # 1.3.0: тематическое ограничение владельца (look-through)
+        self.theme = None
+        if tp.get("shares"):
+            self.theme = {"policy_id": tp.get("policy_id"), "aggregate_id": tp.get("aggregate_id"), "shares": {k: float(v) for k, v in tp["shares"].items()},
+                          "baseline": (float(tp["baseline_value"]) if tp.get("baseline_value") is not None else None), "tolerance": float(tp.get("tolerance", 1e-6)),
+                          "status": str(tp.get("baseline_status") or ("MATERIALIZED" if tp.get("baseline_value") is not None else "PENDING_HOST_COMPUTE"))}
+            self.theme["hard"] = self.theme["status"] == "MATERIALIZED" and self.theme["baseline"] is not None
         caps = inputs.get("per_name_caps") or {}
         rng = inputs.get("mpc_range") or {}
         self.wmax_default = float(rng.get("max_weight", 0.20)); self.step = float(rng.get("grid_step", 0.01)); self.fine = float(rng.get("local_refinement_step", 0.005))
@@ -180,6 +193,8 @@ class _Problem:
         self.cap = np.array([0.0 if self.roles.get(t) == "Watch" else c for t, c in zip(self.tick, self.cap)])
         self.cap = np.array([self.hedge[t]["max_weight"] if t in self.hedge else c for t, c in zip(self.tick, self.cap)])   # потолок хеджа — лимит владельца
         self._card_mask = np.array([t not in self.card_excl and t not in self.hedge for t in self.tick])   # бумаги, идущие в счёт числа позиций
+        self._theme_vec = np.array([float((self.theme or {}).get("shares", {}).get(t, 0.0)) for t in self.tick]) if self.theme else None
+        self._theme_fixed = float(sum(float(x) * float(self.theme["shares"].get(t, 0.0)) for t, x in self.fixed.items())) if self.theme else 0.0
         self.sectors = inputs.get("sectors") or {}
         self.cc = inputs.get("common_cause") or {}
         # матричная форма концентраций (1.0.2): секторы, общие причины, Challenger — без словарных циклов на каждую оценку
@@ -253,9 +268,19 @@ class _Problem:
         return {"positions_count": int(pos.sum()), "positions_min": self.card_min, "positions_max": self.card_max, "min_position_weight": self.min_pos,
                 "below_min": below, "zeroed": [t for t, x, m in zip(self.tick, w, self._card_mask) if m and x <= 1e-9], "excluded_from_count": sorted(self.card_excl | set(self.hedge))}
 
+    def theme_value(self, w: np.ndarray) -> float | None:
+        """1.3.0: T_theme(w) = Σ w_i·share_i (+ фиксированные позиции с заданной долей)."""
+        if self.theme is None:
+            return None
+        return float(np.dot(self._theme_vec, w) + self._theme_fixed)
+
     def violations(self, w: np.ndarray, wdp: float, ev: dict | None = None) -> list[dict]:
         """Список нарушений жёстких ограничений: {constraint, value, bound, excess}."""
         V = []
+        if self.theme is not None and self.theme["hard"]:
+            tv = self.theme_value(w); bound = self.theme["baseline"] + self.theme["tolerance"]
+            if tv > bound + 1e-12:
+                V.append({"constraint": f"theme_policy:{self.theme['aggregate_id']}", "value": tv, "bound": bound, "excess": float(tv - bound)})
         if self.card_on:                                                 # 1.2.0: избыток — в единицах веса, чтобы поиск в недопустимой зоне имел градиент
             cd = self.cardinality(w); n = cd["positions_count"]
             wm = np.sort(np.where(self._card_mask, w, 0.0)[np.where(self._card_mask, w, 0.0) > 1e-9])
@@ -506,6 +531,15 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
         if P.min_pos is not None:
             binding += [f"min_position_weight:{t}" for t, x, m in zip(P.tick, w, P._card_mask) if m and abs(x - P.min_pos) <= 0.005 + 1e-9]
         card_block["binding"] = sorted(b for b in binding if b.startswith(("cardinality", "min_position_weight")))
+    theme_block = None
+    if P.theme is not None:
+        tv = P.theme_value(w); tc = P.theme_value(P.cur); bound = (P.theme["baseline"] + P.theme["tolerance"]) if P.theme["baseline"] is not None else None
+        if P.theme["hard"] and bound is not None and bound - tv <= 0.005 + 1e-9:
+            binding.append(f"theme_policy:{P.theme['aggregate_id']}")
+        theme_block = {"policy_id": P.theme["policy_id"], "aggregate_id": P.theme["aggregate_id"], "binding_basis": "revenue", "value_at_optimum": tv, "value_at_current": tc,
+                       "baseline_value": P.theme["baseline"], "baseline_status": P.theme["status"], "tolerance": P.theme["tolerance"],
+                       "status": ("not_enforced_pending_baseline" if not P.theme["hard"] else ("pass" if tv <= bound + 1e-12 else "violated")),
+                       "binding": f"theme_policy:{P.theme['aggregate_id']}" in binding}
     y5 = ev["horizons"]["Y5"]
     if P.p30_max is not None and float(P.p30_max) - y5["P_loss_gt_30pct"] <= 0.01:
         binding.append("risk_5y:p_loss_gt_30_max")
@@ -555,6 +589,12 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
                         "return_assumption": "flat (1+r)^h, без калибровки и без отклика на сценарий — model_assumption"} for t, cfg in P.hedge.items()} if P.hedge else None)
     return {"model_version": VERSION, "stage": "A_continuous_target", "paths": P.n, "search_paths": P.n_search, "companies": P.tick, "regime": P.regime,
             "scenario_constraints": sc_block, "hedge_instruments": hedge_block, "cardinality": card_block,
+            "contract_version": "1.1", "positions_count": (card_block or {}).get("positions_count", int(sum(1 for i, t in enumerate(P.tick) if w[i] > 1e-9 and t not in P.hedge))),
+            "cardinality_variant": inputs.get("cardinality_variant"), "min_position_weight": P.min_pos,
+            "theme_lookthrough": theme_block, "theme_constraint_status": (theme_block or {}).get("status"),
+            "scenario_conditional_gates": (sc_block or {}).get("gated_at_optimum"),
+            "scenario_concentration_warning": bool(((ev.get("scenario_concentration") or {}).get("value") or 0.0) >= float(((inputs.get("scenario_constraints") or {}).get("scenario_concentration_warning") or 0.60))) if ev.get("scenario_concentration") and (ev.get("scenario_concentration") or {}).get("applicable") else None,
+            "scenario_concentration_hard_status": (("breach" if (P.sc_cfg or {}).get("scenario_concentration_max") is not None and ((ev.get("scenario_concentration") or {}).get("value") or 0.0) > float(P.sc_cfg["scenario_concentration_max"]) else "pass") if ev.get("scenario_concentration") and (ev.get("scenario_concentration") or {}).get("applicable") else "not_applicable"),
             "fixed_positions": {"weights": P.fixed, "total": P.fixed_total, "return_assumption": "flat (относительная стоимость 1.0): без калибровок; участвуют в лимитах, не в распределении доходности"},
             "budget_optimizable_plus_dry_powder": P.budget, "objective": {"primary": "median_CAGR_5Y", "tolerance": P.tol, "secondary": ["ES5_5Y", ("scenario_concentration (вариант «а», при |A| ≥ 2)" if P.sc_cfg is not None and P.BR is not None else "scenario_concentration (BASE only: n/a)"), "turnover"]},
             "feasible": best["feasible"], "start_used": best["start"], "violations_at_optimum": best["violations"],
