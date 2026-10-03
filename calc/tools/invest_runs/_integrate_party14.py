@@ -20,8 +20,9 @@ META = {"HPSA": {"ticker": "HPS.A", "folder": "hps_a", "rv": "20261003T205836Z-r
         "S": {"ticker": "S", "folder": "s", "rv": "20261003T205839Z-reverse_valuation-d4986d", "val": "20261003T205839Z-artifact_validator-d65ac5", "mc": "20261003T210450Z-company_mc-775457",
               "archetype": "mature_positive_margin", "anchor": "2026-07-31", "fq": "Q2 FY2027",
               "purpose": "нормативный прогон принятой калибровки S v1.0 партии 14 (архетип A, старт FCF-маржи 4 % model_assumption; валидатор pass; intrinsic W 0.223 — warning, прецедент SPOT; robustness: знак 0.625 при медиане ≈ 0 — вырожденный случай, подтверждён IMMA партией 15 (ε = 1 п.п., критерий 2 выполнен 8/8), допуск 1.0)"},
-        "CRWD": {"ticker": "CRWD", "folder": "crwd", "rv": "20261003T205832Z-reverse_valuation-83e31c", "val": "20261003T205833Z-artifact_validator-9814fa", "mc": None,
-                 "archetype": "mature_positive_margin", "anchor": "2026-07-31", "fq": "Q2 FY2027", "purpose": ""}}
+        "CRWD": {"ticker": "CRWD", "folder": "crwd", "rv": "20261003T205832Z-reverse_valuation-83e31c", "val": "20261003T212636Z-artifact_validator-82711a", "mc": "20261003T212906Z-company_mc-3c0b46",
+                 "archetype": "mature_positive_margin", "anchor": "2026-07-31", "fq": "Q2 FY2027", "mc_ver": "1.0.1", "mc_pk": "Party15_CRWD_v1.0.1_S_Robustness_v1.0",
+                 "purpose": "нормативный прогон принятой калибровки CRWD v1.0.1 партии 15 (архетип A; переиздание хвостов v1.0 → v1.0.1, центры неизменны, check_supersedes OK; валидатор pass, intrinsic W 0.260 в ориентире, full 0.277; robustness 1.0/1.0; результат: цена 4.2× медианной стоимости модели — вход Decision Request, калибровка не подгонялась)"}}
 
 
 def rec(rid):
@@ -32,7 +33,7 @@ def mc_entry(m):
     r = rec(m["mc"]); o = r["outputs"]; b = o["base"]; q = b["return"]["CAGR_5Y_quantiles"]; rb = o.get("robustness") or {}
     return {"run_id": m["mc"], "model": "company_mc", "version": o.get("model_version"), "timestamp": m["mc"][:15],
             "spec": "Company_Conditional_Monte_Carlo_Specification_v1.1.3 (Joint_Simulation_Layer_Rules_v1.1.2; company_mc 2.5.0, parity-gated blend)",
-            "calibration": "mc_calibration_v1.0.yaml", "purpose": m["purpose"], "equity_value_0_b": round(r["inputs"]["equity_value_0"] / 1e9, 2), "paths": r["inputs"].get("paths") or 500000, "seed": r["seed"],
+            "calibration": f"mc_calibration_v{m.get('mc_ver', '1.0')}.yaml", "purpose": m["purpose"], "equity_value_0_b": round(r["inputs"]["equity_value_0"] / 1e9, 2), "paths": r["inputs"].get("paths") or 500000, "seed": r["seed"],
             "summary": {"median_CAGR_3Y": round(b["return"]["median_CAGR_3Y"], 4), "median_CAGR_5Y": round(b["return"]["median_CAGR_5Y"], 4), "median_CAGR_8Y": round(b["return"]["median_CAGR_8Y"], 4),
                         "CAGR_5Y_q05_q95": [round(q["0.05"], 3), round(q["0.95"], 3)], "P_2x_5Y": round(b["return"]["P_2x_5Y"], 4), "P_loss_gt_30pct_5Y": round(b["downside"]["P_loss_gt_30pct_5Y"], 4),
                         "P_loss_gt_50pct_5Y": round(b["downside"]["P_loss_gt_50pct_5Y"], 4), "ES5": round(b["downside"]["expected_shortfall_5pct_5Y"], 4),
@@ -54,8 +55,9 @@ norm = json.load(open(S / "_norm_runs_joint11.json", encoding="utf-8"))
 life = yaml.safe_load((WS / "portfolio/_calibration_lifecycle.yaml").read_text(encoding="utf-8"))
 for key in sorted(ONLY):
     m = META[key]; fd = WS / "portfolio" / m["folder"]; pfx = key
-    for src_name, dst_name in ((f"{pfx}_calibration_v1.0.yaml", "calibration_v1.0.yaml"), (f"{pfx}_mc_calibration_v1.0.yaml", "mc_calibration_v1.0.yaml")):
-        src = PK / src_name; dst = fd / dst_name
+    mcv = m.get("mc_ver", "1.0"); mc_pk = (WS / "from_imma" / m["mc_pk"]) if m.get("mc_pk") else PK
+    for src, dst_name in ((PK / f"{pfx}_calibration_v1.0.yaml", "calibration_v1.0.yaml"), (mc_pk / f"{pfx}_mc_calibration_v{mcv}.yaml", f"mc_calibration_v{mcv}.yaml")):
+        src_name = src.name; dst = fd / dst_name
         if not dst.exists() or dst.read_bytes() != src.read_bytes():
             changes.append(f"{m['folder']}/{dst_name} ← {src_name}")
             if APPLY:
@@ -68,7 +70,7 @@ for key in sorted(ONLY):
         changes.append(f"{m['folder']}/state.json: +{len(new)} calc_runs ({', '.join(e['run_id'] for e in new)}), info_log, pending_verification: dozor_full_model_verification остаётся")
         if APPLY:
             st.setdefault("calc_runs", []).extend(new)
-            st.setdefault("info_log", []).append({"timestamp": NOW, "kind": "calc", "summary": f"Интеграция калибровки {m['ticker']} v1.0 (партия 14, {TODAY}): calibration_v1.0.yaml + mc_calibration_v1.0.yaml приняты (RV {m['rv'][-6:]}, валидатор calibration pass {m['val'][-6:]}); нормативный прогон: {m['mc'] or '—'}"})
+            st.setdefault("info_log", []).append({"timestamp": NOW, "kind": "calc", "summary": f"Интеграция калибровки {m['ticker']} (RV v1.0, MC v{m.get('mc_ver', '1.0')}; партия {'15' if m.get('mc_pk') else '14'}, {TODAY}): calibration_v1.0.yaml + mc_calibration_v{m.get('mc_ver', '1.0')}.yaml приняты (RV {m['rv'][-6:]}, валидатор calibration pass {m['val'][-6:]}); нормативный прогон: {m['mc'] or '—'}"})
             st["updated"] = NOW
             sp.write_text(json.dumps(st, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     if m["mc"]:
@@ -76,10 +78,10 @@ for key in sorted(ONLY):
             changes.append(f"_norm_runs_joint11.json: {m['ticker']} → {m['mc']}"); norm[m["ticker"]] = m["mc"]
         if not any(c.get("ticker") == m["ticker"] for c in life["calibrations"]):
             changes.append(f"_calibration_lifecycle.yaml: + {m['ticker']} current")
-            life["calibrations"].append({"ticker": m["ticker"], "folder": m["folder"], "archetype": m["archetype"], "mc_file": "mc_calibration_v1.0.yaml", "mc_as_of": TODAY, "rv_file": "calibration_v1.0.yaml", "rv_as_of": TODAY,
+            life["calibrations"].append({"ticker": m["ticker"], "folder": m["folder"], "archetype": m["archetype"], "mc_file": f"mc_calibration_v{m.get('mc_ver', '1.0')}.yaml", "mc_as_of": TODAY, "rv_file": "calibration_v1.0.yaml", "rv_as_of": TODAY,
                                          "base_period_anchor": m["anchor"], "base_period_fiscal_quarter": m["fq"], "lifecycle_state": "current", "last_check": TODAY,
                                          "last_check_basis": f"приёмка партии 14 ({TODAY}): RV {m['rv'][-6:]}, валидатор {m['val'][-6:]}, норматив {m['mc'][-6:]}",
-                                         "next_mandatory_check": "после публикации отчёта за Q3 2026 (CLR-1 §5.1 — сверка дозором; HPS.A: первая консолидация AEG → CLR-2 пересмотр базы)" if key == "HPSA" else "после публикации отчёта за Q3 FY2027 (CLR-1 §5.1)",
+                                         "next_mandatory_check": "после публикации отчёта за Q3 2026 (CLR-1 §5.1 — сверка дозором; HPS.A: первая консолидация AEG → CLR-2 пересмотр базы)" if key == "HPSA" else "после публикации отчёта за Q3 FY2027 (конец ноября 2026; CLR-1 §5.1 — сверка дозором)",
                                          "open_bases": []})
 # стадия в _candidates.yaml
 cp = WS / "portfolio/_candidates.yaml"; text = cp.read_text(encoding="utf-8"); out = text
