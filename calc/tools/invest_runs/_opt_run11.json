@@ -1,0 +1,785 @@
+{
+ "run_id": "20261003T215634Z-portfolio_compare-032f0f",
+ "caps_new": {
+  "CRWD": 0.0868,
+  "HPS.A": 0.1341,
+  "S": 0.1032
+ },
+ "mixture_files": {
+  "CRWD": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-CRWD-paths.npz",
+  "HPS.A": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-HPS.A-paths.npz",
+  "S": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-S-paths.npz"
+ },
+ "variants": {
+  "current": {
+   "weights": {
+    "ASML": 0.0277,
+    "ASTS": 0.0102,
+    "CRWV": 0.0049,
+    "ETN": 0.0116,
+    "HOOD": 0.1423,
+    "LLY": 0.0822,
+    "META": 0.0547,
+    "MSFT": 0.019,
+    "NBIS": 0.3303,
+    "NET": 0.0177,
+    "NVDA": 0.213,
+    "PLTR": 0.0175,
+    "RKLB": 0.0226,
+    "SPCX": 0.0067,
+    "SPOT": 0.0112
+   },
+   "dry_powder": 0.0047,
+   "positions_count": 15,
+   "mixture_Y5": {
+    "median_CAGR": 0.20772889585387255,
+    "P_2x": 0.7068197500000001,
+    "P_loss_gt_30pct": 0.002572450000000001,
+    "P_loss_gt_50pct": 0.0001947000000000001,
+    "expected_shortfall_5pct": 0.01862508021909461,
+    "CAGR_quantiles": {
+     "0.05": 0.04121340560136666,
+     "0.25": 0.13533118664909516,
+     "0.5": 0.20772889585387255,
+     "0.75": 0.28843791341221703,
+     "0.95": 0.41452423190929766
+    }
+   },
+   "violations": [
+    {
+     "constraint": "cardinality:positions_max",
+     "value": 15,
+     "bound": 8,
+     "excess": 0.07980000000000001
+    },
+    {
+     "constraint": "min_position_weight:ASML",
+     "value": 0.0277,
+     "bound": 0.03,
+     "excess": 0.0023
+    },
+    {
+     "constraint": "min_position_weight:ASTS",
+     "value": 0.0102,
+     "bound": 0.03,
+     "excess": 0.019799999999999998
+    },
+    {
+     "constraint": "min_position_weight:CRWV",
+     "value": 0.0049,
+     "bound": 0.03,
+     "excess": 0.025099999999999997
+    },
+    {
+     "constraint": "min_position_weight:ETN",
+     "value": 0.0116,
+     "bound": 0.03,
+     "excess": 0.0184
+    },
+    {
+     "constraint": "min_position_weight:MSFT",
+     "value": 0.019,
+     "bound": 0.03,
+     "excess": 0.011
+    },
+    {
+     "constraint": "min_position_weight:NET",
+     "value": 0.0177,
+     "bound": 0.03,
+     "excess": 0.012299999999999998
+    },
+    {
+     "constraint": "min_position_weight:PLTR",
+     "value": 0.0175,
+     "bound": 0.03,
+     "excess": 0.012499999999999997
+    },
+    {
+     "constraint": "min_position_weight:RKLB",
+     "value": 0.0226,
+     "bound": 0.03,
+     "excess": 0.0074
+    },
+    {
+     "constraint": "min_position_weight:SPCX",
+     "value": 0.0067,
+     "bound": 0.03,
+     "excess": 0.023299999999999998
+    },
+    {
+     "constraint": "min_position_weight:SPOT",
+     "value": 0.0112,
+     "bound": 0.03,
+     "excess": 0.018799999999999997
+    },
+    {
+     "constraint": "per_name_cap:HOOD",
+     "value": 0.1423,
+     "bound": 0.0951,
+     "excess": 0.047200000000000006
+    },
+    {
+     "constraint": "per_name_cap:NBIS",
+     "value": 0.3303,
+     "bound": 0.2947,
+     "excess": 0.035599999999999965
+    },
+    {
+     "constraint": "per_name_cap:NVDA",
+     "value": 0.213,
+     "bound": 0.1412,
+     "excess": 0.0718
+    },
+    {
+     "constraint": "top3_aggregate_max",
+     "value": 0.6856,
+     "bound": 0.5,
+     "excess": 0.1856
+    },
+    {
+     "constraint": "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+     "value": 0.5523999999999999,
+     "bound": 0.35,
+     "excess": 0.2023999999999999
+    },
+    {
+     "constraint": "common_cause_max:AI_OVERBUILD",
+     "value": 0.48029999999999995,
+     "bound": 0.35,
+     "excess": 0.13029999999999997
+    },
+    {
+     "constraint": "common_cause_max:AI_CLOUD_CUSTOMER_FINANCING_STRESS",
+     "value": 0.42674999999999996,
+     "bound": 0.35,
+     "excess": 0.07674999999999998
+    },
+    {
+     "constraint": "dry_powder_min:Stress",
+     "value": 0.0047,
+     "bound": 0.05,
+     "excess": 0.0453
+    }
+   ],
+   "optimized": null
+  },
+  "T_v1.0": {
+   "weights": {
+    "CRWV": 0.105,
+    "LLY": 0.14,
+    "NBIS": 0.215,
+    "NVDA": 0.11,
+    "RKLB": 0.075,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1963,
+   "positions_count": 6,
+   "mixture_Y5": {
+    "median_CAGR": 0.20752928232936263,
+    "P_2x": 0.76888447,
+    "P_loss_gt_30pct": 4.550000000000001e-06,
+    "P_loss_gt_50pct": 0.0,
+    "expected_shortfall_5pct": 0.33476239548147724,
+    "CAGR_quantiles": {
+     "0.05": 0.08489971843883537,
+     "0.25": 0.1532892284487657,
+     "0.5": 0.20752928232936263,
+     "0.75": 0.2680320042640756,
+     "0.95": 0.364725543884475
+    }
+   },
+   "violations": [],
+   "optimized": null
+  },
+  "U18": {
+   "weights": {
+    "CRWV": 0.105,
+    "HPS.A": 0.1,
+    "LLY": 0.085,
+    "NBIS": 0.195,
+    "NVDA": 0.125,
+    "RKLB": 0.045,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1863,
+   "positions_count": 7,
+   "mixture_Y5": {
+    "median_CAGR": 0.21163080120456423,
+    "P_2x": 0.79052021,
+    "P_loss_gt_30pct": 2.600000000000001e-06,
+    "P_loss_gt_50pct": 0.0,
+    "expected_shortfall_5pct": 0.3682985404367977,
+    "CAGR_quantiles": {
+     "0.05": 0.0903571490478765,
+     "0.25": 0.15860683987311375,
+     "0.5": 0.21163080120456423,
+     "0.75": 0.26975279678107067,
+     "0.95": 0.36173492655959394
+    }
+   },
+   "violations": [],
+   "optimized": {
+    "universe": [
+     "ASML",
+     "ASTS",
+     "CRWD",
+     "CRWV",
+     "ETN",
+     "HOOD",
+     "HPS.A",
+     "LLY",
+     "META",
+     "MSFT",
+     "NBIS",
+     "NET",
+     "NVDA",
+     "PLTR",
+     "RKLB",
+     "S",
+     "SPCX",
+     "SPOT"
+    ],
+    "excluded_from_universe": {},
+    "mixture": {
+     "weights": {
+      "CRWV": 0.105,
+      "HPS.A": 0.1,
+      "LLY": 0.085,
+      "NBIS": 0.195,
+      "NVDA": 0.125,
+      "RKLB": 0.045,
+      "SPOT": 0.135
+     },
+     "dry_powder": 0.1863,
+     "feasible": true,
+     "start_used": "given",
+     "median_CAGR_5Y": 0.21160505894591453,
+     "ES5": 0.36858630180088375,
+     "P_loss_gt_30pct": 2e-06,
+     "binding_constraints": [
+      "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+      "per_name_cap:CRWV",
+      "per_name_cap:SPOT"
+     ],
+     "violations_at_optimum": [],
+     "turnover_from_current": 0.5307,
+     "search": {
+      "random_starts": 0,
+      "basin_kicks": 0,
+      "exploration_paths": null,
+      "polish_top": 3,
+      "standard_starts": [
+       "current",
+       "equal",
+       "empty",
+       "given"
+      ],
+      "best_source": "given",
+      "improvement_vs_standard_pp": 0.0
+     },
+     "cardinality": {
+      "positions_count": 7,
+      "positions_min": 6,
+      "positions_max": 8,
+      "min_position_weight": 0.03,
+      "below_min": [],
+      "zeroed": [
+       "ASML",
+       "ASTS",
+       "CRWD",
+       "ETN",
+       "HOOD",
+       "META",
+       "MSFT",
+       "NET",
+       "PLTR",
+       "S",
+       "SPCX"
+      ],
+      "excluded_from_count": [
+       "GLD",
+       "UFO"
+      ],
+      "binding": []
+     },
+     "theme_lookthrough": {
+      "policy_id": "AI_THEME_NOT_INCREASE_V1",
+      "aggregate_id": "AI_TOTAL",
+      "binding_basis": "revenue",
+      "value_at_optimum": 0.41564913064715603,
+      "value_at_current": 0.542759298600204,
+      "baseline_value": 0.542759298600204,
+      "baseline_status": "MATERIALIZED",
+      "tolerance": 1e-06,
+      "status": "pass",
+      "binding": false
+     }
+    },
+    "by_scenario": {
+     "BASE": {
+      "weights": {
+       "ASTS": 0.03,
+       "CRWV": 0.105,
+       "HPS.A": 0.13,
+       "LLY": 0.085,
+       "NBIS": 0.195,
+       "NVDA": 0.125,
+       "RKLB": 0.03,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1413,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.22280284441032383,
+      "ES5": 0.49846879137148425,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "cardinality:positions_max",
+       "common_cause_max:ACQUISITION_INTEGRATION_FAILURE",
+       "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+       "min_position_weight:ASTS",
+       "min_position_weight:RKLB",
+       "per_name_cap:CRWV",
+       "per_name_cap:HPS.A",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5205,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 8,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "META",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "cardinality:positions_max",
+        "min_position_weight:ASTS",
+        "min_position_weight:RKLB"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.41564913064715603,
+       "value_at_current": 0.542759298600204,
+       "baseline_value": 0.542759298600204,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "TAIWAN_SEIZURE": {
+      "weights": {
+       "ASTS": 0.03,
+       "CRWV": 0.09,
+       "HPS.A": 0.1,
+       "LLY": 0.075,
+       "NBIS": 0.19,
+       "NVDA": 0.12,
+       "RKLB": 0.04,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1963,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.15422910966624592,
+      "ES5": 0.11435554571269735,
+      "P_loss_gt_30pct": 1.2e-05,
+      "binding_constraints": [
+       "cardinality:positions_max",
+       "min_position_weight:ASTS",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5377,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 8,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "META",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "cardinality:positions_max",
+        "min_position_weight:ASTS"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.3910231654212698,
+       "value_at_current": 0.542759298600204,
+       "baseline_value": 0.542759298600204,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "CHIP_COLD_WAR": {
+      "weights": {
+       "ASTS": 0.03,
+       "CRWV": 0.105,
+       "HPS.A": 0.13,
+       "LLY": 0.115,
+       "NBIS": 0.175,
+       "NVDA": 0.14,
+       "RKLB": 0.03,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1163,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.23719836461130794,
+      "ES5": 0.5585587952552772,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "cardinality:positions_max",
+       "common_cause_max:ACQUISITION_INTEGRATION_FAILURE",
+       "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+       "min_position_weight:ASTS",
+       "min_position_weight:RKLB",
+       "per_name_cap:CRWV",
+       "per_name_cap:HPS.A",
+       "per_name_cap:NVDA",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5255,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 8,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "META",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "cardinality:positions_max",
+        "min_position_weight:ASTS",
+        "min_position_weight:RKLB"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.40952702632481475,
+       "value_at_current": 0.542759298600204,
+       "baseline_value": 0.542759298600204,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "TAIWAN_QUARANTINE": {
+      "weights": {
+       "ASTS": 0.03,
+       "CRWV": 0.105,
+       "HPS.A": 0.125,
+       "LLY": 0.085,
+       "NBIS": 0.16,
+       "NVDA": 0.1,
+       "RKLB": 0.04,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1963,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.18648783838783134,
+      "ES5": 0.3257339951712302,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "cardinality:positions_max",
+       "min_position_weight:ASTS",
+       "per_name_cap:CRWV",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5805,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 8,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "META",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "cardinality:positions_max",
+        "min_position_weight:ASTS"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.35751930451772485,
+       "value_at_current": 0.542759298600204,
+       "baseline_value": 0.542759298600204,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     }
+    },
+    "conditional": {},
+    "weights_by_scenario": {
+     "ASML": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "ASTS": {
+      "mixture": 0.0,
+      "BASE": 0.03,
+      "TAIWAN_SEIZURE": 0.03,
+      "CHIP_COLD_WAR": 0.03,
+      "TAIWAN_QUARANTINE": 0.03
+     },
+     "CRWD": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "CRWV": {
+      "mixture": 0.105,
+      "BASE": 0.105,
+      "TAIWAN_SEIZURE": 0.09,
+      "CHIP_COLD_WAR": 0.105,
+      "TAIWAN_QUARANTINE": 0.105
+     },
+     "ETN": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "HOOD": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "HPS.A": {
+      "mixture": 0.1,
+      "BASE": 0.13,
+      "TAIWAN_SEIZURE": 0.1,
+      "CHIP_COLD_WAR": 0.13,
+      "TAIWAN_QUARANTINE": 0.125
+     },
+     "LLY": {
+      "mixture": 0.085,
+      "BASE": 0.085,
+      "TAIWAN_SEIZURE": 0.075,
+      "CHIP_COLD_WAR": 0.115,
+      "TAIWAN_QUARANTINE": 0.085
+     },
+     "META": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "MSFT": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "NBIS": {
+      "mixture": 0.195,
+      "BASE": 0.195,
+      "TAIWAN_SEIZURE": 0.19,
+      "CHIP_COLD_WAR": 0.175,
+      "TAIWAN_QUARANTINE": 0.16
+     },
+     "NET": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "NVDA": {
+      "mixture": 0.125,
+      "BASE": 0.125,
+      "TAIWAN_SEIZURE": 0.12,
+      "CHIP_COLD_WAR": 0.14,
+      "TAIWAN_QUARANTINE": 0.1
+     },
+     "PLTR": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "RKLB": {
+      "mixture": 0.045,
+      "BASE": 0.03,
+      "TAIWAN_SEIZURE": 0.04,
+      "CHIP_COLD_WAR": 0.03,
+      "TAIWAN_QUARANTINE": 0.04
+     },
+     "S": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "SPCX": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "SPOT": {
+      "mixture": 0.135,
+      "BASE": 0.135,
+      "TAIWAN_SEIZURE": 0.135,
+      "CHIP_COLD_WAR": 0.135,
+      "TAIWAN_QUARANTINE": 0.135
+     }
+    },
+    "dry_powder_by_scenario": {
+     "mixture": 0.1863,
+     "BASE": 0.1413,
+     "TAIWAN_SEIZURE": 0.1963,
+     "CHIP_COLD_WAR": 0.1163,
+     "TAIWAN_QUARANTINE": 0.1963
+    }
+   }
+  }
+ }
+}
