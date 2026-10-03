@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import importlib
 
-from engine import artifact_validator, company_mc, conditional_mc, conviction_overlay, joint_layer, milestone_mc, portfolio_compare, portfolio_optimizer, portfolio_paths, portfolio_regime, portfolio_stability, reverse_valuation, selftest, synthetic_basket, valuation_multiple
+from engine import artifact_validator, company_mc, conditional_mc, conviction_overlay, joint_layer, milestone_mc, portfolio_compare, portfolio_optimizer, portfolio_paths, portfolio_regime, portfolio_stability, reverse_valuation, scenario_state, selftest, synthetic_basket, valuation_multiple
 
 importlib.reload(selftest)
 importlib.reload(valuation_multiple)
@@ -18,6 +18,7 @@ importlib.reload(company_mc)
 importlib.reload(portfolio_paths)
 importlib.reload(portfolio_optimizer)
 importlib.reload(portfolio_compare)
+importlib.reload(scenario_state)
 importlib.reload(portfolio_stability)
 importlib.reload(artifact_validator)
 
@@ -71,6 +72,11 @@ MODELS = {
         "version": company_mc.VERSION,
         "fn": company_mc.run,
         "doc": company_mc.__doc__.strip().splitlines()[0],
+    },
+    "scenario_state": {
+        "version": scenario_state.VERSION,
+        "fn": scenario_state.run,
+        "doc": scenario_state.__doc__.strip().splitlines()[0],
     },
     "portfolio_compare": {
         "version": portfolio_compare.VERSION,
