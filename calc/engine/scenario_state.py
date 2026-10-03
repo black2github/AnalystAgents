@@ -31,7 +31,7 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 SATISFIED = "verified"
 BLOCKING = "source_conflict"
 
@@ -214,6 +214,18 @@ def run(inputs: dict, seed: int) -> dict:
     as_of_s = as_of.strftime("%Y-%m-%dT%H:%M:%SZ")
     review_days = int(inputs.get("probability_review_days", 90))
     pics = inputs.get("conditional_pictures") or {}
+    if not pics:                                                              # условные картины части B — из карты прогонов хоста, если есть
+        mp = ws / "portfolio" / "_runs" / "_conditional_runs_partB.json"
+        if mp.exists():
+            try:
+                for key, b in _load(mp).items():
+                    o = (b or {}).get("optimum") if isinstance(b, dict) else None
+                    if "|" in key and o and o.get("run_id"):
+                        cu = o.get("current_under_phase") or {}
+                        pics[key] = {"conditional_run_ref": f"portfolio/_runs/_conditional_runs_partB.json#{key}", "conditional_optimum_ref": o["run_id"], "median_CAGR_5Y": cu.get("median_CAGR_5Y"),
+                                     "ES5": cu.get("ES5"), "P_loss_gt_30pct": cu.get("P_loss_gt_30pct"), "optimum_median_CAGR_5Y": o.get("median_CAGR_5Y"), "optimum_ES5": o.get("ES5")}
+            except Exception:  # noqa: BLE001 — картина необязательна
+                pics = {}
     events = evaluate_events(catalog, items, as_of)
     # defining-события исходов → классификация набора
     mes = (catalog.get("mutual_exclusion_sets") or [{}])[0]
