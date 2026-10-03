@@ -3,9 +3,21 @@
 ScenarioConcentration (вариант «а»), сквозные доли тем (Theme Look-through, binding basis revenue), число позиций и оборот от опорного
 варианта, нарушения лимитов владельца (через portfolio_optimizer._Problem на смеси: потолки, сектор, топ-3, общая причина, dry powder,
 риск BASE, сценарные гейты, cardinality, тема), картины по условным фазам (по желанию) и таблица разностей к опорному варианту.
-Ничего не оптимизирует и не решает: все числа — derived_fact из путей; decision: none.
+Ничего не решает: все числа — derived_fact из путей; decision: none.
+1.1.0 — режим universe (решение владельца 03.10.2026): вариант задаётся СПИСКОМ БУМАГ без весов ({"id", "universe": [tk], "note"});
+сравнитель сам вызывает portfolio_optimizer по шаблону optimizer_inputs: (1) оптимум на смеси сценариев с лимитами владельца и
+сценарными гейтами — это и есть веса варианта (часть бумаг получает 0 = «не покупать / продать»); (2) по желанию — оптимум под каждым
+сценарием (пути сценария, probability = 1, без сценарных гейтов) и под условными фазами (conditional) → таблица «бумага × сценарий»
+(variants[id].optimized). Текущие позиции вне вселенной считаются проданными в кэш в стартовой точке (оборот их учитывает).
+Бумаги без путей во вселенной — ошибка (нет калибровки). Долго: один вызов оптимизатора ≈ 20–60 мин на полных путях; универсум
+с 4 сценариями — часы; запускать по одобрению владельца (universe_options.max_paths / search_paths — ускорение).
 
-inputs: {"variants": [{"id": str, "weights": {tk: w}, "dry_powder": w, "note": str?}], "reference_id": id (по умолчанию первый),
+inputs: {"variants": [{"id": str, "weights": {tk: w}, "dry_powder": w, "note": str?} | {"id", "universe": [tk], "note"}], "reference_id": id,
+         "optimizer_inputs": {<полные входы portfolio_optimizer: paths_files (все бумаги с путями), weights_current, fixed_weights,
+             dry_powder_current, dry_powder_return_annual, regime, limits (с cardinality / theme_policy), per_name_caps, roles, sectors,
+             common_cause, scenario_constraints (scenarios + base_paths_files), search, starts>} (обязателен при universe-вариантах),
+         "universe_options": {"per_scenario": true, "conditional": false, "max_paths": null, "search_paths": null,
+             "search": {"random_starts": 0, "basin_kicks": 0}, "scenario_search": {…}} (по желанию),
          "scenarios": [{"id": "BASE", "paths_files": {tk: .npz}}, {"id", "probability", "paths_files"}...]  (как portfolio_paths mixture),
          "dry_powder_return_annual": 0.04, "max_paths": null,
          "fixed_weights": {tk: w} — позиции без путей (GLD/UFO), плоская доходность; участвуют в лимитах и в сумме весов,
@@ -13,7 +25,9 @@ inputs: {"variants": [{"id": str, "weights": {tk: w}, "dry_powder": w, "note": s
          "limits_check": {<входы оптимизатора: limits, per_name_caps, roles, sectors, common_cause, regime, scenario_constraints?>} (по желанию),
          "conditional": [{"scenario_id", "phase_id", "paths_files": {tk: .npz}}] (по желанию — картины по подтверждённым фазам)}
 outputs: variants[id] = {weights, dry_powder, positions_count, by_scenario{sid: Y5-метрики}, mixture{Y3/Y5/Y8}, scenario_impacts,
-  scenario_concentration, theme{aggregate, value}, turnover_vs_reference, violations[], conditional{sid|phase: Y5}}; comparison =
+  scenario_concentration, theme{aggregate, value}, turnover_vs_reference, violations[], conditional{sid|phase: Y5},
+  optimized{universe, mixture{weights, dry_powder, feasible, …}, by_scenario{sid: {weights, dry_powder, median_CAGR_5Y, ES5}},
+  conditional{key: …}, weights_by_scenario{tk: {mixture, sid…}}, excluded_from_universe}}; comparison =
   таблица разностей к reference (медиана, ES5, P(l30), под каждым сценарием, тема, кэш); ranking — лексикографически (медиана с допуском →
   ES5 → концентрация → оборот) только среди допустимых; decision: none.
 """
@@ -24,7 +38,7 @@ import numpy as np
 from engine import portfolio_optimizer as po
 from engine import portfolio_paths as pp
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 Y5KEYS = ("median_CAGR", "P_loss_gt_30pct", "P_loss_gt_50pct", "expected_shortfall_5pct", "P_2x")
 
 
@@ -40,13 +54,92 @@ def _m(pv: np.ndarray, yrs: int) -> dict:
     return po._metrics(pv, yrs)
 
 
+def _restrict(files: dict, uni: list) -> dict:
+    return {t: files[t] for t in uni if t in files}
+
+
+def _opt_summary(o: dict) -> dict:
+    y5 = o["portfolio_return_distribution"]["Y5"]; d5 = o["portfolio_downside"]["Y5"]
+    return {"weights": {t: round(float(w), 6) for t, w in o["proposed_weights"].items() if float(w) > 1e-9}, "dry_powder": float(o["dry_powder_weight"]), "feasible": o["feasible"], "start_used": o.get("start_used"),
+            "median_CAGR_5Y": y5["median_CAGR"], "ES5": d5["expected_shortfall_5pct"], "P_loss_gt_30pct": d5["P_loss_gt_30pct"], "binding_constraints": o.get("binding_constraints"),
+            "violations_at_optimum": o.get("violations_at_optimum"), "turnover_from_current": o.get("turnover_from_current"), "search": o.get("search"), "cardinality": o.get("cardinality"), "theme_lookthrough": o.get("theme_lookthrough")}
+
+
+def _optimize_universe(v: dict, tmpl: dict, opts: dict, scen: list, cond: list, seed: int) -> dict:
+    """Вселенная без весов → оптимум на смеси (веса варианта) + оптимумы под сценариями / условными фазами."""
+    uni = [str(t) for t in (v.get("universe") or [])]
+    if not uni:
+        raise ValueError(f"вариант {v['id']}: universe пуст")
+    files = tmpl.get("paths_files") or {}
+    missing = [t for t in uni if t not in files]
+    if missing:
+        raise ValueError(f"вариант {v['id']}: нет путей (калибровки) для {missing} — бумаги без модели во вселенную не входят")
+    fixed = {k: float(x) for k, x in (tmpl.get("fixed_weights") or {}).items()}
+    cur = {k: float(x) for k, x in (tmpl.get("weights_current") or {}).items()}
+    excluded = {t: w for t, w in cur.items() if t not in uni and t not in fixed and w > 0}
+    inp = {k: x for k, x in tmpl.items() if k not in ("paths_files", "weights_current", "dry_powder_current", "scenario_constraints", "limits", "search")}
+    inp["paths_files"] = _restrict(files, uni)
+    inp["weights_current"] = {t: w for t, w in cur.items() if t in uni or t in fixed}
+    inp["dry_powder_current"] = float(tmpl.get("dry_powder_current", 0.0)) + sum(excluded.values())      # вне вселенной — продано в кэш
+    limits = dict(tmpl.get("limits") or {})
+    card = dict(limits.get("cardinality") or {})
+    if card and card.get("positions_min") is not None and int(card["positions_min"]) > len(uni):
+        card["positions_min"] = len(uni); limits["cardinality"] = card
+    if limits.get("theme_policy"):
+        tp = dict(limits["theme_policy"]); tp["shares"] = {t: x for t, x in (tp.get("shares") or {}).items() if t in uni or t in fixed}; limits["theme_policy"] = tp
+    inp["limits"] = limits
+    sc = tmpl.get("scenario_constraints")
+    if sc:
+        inp["scenario_constraints"] = {**sc, "scenarios": [{**s, "paths_files": _restrict(s.get("paths_files") or {}, uni)} for s in (sc.get("scenarios") or [])], "base_paths_files": _restrict(sc.get("base_paths_files") or {}, uni)}
+    inp["search"] = opts.get("search") if opts.get("search") is not None else (tmpl.get("search") or {"random_starts": 0, "basin_kicks": 0})
+    for k in ("max_paths", "search_paths"):
+        if opts.get(k):
+            inp[k] = int(opts[k])
+    o_mix = po.run(inp, seed)
+    res = {"universe": uni, "excluded_from_universe": excluded, "mixture": _opt_summary(o_mix), "by_scenario": {}, "conditional": {}}
+    given = {t: float(w) for t, w in o_mix["proposed_weights"].items()}; given_dp = float(o_mix["dry_powder_weight"])
+    base = {k: x for k, x in inp.items() if k != "scenario_constraints"}
+    base.update({"starts": ["current", "equal", "empty", "given"], "start_weights": given, "start_dry_powder": given_dp, "search": opts.get("scenario_search") or {"random_starts": 0, "basin_kicks": 0}})
+    if opts.get("per_scenario", True):
+        for s in scen:
+            sfiles = _restrict(s.get("paths_files") or {}, uni)
+            if len(sfiles) < len(uni):
+                res["by_scenario"][s["id"]] = {"error": f"нет путей для {[t for t in uni if t not in sfiles]}"}; continue
+            try:
+                res["by_scenario"][s["id"]] = _opt_summary(po.run({**base, "paths_files": sfiles}, seed))
+            except Exception as e:  # noqa: BLE001 — оптимум под сценарием необязателен; причина — в выход
+                res["by_scenario"][s["id"]] = {"error": str(e)[:200]}
+    if opts.get("conditional", False):
+        for c in cond:
+            key = f"{c['scenario_id']}|{c['phase_id']}"; cfiles = _restrict(c.get("paths_files") or {}, uni)
+            if len(cfiles) < len(uni):
+                res["conditional"][key] = {"error": f"нет путей для {[t for t in uni if t not in cfiles]}"}; continue
+            try:
+                res["conditional"][key] = _opt_summary(po.run({**base, "paths_files": cfiles}, seed))
+            except Exception as e:  # noqa: BLE001
+                res["conditional"][key] = {"error": str(e)[:200]}
+    cols = {"mixture": res["mixture"]} | {k: x for k, x in res["by_scenario"].items() if "weights" in x} | {k: x for k, x in res["conditional"].items() if "weights" in x}
+    res["weights_by_scenario"] = {t: {c: round(float(x["weights"].get(t, 0.0)), 4) for c, x in cols.items()} for t in uni}
+    res["dry_powder_by_scenario"] = {c: round(float(x["dry_powder"]), 4) for c, x in cols.items()}
+    return res
+
+
 def run(inputs: dict, seed: int) -> dict:
-    variants = inputs.get("variants") or []
+    variants = [dict(v) for v in (inputs.get("variants") or [])]
     if not variants:
         raise ValueError("variants пуст")
     ids = [str(v["id"]) for v in variants]
     if len(set(ids)) != len(ids):
         raise ValueError("id вариантов должны быть уникальны")
+    tmpl = inputs.get("optimizer_inputs") or {}
+    uopts = inputs.get("universe_options") or {}
+    optimized = {}
+    for v in variants:                                                       # 1.1.0: вселенная → веса через оптимизатор (до загрузки путей)
+        if v.get("universe") is not None:
+            if not tmpl:
+                raise ValueError(f"вариант {v['id']}: universe требует optimizer_inputs")
+            optimized[str(v["id"])] = r = _optimize_universe(v, tmpl, uopts, inputs.get("scenarios") or [], inputs.get("conditional") or [], seed)
+            v["weights"] = dict(r["mixture"]["weights"]); v["dry_powder"] = r["mixture"]["dry_powder"]
     ref_id = str(inputs.get("reference_id") or ids[0])
     if ref_id not in ids:
         raise ValueError(f"reference_id {ref_id} нет среди вариантов")
@@ -143,7 +236,7 @@ def run(inputs: dict, seed: int) -> dict:
                       "by_scenario_Y5": {sid: {k: by[sid]["Y5"][k] for k in Y5KEYS} | {"q05": by[sid]["Y5"]["CAGR_quantiles"]["0.05"], "q95": by[sid]["Y5"]["CAGR_quantiles"]["0.95"]} for sid in sids},
                       "by_scenario_all_horizons": by, "mixture": mixture, "scenario_impacts": impacts, "scenario_concentration": conc,
                       "conditional_phases_Y5": cond_out or None, "theme": th, "turnover_vs_reference": turnover, "violations": viol,
-                      "feasible": (None if viol is None else (len(viol) == 0))}
+                      "feasible": (None if viol is None else (len(viol) == 0)), "optimized": optimized.get(vid)}
     # таблица разностей к опорному и ранжирование
     R = out_v[ref_id]
     comparison = {}
@@ -187,6 +280,8 @@ def run(inputs: dict, seed: int) -> dict:
             "probability_status": ("owner_judgment" if not pending else "pending_owner_judgment"), "pending": pending, "reference_id": ref_id,
             "limits_check": ("applied" if P is not None else ("not_requested" if not lc else f"unavailable: {locals().get('lc_error', 'pending probabilities')}")),
             "variants": out_v, "comparison_vs_reference": comparison, "ranking": ranking,
+            "universe_mode": ({"variants": list(optimized), "options": {"per_scenario": uopts.get("per_scenario", True), "conditional": uopts.get("conditional", False), "max_paths": uopts.get("max_paths"), "search_paths": uopts.get("search_paths"), "search": uopts.get("search"), "scenario_search": uopts.get("scenario_search")},
+                              "note": "веса варианта = оптимум на смеси с лимитами владельца и сценарными гейтами; оптимумы под сценариями — без гейтов (probability = 1); 0 = не покупать / продать под этим сценарием; позиции вне вселенной считаются проданными в кэш в стартовой точке"} if optimized else None),
             "assumptions": ["позиции без путей (fixed_weights) — плоская доходность 1.0", "смесь §6 — взвешенная эмпирическая, impacts диагностические (§7)",
                             "тема — Σ w·share по выручке (Theme Look-through v1.0)", "нарушения лимитов — по точке, без поиска; разрыв ≠ приказ"],
             "decision": "none"}

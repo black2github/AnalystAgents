@@ -54,3 +54,28 @@ def test_compare_pending_probability_and_conditional(paths, tmp_path):
         pc.run({"variants": [{"id": "a", "weights": {"AAA": 0.5}, "dry_powder": 0.3}], "scenarios": scen}, 0)          # сумма ≠ 1
     with pytest.raises(ValueError):
         pc.run({"variants": [{"id": "a", "weights": {"AAA": 0.7}, "dry_powder": 0.3}, {"id": "a", "weights": {"AAA": 0.7}, "dry_powder": 0.3}], "scenarios": scen}, 0)   # дубликат id
+
+
+def test_universe_mode_optimizes_without_weights(paths, tmp_path):
+    """1.1.0: вариант списком бумаг → веса через оптимизатор на смеси; оптимумы под сценариями; бумага вне вселенной (CCC) считается
+    проданной в кэш; бумага без путей — ошибка; таблица «бумага × сценарий»."""
+    from tests.test_portfolio_optimizer import _inputs
+    scen = _scen(paths, tmp_path)
+    tmpl = _inputs(paths, dry_powder_current=0.15, scenario_constraints={"p_min": 0.1, "es5_min": None, "p_loss_gt_30_max": None, "scenario_concentration_max": None,
+                                                                           "scenarios": [{"id": "S1", "probability": 0.2, "paths_files": scen[1]["paths_files"]}], "base_paths_files": paths},
+                   search={"random_starts": 0, "basin_kicks": 0}, search_paths=1000, max_paths=2000)
+    out = pc.run({"variants": [{"id": "current", "weights": {"AAA": 0.10, "BBB": 0.40, "CCC": 0.30}, "dry_powder": 0.15},
+                               {"id": "uni_ab", "universe": ["AAA", "BBB"], "note": "без CCC"}],
+                  "reference_id": "current", "scenarios": scen, "fixed_weights": {"ZZZ": 0.05}, "optimizer_inputs": tmpl, "universe_options": {"per_scenario": True}}, 0)
+    u = out["variants"]["uni_ab"]; opt = u["optimized"]
+    assert out["universe_mode"]["variants"] == ["uni_ab"] and opt["universe"] == ["AAA", "BBB"] and opt["excluded_from_universe"] == {"CCC": 0.30}
+    assert set(u["weights"]) <= {"AAA", "BBB"} and abs(sum(u["weights"].values()) + u["dry_powder"] + 0.05 - 1.0) < 1e-4
+    assert opt["mixture"]["feasible"] is not None and "median_CAGR_5Y" in opt["mixture"] and opt["mixture"]["turnover_from_current"] is not None
+    assert set(opt["by_scenario"]) == {"BASE", "S1"} and all("weights" in x for x in opt["by_scenario"].values())
+    assert set(opt["weights_by_scenario"]) == {"AAA", "BBB"} and set(opt["weights_by_scenario"]["AAA"]) == {"mixture", "BASE", "S1"}
+    assert opt["weights_by_scenario"]["AAA"]["S1"] <= opt["weights_by_scenario"]["AAA"]["BASE"] + 1e-9     # AAA ×0.3 под S1 → не больше, чем под BASE
+    assert u["by_scenario_Y5"]["BASE"]["median_CAGR"] is not None and "uni_ab" in out["comparison_vs_reference"]
+    with pytest.raises(ValueError, match="нет путей"):
+        pc.run({"variants": [{"id": "x", "universe": ["AAA", "QQQ"]}], "scenarios": scen, "optimizer_inputs": tmpl}, 0)
+    with pytest.raises(ValueError, match="optimizer_inputs"):
+        pc.run({"variants": [{"id": "x", "universe": ["AAA"]}], "scenarios": scen}, 0)

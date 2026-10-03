@@ -1,8 +1,11 @@
-"""Сравнение вариантов состава одним запуском (portfolio_compare 1.0.0): варианты — из portfolio/_compare/variants.yaml (текущие веса, оптимумы
-прогонов по run_id, ручные варианты владельца), сценарии — BASE + TS/CW/Q с вероятностями владельца, условные фазы части B, тема AI_TOTAL,
-проверка лимитов (approved_limits_v1_0/v1_1, потолки захода 6, сценарные гейты V1, концентрация hard 70, cardinality, тема).
-Выход: portfolio/_compare/<дата>.json (+ latest.json) и notes/compare-<дата>.md (таблица для владельца и агента). Расчёт — секунды–минуты.
-Запуск: python _portfolio_compare_run.py [--date YYYY-MM-DD]"""
+"""Сравнение вариантов состава одним запуском (portfolio_compare 1.1.0): варианты — из portfolio/_compare/variants.yaml (текущие веса, оптимумы
+прогонов по run_id, ручные варианты владельца, а с 1.1.0 — ВСЕЛЕННЫЕ без весов `universe: [тикеры]`: веса считает оптимизатор на смеси,
+плюс оптимум под каждым сценарием и, по желанию, под условными фазами), сценарии — BASE + TS/CW/Q с вероятностями владельца, условные
+фазы части B, тема AI_TOTAL, проверка лимитов (approved_limits_v1_0/v1_1, потолки захода 6, сценарные гейты V1, концентрация hard 70,
+cardinality, тема). Выход: portfolio/_compare/<дата>.json (+ latest.json) и notes/compare-<дата>.md.
+Время: без universe — секунды–минуты; КАЖДЫЙ universe-вариант = 1 + число сценариев (+ фаз) вызовов оптимизатора ≈ 20–25 мин каждый на
+полных путях (universe_options в variants.yaml: max_paths / search_paths ускоряют) — запускать ТОЛЬКО по одобрению владельца.
+Запуск: python _portfolio_compare_run.py [--date YYYY-MM-DD] [--skip-universe]"""
 import datetime
 import json
 import sys
@@ -26,9 +29,19 @@ for v in cfg["variants"]:
         r = json.load(open(WS / "portfolio/_runs" / f"{v['optimum_run']}.json", encoding="utf-8"))["outputs"]
         w = {tk: x for tk, x in r["proposed_weights"].items() if tk in L.NORM and x > 0}
         variants.append({"id": v["id"], "weights": w, "dry_powder": float(r["dry_powder_weight"]), "note": f"{v.get('note', '')} [{v['optimum_run'][-6:]}]"})
+    elif v.get("universe") is not None:
+        if "--skip-universe" in sys.argv:
+            continue
+        uni = [str(t).upper() for t in v["universe"]]
+        bad = [t for t in uni if t not in L.NORM]
+        if bad:
+            print(f"вариант {v['id']}: нет калибровки (путей) для {bad} — пропущен", flush=True); continue
+        variants.append({"id": v["id"], "universe": uni, "note": v.get("note", "вселенная → оптимизатор")})
     else:
         variants.append({"id": v["id"], "weights": {k: float(x) for k, x in v["weights"].items()}, "dry_powder": float(v["dry_powder"]), "note": v.get("note")})
 for v in variants:                                                      # нормировка: веса + dp + fixed = 1 (кэш досчитывается)
+    if "universe" in v:
+        continue
     tot = sum(v["weights"].values()) + v["dry_powder"] + sum(fixed.values())
     if abs(tot - 1.0) > 1e-4:
         v["dry_powder"] = round(1.0 - sum(v["weights"].values()) - sum(fixed.values()), 6)
@@ -41,6 +54,12 @@ limits = {**L.limits, "cardinality": {"positions_min": card["positions_min"], "p
 inp = {"variants": variants, "reference_id": cfg.get("reference_id", "current"), "scenarios": [{"id": "BASE", "paths_files": L.base_files}] + L.scen_files, "dry_powder_return_annual": 0.04, "fixed_weights": fixed,
        "theme": {"aggregate_id": "AI_TOTAL", "shares": TH["shares"], "baseline_value": TH["baseline_2026_09_21"], "policy_id": "AI_THEME_NOT_INCREASE_V1"},
        "limits_check": {"limits": limits, "per_name_caps": L.caps, "roles": {}, "sectors": L.sectors, "common_cause": L.cc, "regime": L.regime, "scenario_constraints": sc}, "conditional": cond}
+if any("universe" in v for v in variants):                              # 1.1.0: шаблон оптимизатора для universe-вариантов (как заход 9/10)
+    fixed_opt = {tk: w for tk, w in L.wcur.items() if tk not in L.NORM}
+    inp["optimizer_inputs"] = {"paths_files": L.FILES, "weights_current": L.wcur, "fixed_weights": fixed_opt, "dry_powder_current": L.cash_w, "dry_powder_return_annual": 0.04, "regime": L.regime, "limits": limits,
+                               "per_name_caps": L.caps, "roles": {}, "sectors": L.sectors, "common_cause": L.cc, "objective_tolerance_pp": 0.5, "scenario_constraints": sc, "starts": ["current", "equal", "empty"]}
+    inp["universe_options"] = cfg.get("universe_options") or {"per_scenario": True, "conditional": False}
+    print("universe-варианты:", [v["id"] for v in variants if "universe" in v], "| options", inp["universe_options"], flush=True)
 r = L.post({"model": "portfolio_compare", "inputs": inp, "seed": 0, "save": True}); o = r["outputs"]
 out_dir = WS / "portfolio/_compare"; out_dir.mkdir(exist_ok=True)
 for name in (f"{date}.json", "latest.json"):
@@ -72,6 +91,22 @@ if any(V[i].get("conditional_phases_Y5") for i in ids):
     lines.append("\n## 3. Условные фазы (probability = 1): медиана / ES5, %\n"); lines.append("| фаза | " + " | ".join(ids) + " |"); lines.append("|---|" + "---|" * len(ids))
     for key in V[ids[0]]["conditional_phases_Y5"]:
         lines.append(f"| {key.replace('|', ' / ')} | " + " | ".join((f"{100 * V[i]['conditional_phases_Y5'][key]['median_CAGR']:+.1f} / {100 * V[i]['conditional_phases_Y5'][key]['expected_shortfall_5pct']:+.1f}" if "median_CAGR" in V[i]["conditional_phases_Y5"][key] else "—") for i in ids) + " |")
+for i in ids:                                                           # 1.1.0: таблица «бумага × сценарий» для universe-вариантов
+    opt = V[i].get("optimized")
+    if not opt:
+        continue
+    cols = list(next(iter(opt["weights_by_scenario"].values())).keys()) if opt["weights_by_scenario"] else ["mixture"]
+    lines.append(f"\n## 3a. Вселенная «{i}» ({', '.join(opt['universe'])}): оптимальные веса под сценариями, % NAV (0 = не покупать / продать)\n")
+    lines.append("| бумага | " + " | ".join(cols) + " |"); lines.append("|---|" + "---|" * len(cols))
+    for t in opt["universe"]:
+        lines.append(f"| {t} | " + " | ".join(f"{100 * opt['weights_by_scenario'][t][c]:.1f}" for c in cols) + " |")
+    lines.append("| кэш | " + " | ".join(f"{100 * opt['dry_powder_by_scenario'][c]:.1f}" for c in cols) + " |")
+    lines.append("| медиана / ES5 Y5 | " + " | ".join((f"{100 * x['median_CAGR_5Y']:+.1f} / {100 * x['ES5']:+.1f}" if "median_CAGR_5Y" in x else "—") for x in [opt["mixture"]] + [opt["by_scenario"].get(c, opt["conditional"].get(c, {})) for c in cols[1:]]) + " |")
+    if opt.get("excluded_from_universe"):
+        lines.append(f"\nВне вселенной (считаются проданными в кэш): {', '.join(f'{t} {100 * w:.1f} %' for t, w in opt['excluded_from_universe'].items())}.")
+    errs = {k: x["error"] for k, x in {**opt["by_scenario"], **opt["conditional"]}.items() if "error" in x}
+    if errs:
+        lines.append(f"\nНе посчитано: {errs}")
 lines.append("\n## 4. Нарушения лимитов владельца (разрыв ≠ приказ)\n")
 for i in ids:
     vi = V[i]["violations"]
