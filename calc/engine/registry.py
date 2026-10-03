@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import importlib
 
-from engine import artifact_validator, company_mc, conditional_mc, conviction_overlay, joint_layer, milestone_mc, portfolio_compare, portfolio_optimizer, portfolio_paths, portfolio_regime, portfolio_stability, reverse_valuation, scenario_state, selftest, synthetic_basket, valuation_multiple
+from engine import artifact_validator, company_mc, conditional_mc, conviction_overlay, joint_layer, milestone_mc, portfolio_compare, portfolio_optimizer, portfolio_paths, portfolio_regime, portfolio_stability, rebalance_plan, reverse_valuation, scenario_state, selftest, synthetic_basket, valuation_multiple
 
 importlib.reload(selftest)
 importlib.reload(valuation_multiple)
@@ -19,10 +19,16 @@ importlib.reload(portfolio_paths)
 importlib.reload(portfolio_optimizer)
 importlib.reload(portfolio_compare)
 importlib.reload(scenario_state)
+importlib.reload(rebalance_plan)
 importlib.reload(portfolio_stability)
 importlib.reload(artifact_validator)
 
 MODELS = {
+    "rebalance_plan": {
+        "version": rebalance_plan.VERSION,
+        "fn": rebalance_plan.run,
+        "doc": rebalance_plan.__doc__.strip().splitlines()[0],
+    },
     "portfolio_stability": {
         "version": portfolio_stability.VERSION,
         "fn": portfolio_stability.run,
