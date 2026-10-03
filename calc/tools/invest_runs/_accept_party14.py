@@ -3,13 +3,14 @@
 2) валидатор режим calibration (схема v1.0.1, MC-G5-001..013 по измеренной σ, сухой прогон, дисперсия intrinsic/full);
 Печатает сводку; нормативные 500k-прогоны запускаются отдельно (--mc) только если шаги 1–2 pass."""
 import json
+import os
 import sys
 import urllib.request
 from pathlib import Path
 
 import yaml
 
-WS = Path("C:/openclaw-lab/data/workspace-invest"); PK = WS / "from_imma" / "Party14_CRWD_HPSA_S_RV_MC_Calibrations_v1.0"
+WS = Path("C:/openclaw-lab/data/workspace-invest"); PK = WS / "from_imma" / (os.environ.get("PK15") and "Party15_CRWD_v1.0.1_S_Robustness_v1.0" or "Party14_CRWD_HPSA_S_RV_MC_Calibrations_v1.0")
 URL = "http://127.0.0.1:18791/run"; TODAY = "2026-10-03"
 TKS = [a for a in sys.argv[1:] if a in ("CRWD", "HPSA", "S")] or ["CRWD", "HPSA", "S"]
 MC = "--mc" in sys.argv
@@ -40,7 +41,7 @@ def rv_inputs(tk: str) -> dict:
 
 for tk in TKS:
     print(f"===== {tk} =====")
-    cal = yaml.safe_load((PK / f"{tk}_mc_calibration_v1.0.yaml").read_text(encoding="utf-8"))
+    cal = yaml.safe_load((PK / f"{tk}_mc_calibration_v{os.environ.get('MCV', '1.0')}.yaml").read_text(encoding="utf-8"))
     eq0 = yaml.safe_load((PK / f"{tk}_calibration_v1.0.yaml").read_text(encoding="utf-8"))["calibration_v1.0"]["market"]["equity_value"]
     if not MC:
         r = post({"model": "reverse_valuation", "inputs": rv_inputs(tk), "seed": 0, "save": True})

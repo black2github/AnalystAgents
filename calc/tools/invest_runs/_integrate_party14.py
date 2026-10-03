@@ -19,7 +19,7 @@ META = {"HPSA": {"ticker": "HPS.A", "folder": "hps_a", "rv": "20261003T205836Z-r
                  "purpose": "нормативный прогон принятой калибровки HPS.A v1.0 партии 14 (архетип A с M&A-переходом: база без AEG до Q3 2026; валидатор 1.10.1: схема 1.0.2, MC-G5-013 pass σ 0.114/0.015/0.032, 5× MC-G5-001 reviewed-immaterial; intrinsic W 0.270 в ориентире; robustness 1.0/1.0)"},
         "S": {"ticker": "S", "folder": "s", "rv": "20261003T205839Z-reverse_valuation-d4986d", "val": "20261003T205839Z-artifact_validator-d65ac5", "mc": "20261003T210450Z-company_mc-775457",
               "archetype": "mature_positive_margin", "anchor": "2026-07-31", "fq": "Q2 FY2027",
-              "purpose": "нормативный прогон калибровки S v1.0 партии 14 (архетип A, старт FCF-маржи 4 % model_assumption; валидатор pass; intrinsic W 0.223 — warning; robustness: знак 0.625 — вырожденный случай медианы ≈ 0, допуск 1.0)"},
+              "purpose": "нормативный прогон принятой калибровки S v1.0 партии 14 (архетип A, старт FCF-маржи 4 % model_assumption; валидатор pass; intrinsic W 0.223 — warning, прецедент SPOT; robustness: знак 0.625 при медиане ≈ 0 — вырожденный случай, подтверждён IMMA партией 15 (ε = 1 п.п., критерий 2 выполнен 8/8), допуск 1.0)"},
         "CRWD": {"ticker": "CRWD", "folder": "crwd", "rv": "20261003T205832Z-reverse_valuation-83e31c", "val": "20261003T205833Z-artifact_validator-9814fa", "mc": None,
                  "archetype": "mature_positive_margin", "anchor": "2026-07-31", "fq": "Q2 FY2027", "purpose": ""}}
 
