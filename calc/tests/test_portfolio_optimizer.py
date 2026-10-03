@@ -132,3 +132,34 @@ def test_hedge_instrument_and_scenario_constraints_v110(paths, tmp_path):
     # хедж не может быть одновременно fixed
     with pytest.raises(ValueError):
         po.run({**base_inp, "fixed_weights": {"ZZZ": 0.03, "HGD": 0.02}}, 0)
+
+
+def test_cardinality_and_min_position_weight_v120(paths):
+    """1.2.0: лимит числа бумаг и минимальный вес позиции (DR-2026-10-02-01/В1): позиций ≤ max, каждая ≥ min или 0; ходы через запретную
+    зону (закрыть/открыть позицию); честный infeasible при невыполнимом лимите; без лимита — прежний результат."""
+    base = _inputs(paths)
+    free = po.run(base, 0)
+    assert free["cardinality"] is None
+    # в фикстуре AAA и BBB в одном секторе (лимит 0.60), потолки 0.4/0.4/0.3, dry powder ≤ 0.15 → две бумаги не вмещают бюджет 0.95;
+    # ослабляем сектор и кэш, чтобы допустимые 2-бумажные портфели существовали (AAA 0.4 + BBB 0.4 + dp 0.15 или AAA 0.4 + CCC 0.3 + dp 0.25)
+    lim = {**LIMITS, "sector_max": 0.95, "dry_powder": {"Normal": {"min": 0.05, "preferred_max": 0.10, "hard_max": 0.30}},
+           "cardinality": {"positions_min": 1, "positions_max": 2, "min_position_weight": 0.10, "excludes": []}}
+    free = po.run({**base, "limits": {**LIMITS, "sector_max": 0.95, "dry_powder": lim["dry_powder"]}}, 0)
+    out = po.run({**base, "limits": lim}, 0)
+    w = out["proposed_weights"]; cd = out["cardinality"]
+    assert out["feasible"] and out["violations_at_optimum"] == []
+    assert cd["positions_count"] <= 2 and cd["positions_count"] >= 1 and cd["below_min"] == []
+    assert all(x == 0.0 or x >= 0.10 - 1e-9 for x in w.values())
+    assert sum(w.values()) + out["dry_powder_weight"] + 0.05 == pytest.approx(1.0, abs=1e-6)
+    assert "cardinality:positions_max" in out["binding_constraints"] or cd["positions_count"] < 2
+    # цена ограничения: медиана не выше свободного оптимума (с допуском на сетку)
+    assert out["portfolio_return_distribution"]["Y5"]["median_CAGR"] <= free["portfolio_return_distribution"]["Y5"]["median_CAGR"] + 1e-6
+    # минимальный вес выше потолка одной бумаги → позиция либо 0, либо невыполнима; позиций меньше min → честный infeasible
+    bad = po.run({**base, "limits": {**LIMITS, "cardinality": {"positions_min": 3, "positions_max": 3, "min_position_weight": 0.35, "excludes": []}}}, 0)
+    assert not bad["feasible"] and any(k.startswith(("cardinality", "min_position_weight", "per_name_cap", "dry_powder", "sector")) for k in bad["minimum_relaxations"])
+    # прежние лимиты (сектор 0.60, dp ≤ 0.15) при positions_max 2 — допустимого портфеля нет: честный infeasible, лимит не ослабляется тихо
+    nofit = po.run({**base, "limits": {**LIMITS, "cardinality": {"positions_max": 2, "min_position_weight": 0.10, "excludes": []}}}, 0)
+    assert not nofit["feasible"] and nofit["minimum_relaxations"]
+    # исключения не идут в счёт
+    exc = po.run({**base, "limits": {**lim, "cardinality": {"positions_max": 1, "min_position_weight": 0.05, "excludes": ["AAA"]}}}, 0)
+    assert exc["feasible"] and sum(1 for t, x in exc["proposed_weights"].items() if t != "AAA" and x > 0) <= 1

@@ -17,6 +17,12 @@ inputs: {"paths_files": {tk: .npz}, "weights_current": {tk: w} (все пози�
          "mpc_range": {"min_weight": 0, "max_weight": 0.2, "grid_step": 0.01, "local_refinement_step": 0.005},
          "objective_tolerance_pp": 0.5, "starts": ["current","equal","empty"] (+ "given": start_weights/start_dry_powder),
          "search_paths": 100000, "max_paths": null,
+         1.2.0 (DR-2026-10-02-01/В1, решение владельца 03.10.2026): "limits": {..., "cardinality": {"positions_min": 6, "positions_max": 8,
+         "min_position_weight": 0.03, "excludes": ["GLD", "UFO"]}} — число оптимизируемых бумаг с весом > 0 в [min, max] (исключения, fixed и
+         dry powder вне счёта), вес позиции либо 0, либо ≥ min_position_weight. Жёсткие структурные ограничения владельца; в поиске —
+         дополнительные ходы «закрыть позицию» (весь вес → другой бумаге или dry powder) и «открыть позицию на min_position_weight»,
+         потому что покоординатные шаги не могут пересечь запретную зону (0, min). Выход: cardinality {positions_count, min_position_weight,
+         zeroed, binding}.
          1.1.0 (DR-2026-09-27-01, решение владельца 30.09.2026; заказ слоя действий v1.2 п. 2.3), 1.1.1 — сверка с Optimizer contract v1.1
          (партия 10: S_cond требует B_s > 0; выход scenario_constraints.gated_at_optimum, contract_version):
          "scenario_constraints": {"p_min": 0.10, "es5_min": -0.40, "p_loss_gt_30_max": 0.25, "scenario_concentration_max": 0.60,
@@ -45,7 +51,7 @@ import numpy as np
 
 from engine import portfolio_paths
 
-VERSION = "1.1.1"
+VERSION = "1.2.0"
 HORIZONS = (("Y3", "r3", 3), ("Y5", "r5", 5), ("Y8", "r8", 8))
 
 
@@ -157,6 +163,12 @@ class _Problem:
         self.ch_name = roles_lim.get("Challenger_max_per_name"); self.ch_agg = roles_lim.get("Challenger_aggregate_max")
         risk = L.get("risk_5y") or {}
         self.p30_max, self.p50_max, self.es5_min = risk.get("p_loss_gt_30_max"), risk.get("p_loss_gt_50_max"), risk.get("es5_min")
+        card = L.get("cardinality") or {}                                   # 1.2.0: число бумаг и минимальный вес позиции (owner_judgment)
+        self.card_min = int(card["positions_min"]) if card.get("positions_min") is not None else None
+        self.card_max = int(card["positions_max"]) if card.get("positions_max") is not None else None
+        self.min_pos = float(card["min_position_weight"]) if card.get("min_position_weight") is not None else None
+        self.card_excl = set(card.get("excludes") or [])
+        self.card_on = any(x is not None for x in (self.card_min, self.card_max, self.min_pos))
         caps = inputs.get("per_name_caps") or {}
         rng = inputs.get("mpc_range") or {}
         self.wmax_default = float(rng.get("max_weight", 0.20)); self.step = float(rng.get("grid_step", 0.01)); self.fine = float(rng.get("local_refinement_step", 0.005))
@@ -167,6 +179,7 @@ class _Problem:
                                  float(self.ch_name) if (self.roles.get(t) == "Challenger" and self.ch_name is not None) else 9.0) for t in self.tick])
         self.cap = np.array([0.0 if self.roles.get(t) == "Watch" else c for t, c in zip(self.tick, self.cap)])
         self.cap = np.array([self.hedge[t]["max_weight"] if t in self.hedge else c for t, c in zip(self.tick, self.cap)])   # потолок хеджа — лимит владельца
+        self._card_mask = np.array([t not in self.card_excl and t not in self.hedge for t in self.tick])   # бумаги, идущие в счёт числа позиций
         self.sectors = inputs.get("sectors") or {}
         self.cc = inputs.get("common_cause") or {}
         # матричная форма концентраций (1.0.2): секторы, общие причины, Challenger — без словарных циклов на каждую оценку
@@ -232,9 +245,27 @@ class _Problem:
         chal = float(self._chal @ w + self._chal_fixed)
         return {"sector": sec, "top3": top3, "common_cause": cc, "challenger_aggregate": chal, "dry_powder": wdp}
 
+    def cardinality(self, w: np.ndarray) -> dict:
+        """1.2.0: число счётных бумаг с весом > 0, позиции ниже минимального веса, обнулённые."""
+        wm = np.where(self._card_mask, w, 0.0)
+        pos = wm > 1e-9
+        below = [t for t, x, m in zip(self.tick, w, self._card_mask) if m and 1e-9 < x < (self.min_pos or 0.0) - 1e-9]
+        return {"positions_count": int(pos.sum()), "positions_min": self.card_min, "positions_max": self.card_max, "min_position_weight": self.min_pos,
+                "below_min": below, "zeroed": [t for t, x, m in zip(self.tick, w, self._card_mask) if m and x <= 1e-9], "excluded_from_count": sorted(self.card_excl | set(self.hedge))}
+
     def violations(self, w: np.ndarray, wdp: float, ev: dict | None = None) -> list[dict]:
         """Список нарушений жёстких ограничений: {constraint, value, bound, excess}."""
         V = []
+        if self.card_on:                                                 # 1.2.0: избыток — в единицах веса, чтобы поиск в недопустимой зоне имел градиент
+            cd = self.cardinality(w); n = cd["positions_count"]
+            wm = np.sort(np.where(self._card_mask, w, 0.0)[np.where(self._card_mask, w, 0.0) > 1e-9])
+            if self.card_max is not None and n > self.card_max:
+                V.append({"constraint": "cardinality:positions_max", "value": n, "bound": self.card_max, "excess": float(wm[: n - self.card_max].sum())})
+            if self.card_min is not None and n < self.card_min:
+                V.append({"constraint": "cardinality:positions_min", "value": n, "bound": self.card_min, "excess": float((self.card_min - n) * (self.min_pos or 0.01))})
+            for t in cd["below_min"]:
+                x = float(w[self.tick.index(t)])
+                V.append({"constraint": f"min_position_weight:{t}", "value": x, "bound": self.min_pos, "excess": float(self.min_pos - x)})
         for t, x, c in zip(self.tick, w, self.cap):
             if x > c + 1e-9:
                 V.append({"constraint": f"per_name_cap:{t}", "value": float(x), "bound": float(c), "excess": float(x - c)})
@@ -356,6 +387,51 @@ def _search(P: _Problem, w0: np.ndarray, wdp0: float, step: float, max_iter: int
                     break
             if improved:
                 break
+        if not improved and P.card_on:
+            # 1.2.0: ходы через запретную зону (0, min_position_weight): закрыть позицию целиком / открыть на минимальном весе
+            cand_moves = []
+            for i in range(k):
+                if not P._card_mask[i]:
+                    continue
+                if w[i] > 1e-9:
+                    for j in slots:
+                        if j == i:
+                            continue
+                        w2, dp2 = w.copy(), wdp; amt = w2[i]; w2[i] = 0.0
+                        if j < k:
+                            if w2[j] + amt > P.cap[j] + 1e-9:
+                                continue
+                            w2[j] = _snap(w2[j] + amt, step)
+                        else:
+                            if dp2 + amt > P.dp_max + 1e-9:
+                                continue
+                            dp2 = round(dp2 + amt, 9)
+                        cand_moves.append((w2, round(P.budget - w2.sum(), 9) if j < k else dp2))
+                elif P.min_pos is not None and P.cap[i] >= P.min_pos - 1e-9:
+                    for j in slots:
+                        if j == i:
+                            continue
+                        w2, dp2 = w.copy(), wdp; w2[i] = _snap(P.min_pos, step)
+                        if j < k:
+                            if w2[j] - P.min_pos < -1e-9 or (P._card_mask[j] and 1e-9 < w2[j] - P.min_pos < (P.min_pos or 0.0) - 1e-9):
+                                continue
+                            w2[j] = _snap(w2[j] - P.min_pos, step)
+                        else:
+                            if dp2 - P.min_pos < P.dp_min - 1e-9:
+                                continue
+                            dp2 = round(dp2 - P.min_pos, 9)
+                        cand_moves.append((w2, round(P.budget - w2.sum(), 9) if j < k else dp2))
+            for w2, dp2 in cand_moves:
+                if abs(w2.sum() + dp2 - P.budget) > 1e-6 or dp2 < P.dp_min - 1e-9 or dp2 > P.dp_max + 1e-9:
+                    continue
+                ev2 = P.evaluate(w2, dp2); evals += 1
+                f2 = feasible(w2, dp2)
+                take = (f2 and not best_feas) or (f2 == best_feas and P.better(ev2, best_ev)) if (f2 or not best_feas) else False
+                if not f2 and not best_feas:
+                    take = sum(v["excess"] for v in P.violations(w2, dp2, ev2)) < sum(v["excess"] for v in P.violations(w, wdp, best_ev)) - 1e-9
+                if take:
+                    w, wdp, best_ev, best_feas = w2, dp2, ev2, f2; improved = True
+                    break
         if not improved:
             break
     return w, wdp, evals
@@ -420,6 +496,16 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
         binding += [f"common_cause_max:{c}" for c, x in con["common_cause"].items() if float(P.cc_max) - x <= 0.005 + 1e-9]
     if wdp - P.dp_min <= 0.005 + 1e-9:
         binding.append(f"dry_powder_min:{P.regime}")
+    card_block = None
+    if P.card_on:
+        card_block = P.cardinality(w)
+        if P.card_max is not None and card_block["positions_count"] >= P.card_max:
+            binding.append("cardinality:positions_max")
+        if P.card_min is not None and card_block["positions_count"] <= P.card_min:
+            binding.append("cardinality:positions_min")
+        if P.min_pos is not None:
+            binding += [f"min_position_weight:{t}" for t, x, m in zip(P.tick, w, P._card_mask) if m and abs(x - P.min_pos) <= 0.005 + 1e-9]
+        card_block["binding"] = sorted(b for b in binding if b.startswith(("cardinality", "min_position_weight")))
     y5 = ev["horizons"]["Y5"]
     if P.p30_max is not None and float(P.p30_max) - y5["P_loss_gt_30pct"] <= 0.01:
         binding.append("risk_5y:p_loss_gt_30_max")
@@ -468,7 +554,7 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
     hedge_block = ({t: {**cfg, "current_weight": float(P.cur[P.tick.index(t)]), "proposed_weight": proposed[t],
                         "return_assumption": "flat (1+r)^h, без калибровки и без отклика на сценарий — model_assumption"} for t, cfg in P.hedge.items()} if P.hedge else None)
     return {"model_version": VERSION, "stage": "A_continuous_target", "paths": P.n, "search_paths": P.n_search, "companies": P.tick, "regime": P.regime,
-            "scenario_constraints": sc_block, "hedge_instruments": hedge_block,
+            "scenario_constraints": sc_block, "hedge_instruments": hedge_block, "cardinality": card_block,
             "fixed_positions": {"weights": P.fixed, "total": P.fixed_total, "return_assumption": "flat (относительная стоимость 1.0): без калибровок; участвуют в лимитах, не в распределении доходности"},
             "budget_optimizable_plus_dry_powder": P.budget, "objective": {"primary": "median_CAGR_5Y", "tolerance": P.tol, "secondary": ["ES5_5Y", ("scenario_concentration (вариант «а», при |A| ≥ 2)" if P.sc_cfg is not None and P.BR is not None else "scenario_concentration (BASE only: n/a)"), "turnover"]},
             "feasible": best["feasible"], "start_used": best["start"], "violations_at_optimum": best["violations"],
