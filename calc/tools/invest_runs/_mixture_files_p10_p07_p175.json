@@ -13,5 +13,8 @@
  "NBIS": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-NBIS-paths.npz",
  "ETN": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-ETN-paths.npz",
  "SPOT": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-SPOT-paths.npz",
- "SPCX": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-SPCX-paths.npz"
+ "SPCX": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-SPCX-paths.npz",
+ "CRWD": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-CRWD-paths.npz",
+ "HPS.A": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-HPS.A-paths.npz",
+ "S": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-S-paths.npz"
 }

@@ -358,6 +358,80 @@
    "applicable": [
     "CAPITAL_MARKETS"
    ]
+  },
+  "CRWD": {
+   "run_id": "20261003T214015Z-company_mc-4194fb",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20261003T214015Z-company_mc-4194fb-paths.npz",
+   "median_CAGR_5Y": -0.17898255054938567,
+   "q05": -0.3084696124538593,
+   "q95": -0.03147630537737285,
+   "P_loss_gt_30pct_5Y": 0.893106,
+   "P_loss_gt_50pct_5Y": 0.715588,
+   "ES5": -0.8697508416571611,
+   "P_2x_5Y": 0.000116,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ADVANCED_PACKAGING",
+    "CAPITAL_MARKETS",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "AI_COMPUTE_DEMAND"
+   ],
+   "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml"
+  },
+  "HPS.A": {
+   "run_id": "20261003T214112Z-company_mc-dc3996",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20261003T214112Z-company_mc-dc3996-paths.npz",
+   "median_CAGR_5Y": 0.15095288157172215,
+   "q05": -0.011980196267698367,
+   "q95": 0.3323081423087217,
+   "P_loss_gt_30pct_5Y": 0.011882,
+   "P_loss_gt_50pct_5Y": 0.001538,
+   "ES5": -0.21848910678493086,
+   "P_2x_5Y": 0.50874,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ADVANCED_PACKAGING",
+    "AI_COMPUTE_DEMAND",
+    "CAPITAL_MARKETS",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [],
+   "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml"
+  },
+  "S": {
+   "run_id": "20261003T214208Z-company_mc-f31a4e",
+   "paths_file": "/data/workspace-invest/portfolio/_runs/20261003T214208Z-company_mc-f31a4e-paths.npz",
+   "median_CAGR_5Y": -0.0044085534887966515,
+   "q05": -0.12463131024128296,
+   "q95": 0.12705169147265033,
+   "P_loss_gt_30pct_5Y": 0.193732,
+   "P_loss_gt_50pct_5Y": 0.04296,
+   "ES5": -0.5576025742677311,
+   "P_2x_5Y": 0.028998,
+   "scenario_mode": "phased",
+   "unmapped": [
+    "ADVANCED_PACKAGING",
+    "CHINA_REVENUE",
+    "GOVERNMENT_DEFENSE",
+    "HBM_MEMORY",
+    "SEMICONDUCTOR_WFE",
+    "TAIWAN_SUPPLY"
+   ],
+   "applicable": [
+    "AI_COMPUTE_DEMAND",
+    "CAPITAL_MARKETS"
+   ],
+   "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml"
   }
  },
  "TAIWAN_SEIZURE": {
