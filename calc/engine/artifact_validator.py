@@ -38,7 +38,7 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.11.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
+VERSION = "1.12.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
 #                    измерение в квартале применения — мода сроков вехи, как в движке), пример-фикстуры v1.0.2
 SCHEMA_VERSION = "1.0.5"            # Company Artifact Schema (v1.0.5: kpi_observations[].verification_run_ids — история прогонов дозора)
 CANDIDATE_SCHEMA_VERSION = "1.0.2"  # Company Candidate Schema: 1.0.2 (партия 16, полный вектор таксономии 1.2.1); 1.0.1 закреплена за кандидатами партий 1–13
@@ -353,6 +353,96 @@ def _target_kind(path: str) -> str:
             return "milestone_timing"
         return "milestone"
     return "other"
+
+
+SCENARIO_EXC_REASONS = ("substitute_channel", "no_causal_channel", "immaterial_at_company_level", "not_applicable_until_anchor")
+PROVENANCE_VOCAB = ("verified_fact", "derived_fact", "model_assumption", "owner_judgment", "company_guidance", "normative_rule")
+
+
+def scenario_overridden_drivers(ws: Path, scenario_files: list | None = None) -> dict:
+    """MC-G5-014 §8.2 (1.12.0): множество драйверов, которые переопределяет хотя бы одна фаза действующих сценариев —
+    динамически из portfolio/_scenarios/<SID>_v*.yaml (последняя версия каждого сценария; BASE в каталоге нет) или из inputs.scenario_files.
+    Возвращает {driver_id: ["SID|PHASE", ...]}; присутствие в driver_overrides достаточно (mean_shift 0 не исключает)."""
+    files = [Path(f) for f in (scenario_files or [])]
+    if not files:
+        latest: dict[str, tuple] = {}
+        for x in sorted((ws / "portfolio" / "_scenarios").glob("*_v*.yaml")):
+            sid = x.name.rsplit("_v", 1)[0]
+            try:
+                ver = tuple(int(n) for n in x.stem.rsplit("_v", 1)[1].split("."))
+            except ValueError:
+                continue
+            if sid not in latest or ver > latest[sid][0]:
+                latest[sid] = (ver, x)
+        files = [v[1] for v in latest.values()]
+    out: dict[str, list] = {}
+    for f in files:
+        try:
+            d = yaml.safe_load(Path(f).read_text(encoding="utf-8")) or {}
+        except Exception:  # noqa: BLE001
+            continue
+        sid = str(d.get("scenario_id") or Path(f).name.rsplit("_v", 1)[0])
+        if sid == "BASE":
+            continue
+        for ph in d.get("phases") or []:
+            for drv in (ph.get("driver_overrides") or {}):
+                out.setdefault(str(drv), []).append(f"{sid}|{ph.get('phase_id')}")
+    return out
+
+
+def scenario_mapping_completeness(cal: dict, mpc: dict | None, overridden: dict, taxonomy_ids: set | None) -> tuple[list[dict], list[dict]]:
+    """MC-G5-014 (Joint Rules v1.1.3 §8): ненулевая экспозиция по шокируемому сценариями драйверу требует прямого mapping или структурного
+    исключения mpc_inputs.driver_interpretation[driver].scenario_mapping_exception (§8.4). Возвращает (findings, отчёт по драйверам §8.5)."""
+    F: list[dict] = []; rows: list[dict] = []
+    if mpc is None or not overridden:
+        return F, rows
+    maps = cal.get("driver_parameter_mapping") or []
+    mapped_count = {}
+    for m in maps:
+        mapped_count[m.get("driver_id")] = mapped_count.get(m.get("driver_id"), 0) + 1
+    vec = mpc.get("driver_exposure_vector") or {}; interp = mpc.get("driver_interpretation") or {}
+    for d in sorted(overridden):
+        e = vec.get(d)
+        if e in (0, None):
+            continue
+        row = {"driver_id": d, "exposure": e, "overridden_in": overridden[d], "mapping_count": mapped_count.get(d, 0), "exception_status": None, "reason_code": None, "substitute_driver_ids": None}
+        if mapped_count.get(d, 0) > 0:
+            row["result"] = "mapped"; rows.append(row); continue
+        ex = ((interp.get(d) or {}).get("scenario_mapping_exception")) if isinstance(interp.get(d), dict) else None
+        if not isinstance(ex, dict):
+            row["result"] = "error_unmapped_scenario_visible_driver"; rows.append(row)
+            F.append(_f("MC-G5-014", f"driver_parameter_mapping/{d}", f"драйвер {d!r} (exposure {e}) переопределяется сценариями {sorted(set(x.split('|')[0] for x in overridden[d]))}, но не имеет ни mapping, ни структурного исключения scenario_mapping_exception (§8.4); свободный текст reviewed-immaterial не освобождает"))
+            continue
+        problems = []
+        if ex.get("status") != "approved_exception":
+            problems.append("status ≠ approved_exception")
+        rc = ex.get("reason_code")
+        if rc not in SCENARIO_EXC_REASONS:
+            problems.append(f"reason_code {rc!r} вне {SCENARIO_EXC_REASONS}")
+        if not str(ex.get("rationale") or "").strip():
+            problems.append("пустой rationale")
+        if ex.get("provenance") not in PROVENANCE_VOCAB:
+            problems.append(f"provenance {ex.get('provenance')!r} вне словаря")
+        if not str(ex.get("review_ref") or "").strip():
+            problems.append("пустой review_ref")
+        subs = list(ex.get("substitute_driver_ids") or [])
+        if rc == "substitute_channel":
+            if not subs:
+                problems.append("substitute_channel без substitute_driver_ids")
+            bad = [x for x in subs if taxonomy_ids is not None and x not in taxonomy_ids]
+            if bad:
+                problems.append(f"substitute_driver_ids вне таксономии: {bad}")
+            if subs and not any(mapped_count.get(x, 0) > 0 for x in subs):
+                problems.append("ни один канал-заместитель не имеет живого mapping")
+        if rc == "not_applicable_until_anchor" and not str(ex.get("anchor_condition") or "").strip():
+            problems.append("not_applicable_until_anchor без anchor_condition")
+        row.update({"exception_status": ex.get("status"), "reason_code": rc, "substitute_driver_ids": subs or None})
+        if problems:
+            row["result"] = "error_unmapped_scenario_visible_driver"; row["exception_problems"] = problems; rows.append(row)
+            F.append(_f("MC-G5-014", f"mpc_inputs/driver_interpretation/{d}/scenario_mapping_exception", f"драйвер {d!r} (exposure {e}): исключение не по контракту §8.4 — " + "; ".join(problems)))
+        else:
+            row["result"] = f"exception_{rc}"; rows.append(row)
+    return F, rows
 
 
 def integrity_calibration(cal: dict, mpc: dict | None, joint_spec: dict | None, limits: dict, strict_aggregate: bool, agg: dict | None = None) -> list[dict]:
@@ -1187,13 +1277,19 @@ def run(inputs: dict, seed: int) -> dict:
         if folders:
             mp = ws / "portfolio" / folders[0] / "mpc_inputs.yaml"
             mpc = _load(mp) if mp.exists() else None
-        jp = Path(inputs.get("joint_layer_spec_path") or (ws / "methodology" / "Joint_Simulation_Layer_Schema_v1.0.yaml"))
+        jdef = ws / "methodology" / "Joint_Simulation_Layer_Schema_v1.1.yaml"                                                  # 1.12.0: по умолчанию последние версии
+        jp = Path(inputs.get("joint_layer_spec_path") or (jdef if jdef.exists() else ws / "methodology" / "Joint_Simulation_Layer_Schema_v1.0.yaml"))
         joint_spec = inputs.get("joint_layer_spec") or (yaml.safe_load(jp.read_text(encoding="utf-8")) if jp.exists() else None)
         limits = dict(AGG_SHIFT_LIMITS); limits.update(inputs.get("aggregate_shift_limits") or {})
-        rp = Path(inputs.get("joint_rules_path") or (ws / "methodology" / "Joint_Simulation_Layer_Rules_v1.1.2.yaml"))
+        rdef = ws / "methodology" / "Joint_Simulation_Layer_Rules_v1.1.3.yaml"
+        rp = Path(inputs.get("joint_rules_path") or (rdef if rdef.exists() else ws / "methodology" / "Joint_Simulation_Layer_Rules_v1.1.2.yaml"))
         rules = yaml.safe_load(rp.read_text(encoding="utf-8")) if rp.exists() else None
         agg: dict = {}
         findings = integrity_calibration(cal, mpc, joint_spec, limits, bool(inputs.get("strict_aggregate", True)), agg)
+        overridden = scenario_overridden_drivers(ws, inputs.get("scenario_files")) if inputs.get("scenario_check", True) else {}   # MC-G5-014
+        tax014 = _taxonomy_ids(ws, (mpc or {}).get("driver_taxonomy_version")) if mpc else None
+        f014, scenario_rows = scenario_mapping_completeness(cal, mpc, overridden, tax014)
+        findings.extend(f014)
         engine = None
         dispersion = None
         if inputs.get("engine_dry_run", True) and not errs:
@@ -1218,7 +1314,8 @@ def run(inputs: dict, seed: int) -> dict:
         n_err = sum(1 for f in findings if f["severity"] == "error")
         return {"model_version": VERSION, "schema_version": cal_sv, "mode": mode, "ticker": cal.get("ticker"), "archetype": cal.get("archetype"),
                 "schema_errors": errs, "integrity": findings, "engine_dry_run": engine, "aggregate_shift": agg, "dispersion": dispersion, "pass": not errs and n_err == 0,
-                "note": "MC-G5-013 — hard gate по Joint_Simulation_Layer_Rules_v1.1 (strict_aggregate=false → warning); MC-G5-009 (антицикличность) и MC-G5-010 (полнота provenance сверх схемы) статически не проверяются", "decision": "none"}
+                "scenario_mapping": {"rules_ref": "Joint_Simulation_Layer_Rules_v1.1.3#MC-G5-014", "overridden_drivers": {d: sorted(set(x.split("|")[0] for x in v)) for d, v in overridden.items()}, "drivers": scenario_rows},
+                "note": "MC-G5-013 — hard gate по Joint_Simulation_Layer_Rules_v1.1 (strict_aggregate=false → warning); MC-G5-014 — scenario-visible mapping completeness (v1.1.3 §8); MC-G5-009 (антицикличность) и MC-G5-010 (полнота provenance сверх схемы) статически не проверяются", "decision": "none"}
     if mode == "scenario":
         return _validate_scenario(inputs, ws, rules)
     if mode == "strategy":

@@ -342,3 +342,18 @@ def test_theme_and_car_modes_on_workspace():
     import copy
     bad = copy.deepcopy(car)
     assert "CAR-002" in car["rules"]["car"]
+
+
+def test_mc_g5_014_fixtures_from_imma():
+    """MC-G5-014 (Joint Rules v1.1.3 §8): фикстуры IMMA партии 17 — прямой mapping / нулевая экспозиция / канал-заместитель с живым mapping →
+    pass; без mapping, голый reviewed-immaterial, заместитель без mapping → error."""
+    import yaml
+    from engine.artifact_validator import scenario_mapping_completeness
+    fx = yaml.safe_load((WS / "methodology" / "MC_G5_014_Validator_Fixtures_v1.0.yaml").read_text(encoding="utf-8"))
+    for f in fx["fixtures"]:
+        cal = {"driver_parameter_mapping": [{"driver_id": d} for d in f["mapping_driver_ids"]]}
+        mpc = {"driver_exposure_vector": f["exposure"], "driver_interpretation": f["driver_interpretation"]}
+        over = {d: ["S|P"] for d in f["scenario_overrides"]}
+        F, rows = scenario_mapping_completeness(cal, mpc, over, {"TAIWAN_SUPPLY", "AI_COMPUTE_DEMAND", "DATA_CENTER_POWER"})
+        got = "error" if any(x["severity"] == "error" for x in F) else "pass"
+        assert got == f["expected"], (f["id"], F)
