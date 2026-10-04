@@ -13,7 +13,7 @@ from pathlib import Path
 import yaml
 
 S = Path(__file__).parent; WS = Path("C:/openclaw-lab/data/workspace-invest"); URL = "http://127.0.0.1:18791/run"
-CAL = {"CRWD": ("crwd", "mc_calibration_v1.0.1.yaml"), "HPS.A": ("hps_a", "mc_calibration_v1.0.yaml"), "S": ("s", "mc_calibration_v1.0.yaml")}
+CAL = {"CRWD": ("crwd", "mc_calibration_v1.0.1.yaml"), "HPS.A": ("hps_a", "mc_calibration_v1.0.1.yaml"), "S": ("s", "mc_calibration_v1.0.yaml")}
 NORM = json.load(open(S / "_norm_runs_joint11.json", encoding="utf-8"))
 SCEN_FILES = {"TAIWAN_SEIZURE": "TAIWAN_SEIZURE_v1.1.1.yaml", "CHIP_COLD_WAR": "CHIP_COLD_WAR_v1.1.1.yaml", "TAIWAN_QUARANTINE": "TAIWAN_QUARANTINE_v1.1.1.yaml"}
 PHASES = {"TAIWAN_SEIZURE": ["BLOCKADE", "CONFLICT", "RECOVERY"], "TAIWAN_QUARANTINE": ["QUARANTINE", "NORMALIZATION_OR_FROZEN"]}

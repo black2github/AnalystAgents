@@ -63,7 +63,7 @@ for tk in TKS:
         e = vo.get("engine_dry_run") or {}
         print(f"   сухой прогон: mapping_warnings {e.get('mapping_warnings')}, deterministic {e.get('deterministic')}")
     else:
-        spec = yaml.safe_load((WS / "methodology" / "Joint_Simulation_Layer_Schema_v1.0.yaml").read_text(encoding="utf-8")) if (WS / "methodology" / "Joint_Simulation_Layer_Schema_v1.0.yaml").exists() else None
+        spec = yaml.safe_load((WS / "methodology" / "Joint_Simulation_Layer_Schema_v1.1.yaml").read_text(encoding="utf-8")) if (WS / "methodology" / "Joint_Simulation_Layer_Schema_v1.0.yaml").exists() else None
         inp = {"calibration": cal, "equity_value_0": eq0, "convergence_check": True, "robustness": True, "robustness_paths": 100000, "store_paths": True}
         if spec is not None:
             inp["joint_layer_spec"] = spec

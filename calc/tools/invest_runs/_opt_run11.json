@@ -1,8 +1,8 @@
 {
- "run_id": "20261003T215634Z-portfolio_compare-032f0f",
+ "run_id": "20261004T070657Z-portfolio_compare-b4630d",
  "caps_new": {
   "CRWD": 0.0868,
-  "HPS.A": 0.1341,
+  "HPS.A": 0.134,
   "S": 0.1032
  },
  "mixture_files": {
@@ -194,27 +194,27 @@
   "U18": {
    "weights": {
     "CRWV": 0.105,
-    "HPS.A": 0.1,
-    "LLY": 0.085,
+    "HPS.A": 0.12,
+    "LLY": 0.095,
     "NBIS": 0.195,
     "NVDA": 0.125,
-    "RKLB": 0.045,
+    "RKLB": 0.03,
     "SPOT": 0.135
    },
-   "dry_powder": 0.1863,
+   "dry_powder": 0.1713,
    "positions_count": 7,
    "mixture_Y5": {
-    "median_CAGR": 0.21163080120456423,
-    "P_2x": 0.79052021,
-    "P_loss_gt_30pct": 2.600000000000001e-06,
+    "median_CAGR": 0.21307720834414723,
+    "P_2x": 0.7911442900000001,
+    "P_loss_gt_30pct": 9.400000000000003e-06,
     "P_loss_gt_50pct": 0.0,
-    "expected_shortfall_5pct": 0.3682985404367977,
+    "expected_shortfall_5pct": 0.3429094190994525,
     "CAGR_quantiles": {
-     "0.05": 0.0903571490478765,
-     "0.25": 0.15860683987311375,
-     "0.5": 0.21163080120456423,
-     "0.75": 0.26975279678107067,
-     "0.95": 0.36173492655959394
+     "0.05": 0.08817196016658979,
+     "0.25": 0.15908410504699755,
+     "0.5": 0.21307720834414723,
+     "0.75": 0.2717434451372347,
+     "0.95": 0.3640003404723646
     }
    },
    "violations": [],
@@ -243,21 +243,22 @@
     "mixture": {
      "weights": {
       "CRWV": 0.105,
-      "HPS.A": 0.1,
-      "LLY": 0.085,
+      "HPS.A": 0.12,
+      "LLY": 0.095,
       "NBIS": 0.195,
       "NVDA": 0.125,
-      "RKLB": 0.045,
+      "RKLB": 0.03,
       "SPOT": 0.135
      },
-     "dry_powder": 0.1863,
+     "dry_powder": 0.1713,
      "feasible": true,
      "start_used": "given",
-     "median_CAGR_5Y": 0.21160505894591453,
-     "ES5": 0.36858630180088375,
-     "P_loss_gt_30pct": 2e-06,
+     "median_CAGR_5Y": 0.21309442621722585,
+     "ES5": 0.3432784816201107,
+     "P_loss_gt_30pct": 1e-05,
      "binding_constraints": [
       "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+      "min_position_weight:RKLB",
       "per_name_cap:CRWV",
       "per_name_cap:SPOT"
      ],
@@ -300,15 +301,17 @@
        "GLD",
        "UFO"
       ],
-      "binding": []
+      "binding": [
+       "min_position_weight:RKLB"
+      ]
      },
      "theme_lookthrough": {
       "policy_id": "AI_THEME_NOT_INCREASE_V1",
       "aggregate_id": "AI_TOTAL",
       "binding_basis": "revenue",
-      "value_at_optimum": 0.41564913064715603,
-      "value_at_current": 0.542759298600204,
-      "baseline_value": 0.542759298600204,
+      "value_at_optimum": 0.4119880963409604,
+      "value_at_current": 0.5365580697215558,
+      "baseline_value": 0.5365580697215557,
       "baseline_status": "MATERIALIZED",
       "tolerance": 1e-06,
       "status": "pass",
@@ -318,33 +321,29 @@
     "by_scenario": {
      "BASE": {
       "weights": {
-       "ASTS": 0.03,
        "CRWV": 0.105,
        "HPS.A": 0.13,
-       "LLY": 0.085,
-       "NBIS": 0.195,
-       "NVDA": 0.125,
-       "RKLB": 0.03,
+       "LLY": 0.12,
+       "NBIS": 0.215,
+       "NVDA": 0.11,
        "SPOT": 0.135
       },
-      "dry_powder": 0.1413,
+      "dry_powder": 0.1613,
       "feasible": true,
       "start_used": "given",
-      "median_CAGR_5Y": 0.22280284441032383,
-      "ES5": 0.49846879137148425,
+      "median_CAGR_5Y": 0.2272356274966998,
+      "ES5": 0.49786075096951404,
       "P_loss_gt_30pct": 0.0,
       "binding_constraints": [
-       "cardinality:positions_max",
+       "cardinality:positions_min",
        "common_cause_max:ACQUISITION_INTEGRATION_FAILURE",
        "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
-       "min_position_weight:ASTS",
-       "min_position_weight:RKLB",
        "per_name_cap:CRWV",
        "per_name_cap:HPS.A",
        "per_name_cap:SPOT"
       ],
       "violations_at_optimum": [],
-      "turnover_from_current": 0.5205,
+      "turnover_from_current": 0.5483,
       "search": {
        "random_starts": 0,
        "basin_kicks": 0,
@@ -360,13 +359,14 @@
        "improvement_vs_standard_pp": 0.0
       },
       "cardinality": {
-       "positions_count": 8,
+       "positions_count": 6,
        "positions_min": 6,
        "positions_max": 8,
        "min_position_weight": 0.03,
        "below_min": [],
        "zeroed": [
         "ASML",
+        "ASTS",
         "CRWD",
         "ETN",
         "HOOD",
@@ -374,6 +374,7 @@
         "MSFT",
         "NET",
         "PLTR",
+        "RKLB",
         "S",
         "SPCX"
        ],
@@ -382,18 +383,16 @@
         "UFO"
        ],
        "binding": [
-        "cardinality:positions_max",
-        "min_position_weight:ASTS",
-        "min_position_weight:RKLB"
+        "cardinality:positions_min"
        ]
       },
       "theme_lookthrough": {
        "policy_id": "AI_THEME_NOT_INCREASE_V1",
        "aggregate_id": "AI_TOTAL",
        "binding_basis": "revenue",
-       "value_at_optimum": 0.41564913064715603,
-       "value_at_current": 0.542759298600204,
-       "baseline_value": 0.542759298600204,
+       "value_at_optimum": 0.4177347099652303,
+       "value_at_current": 0.5365580697215558,
+       "baseline_value": 0.5365580697215557,
        "baseline_status": "MATERIALIZED",
        "tolerance": 1e-06,
        "status": "pass",
@@ -402,28 +401,28 @@
      },
      "TAIWAN_SEIZURE": {
       "weights": {
-       "ASTS": 0.03,
-       "CRWV": 0.09,
-       "HPS.A": 0.1,
-       "LLY": 0.075,
+       "ASTS": 0.065,
+       "CRWV": 0.105,
+       "LLY": 0.14,
        "NBIS": 0.19,
-       "NVDA": 0.12,
-       "RKLB": 0.04,
+       "NVDA": 0.065,
+       "RKLB": 0.08,
        "SPOT": 0.135
       },
       "dry_powder": 0.1963,
       "feasible": true,
       "start_used": "given",
-      "median_CAGR_5Y": 0.15422910966624592,
-      "ES5": 0.11435554571269735,
+      "median_CAGR_5Y": 0.14966693291230182,
+      "ES5": 0.1056242656035775,
       "P_loss_gt_30pct": 1.2e-05,
       "binding_constraints": [
-       "cardinality:positions_max",
-       "min_position_weight:ASTS",
+       "per_name_cap:CRWV",
+       "per_name_cap:LLY",
+       "per_name_cap:RKLB",
        "per_name_cap:SPOT"
       ],
       "violations_at_optimum": [],
-      "turnover_from_current": 0.5377,
+      "turnover_from_current": 0.5855,
       "search": {
        "random_starts": 0,
        "basin_kicks": 0,
@@ -439,7 +438,7 @@
        "improvement_vs_standard_pp": 0.0
       },
       "cardinality": {
-       "positions_count": 8,
+       "positions_count": 7,
        "positions_min": 6,
        "positions_max": 8,
        "min_position_weight": 0.03,
@@ -449,6 +448,7 @@
         "CRWD",
         "ETN",
         "HOOD",
+        "HPS.A",
         "META",
         "MSFT",
         "NET",
@@ -460,18 +460,15 @@
         "GLD",
         "UFO"
        ],
-       "binding": [
-        "cardinality:positions_max",
-        "min_position_weight:ASTS"
-       ]
+       "binding": []
       },
       "theme_lookthrough": {
        "policy_id": "AI_THEME_NOT_INCREASE_V1",
        "aggregate_id": "AI_TOTAL",
        "binding_basis": "revenue",
-       "value_at_optimum": 0.3910231654212698,
-       "value_at_current": 0.542759298600204,
-       "baseline_value": 0.542759298600204,
+       "value_at_optimum": 0.3515703863048434,
+       "value_at_current": 0.5365580697215558,
+       "baseline_value": 0.5365580697215557,
        "baseline_status": "MATERIALIZED",
        "tolerance": 1e-06,
        "status": "pass",
@@ -483,31 +480,108 @@
        "ASTS": 0.03,
        "CRWV": 0.105,
        "HPS.A": 0.13,
-       "LLY": 0.115,
-       "NBIS": 0.175,
-       "NVDA": 0.14,
-       "RKLB": 0.03,
+       "LLY": 0.12,
+       "NBIS": 0.215,
+       "NVDA": 0.11,
        "SPOT": 0.135
       },
-      "dry_powder": 0.1163,
+      "dry_powder": 0.1313,
       "feasible": true,
       "start_used": "given",
-      "median_CAGR_5Y": 0.23719836461130794,
-      "ES5": 0.5585587952552772,
+      "median_CAGR_5Y": 0.24435621266063778,
+      "ES5": 0.5475797386005253,
       "P_loss_gt_30pct": 0.0,
       "binding_constraints": [
-       "cardinality:positions_max",
        "common_cause_max:ACQUISITION_INTEGRATION_FAILURE",
        "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
        "min_position_weight:ASTS",
-       "min_position_weight:RKLB",
        "per_name_cap:CRWV",
        "per_name_cap:HPS.A",
-       "per_name_cap:NVDA",
        "per_name_cap:SPOT"
       ],
       "violations_at_optimum": [],
-      "turnover_from_current": 0.5255,
+      "turnover_from_current": 0.5381,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 7,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "META",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "RKLB",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "min_position_weight:ASTS"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.4177347099652303,
+       "value_at_current": 0.5365580697215558,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "TAIWAN_QUARANTINE": {
+      "weights": {
+       "ASTS": 0.03,
+       "CRWV": 0.105,
+       "HPS.A": 0.06,
+       "LLY": 0.14,
+       "NBIS": 0.185,
+       "NVDA": 0.125,
+       "RKLB": 0.03,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1663,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.1903639864439729,
+      "ES5": 0.30409112024866464,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "cardinality:positions_max",
+       "min_position_weight:ASTS",
+       "min_position_weight:RKLB",
+       "per_name_cap:CRWV",
+       "per_name_cap:LLY",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5305,
       "search": {
        "random_starts": 0,
        "basin_kicks": 0,
@@ -554,88 +628,9 @@
        "policy_id": "AI_THEME_NOT_INCREASE_V1",
        "aggregate_id": "AI_TOTAL",
        "binding_basis": "revenue",
-       "value_at_optimum": 0.40952702632481475,
-       "value_at_current": 0.542759298600204,
-       "baseline_value": 0.542759298600204,
-       "baseline_status": "MATERIALIZED",
-       "tolerance": 1e-06,
-       "status": "pass",
-       "binding": false
-      }
-     },
-     "TAIWAN_QUARANTINE": {
-      "weights": {
-       "ASTS": 0.03,
-       "CRWV": 0.105,
-       "HPS.A": 0.125,
-       "LLY": 0.085,
-       "NBIS": 0.16,
-       "NVDA": 0.1,
-       "RKLB": 0.04,
-       "SPOT": 0.135
-      },
-      "dry_powder": 0.1963,
-      "feasible": true,
-      "start_used": "given",
-      "median_CAGR_5Y": 0.18648783838783134,
-      "ES5": 0.3257339951712302,
-      "P_loss_gt_30pct": 0.0,
-      "binding_constraints": [
-       "cardinality:positions_max",
-       "min_position_weight:ASTS",
-       "per_name_cap:CRWV",
-       "per_name_cap:SPOT"
-      ],
-      "violations_at_optimum": [],
-      "turnover_from_current": 0.5805,
-      "search": {
-       "random_starts": 0,
-       "basin_kicks": 0,
-       "exploration_paths": null,
-       "polish_top": 3,
-       "standard_starts": [
-        "current",
-        "equal",
-        "empty",
-        "given"
-       ],
-       "best_source": "given",
-       "improvement_vs_standard_pp": 0.0
-      },
-      "cardinality": {
-       "positions_count": 8,
-       "positions_min": 6,
-       "positions_max": 8,
-       "min_position_weight": 0.03,
-       "below_min": [],
-       "zeroed": [
-        "ASML",
-        "CRWD",
-        "ETN",
-        "HOOD",
-        "META",
-        "MSFT",
-        "NET",
-        "PLTR",
-        "S",
-        "SPCX"
-       ],
-       "excluded_from_count": [
-        "GLD",
-        "UFO"
-       ],
-       "binding": [
-        "cardinality:positions_max",
-        "min_position_weight:ASTS"
-       ]
-      },
-      "theme_lookthrough": {
-       "policy_id": "AI_THEME_NOT_INCREASE_V1",
-       "aggregate_id": "AI_TOTAL",
-       "binding_basis": "revenue",
-       "value_at_optimum": 0.35751930451772485,
-       "value_at_current": 0.542759298600204,
-       "baseline_value": 0.542759298600204,
+       "value_at_optimum": 0.4021758416899961,
+       "value_at_current": 0.5365580697215558,
+       "baseline_value": 0.5365580697215557,
        "baseline_status": "MATERIALIZED",
        "tolerance": 1e-06,
        "status": "pass",
@@ -654,8 +649,8 @@
      },
      "ASTS": {
       "mixture": 0.0,
-      "BASE": 0.03,
-      "TAIWAN_SEIZURE": 0.03,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.065,
       "CHIP_COLD_WAR": 0.03,
       "TAIWAN_QUARANTINE": 0.03
      },
@@ -669,7 +664,7 @@
      "CRWV": {
       "mixture": 0.105,
       "BASE": 0.105,
-      "TAIWAN_SEIZURE": 0.09,
+      "TAIWAN_SEIZURE": 0.105,
       "CHIP_COLD_WAR": 0.105,
       "TAIWAN_QUARANTINE": 0.105
      },
@@ -688,18 +683,18 @@
       "TAIWAN_QUARANTINE": 0.0
      },
      "HPS.A": {
-      "mixture": 0.1,
+      "mixture": 0.12,
       "BASE": 0.13,
-      "TAIWAN_SEIZURE": 0.1,
+      "TAIWAN_SEIZURE": 0.0,
       "CHIP_COLD_WAR": 0.13,
-      "TAIWAN_QUARANTINE": 0.125
+      "TAIWAN_QUARANTINE": 0.06
      },
      "LLY": {
-      "mixture": 0.085,
-      "BASE": 0.085,
-      "TAIWAN_SEIZURE": 0.075,
-      "CHIP_COLD_WAR": 0.115,
-      "TAIWAN_QUARANTINE": 0.085
+      "mixture": 0.095,
+      "BASE": 0.12,
+      "TAIWAN_SEIZURE": 0.14,
+      "CHIP_COLD_WAR": 0.12,
+      "TAIWAN_QUARANTINE": 0.14
      },
      "META": {
       "mixture": 0.0,
@@ -717,10 +712,10 @@
      },
      "NBIS": {
       "mixture": 0.195,
-      "BASE": 0.195,
+      "BASE": 0.215,
       "TAIWAN_SEIZURE": 0.19,
-      "CHIP_COLD_WAR": 0.175,
-      "TAIWAN_QUARANTINE": 0.16
+      "CHIP_COLD_WAR": 0.215,
+      "TAIWAN_QUARANTINE": 0.185
      },
      "NET": {
       "mixture": 0.0,
@@ -731,10 +726,10 @@
      },
      "NVDA": {
       "mixture": 0.125,
-      "BASE": 0.125,
-      "TAIWAN_SEIZURE": 0.12,
-      "CHIP_COLD_WAR": 0.14,
-      "TAIWAN_QUARANTINE": 0.1
+      "BASE": 0.11,
+      "TAIWAN_SEIZURE": 0.065,
+      "CHIP_COLD_WAR": 0.11,
+      "TAIWAN_QUARANTINE": 0.125
      },
      "PLTR": {
       "mixture": 0.0,
@@ -744,11 +739,11 @@
       "TAIWAN_QUARANTINE": 0.0
      },
      "RKLB": {
-      "mixture": 0.045,
-      "BASE": 0.03,
-      "TAIWAN_SEIZURE": 0.04,
-      "CHIP_COLD_WAR": 0.03,
-      "TAIWAN_QUARANTINE": 0.04
+      "mixture": 0.03,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.08,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.03
      },
      "S": {
       "mixture": 0.0,
@@ -773,11 +768,11 @@
      }
     },
     "dry_powder_by_scenario": {
-     "mixture": 0.1863,
-     "BASE": 0.1413,
+     "mixture": 0.1713,
+     "BASE": 0.1613,
      "TAIWAN_SEIZURE": 0.1963,
-     "CHIP_COLD_WAR": 0.1163,
-     "TAIWAN_QUARANTINE": 0.1963
+     "CHIP_COLD_WAR": 0.1313,
+     "TAIWAN_QUARANTINE": 0.1663
     }
    }
   }
