@@ -38,10 +38,11 @@ from pathlib import Path
 
 import yaml
 
-VERSION = "1.10.1"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
+VERSION = "1.11.0"  # 1.6.0: схема калибровки по schema_version файла (1.0.1 закреплена, 1.0.2 текущая), Rules v1.1.2 (пороги вех нормативны,
 #                    измерение в квартале применения — мода сроков вехи, как в движке), пример-фикстуры v1.0.2
 SCHEMA_VERSION = "1.0.5"            # Company Artifact Schema (v1.0.5: kpi_observations[].verification_run_ids — история прогонов дозора)
-CANDIDATE_SCHEMA_VERSION = "1.0.1"  # Company Candidate Schema (не менялась с партии 1)
+CANDIDATE_SCHEMA_VERSION = "1.0.2"  # Company Candidate Schema: 1.0.2 (партия 16, полный вектор таксономии 1.2.1); 1.0.1 закреплена за кандидатами партий 1–13
+CANDIDATE_SCHEMA_VERSIONS = ("1.0.1", "1.0.2")
 DOZOR_PROTOCOL_VERSION = "1.2.1"    # Dozor Verification Protocol (сводная редакция v1.2.1 = v1.1 + дельта v1.2; схема отчёта 1.2.0, отчёты v1.0/v1.1 валидны)
 VERIFIED_KPI_STATUSES = ("verified_match", "verified_match_with_normalization")
 CALIBRATION_SCHEMA_VERSION = "1.0.2"  # Company MC Calibration Schema — текущая (привязка к company_mc 2.3.1)
@@ -317,9 +318,11 @@ def integrity_candidate(c: dict, taxonomy_ids: set[str] | None) -> list[dict]:
     if taxonomy_ids is None:
         F.append(_f("CAND-REF-014", "mpc_inputs/driver_taxonomy_version", f"таксономия v{mp.get('driver_taxonomy_version')} не найдена", "warning"))
     elif keys != taxonomy_ids:
-        F.append(_f("CAND-REF-014", "mpc_inputs/driver_exposure_vector", f"лишние: {sorted(keys - taxonomy_ids)}; отсутствуют: {sorted(taxonomy_ids - keys)}"))
-    if c.get("candidate_schema_version") != CANDIDATE_SCHEMA_VERSION:
-        F.append(_f("CAND-REF-017", "candidate_schema_version", f"{c.get('candidate_schema_version')!r} ≠ {CANDIDATE_SCHEMA_VERSION!r}"))
+        gap = set(mp.get("taxonomy_gap") or [])                                   # 1.11.0: объявленный разрыв схемы кандидата (v1.0.1 — 32 драйвера) → предупреждение
+        sev = "warning" if (keys <= taxonomy_ids and (taxonomy_ids - keys) <= gap and gap) else "error"
+        F.append(_f("CAND-REF-014", "mpc_inputs/driver_exposure_vector", f"лишние: {sorted(keys - taxonomy_ids)}; отсутствуют: {sorted(taxonomy_ids - keys)}" + ("; объявленный taxonomy_gap схемы кандидата — канонический mpc_inputs обязан быть полным" if sev == "warning" else ""), sev))
+    if str(c.get("candidate_schema_version")) not in CANDIDATE_SCHEMA_VERSIONS:
+        F.append(_f("CAND-REF-017", "candidate_schema_version", f"{c.get('candidate_schema_version')!r} ∉ {CANDIDATE_SCHEMA_VERSIONS}"))
     return F
 
 
@@ -1159,13 +1162,15 @@ def run(inputs: dict, seed: int) -> dict:
         cand = inputs.get("candidate")
         if not isinstance(cand, dict):
             raise ValueError("mode=candidate требует inputs.candidate (dict)")
-        schema = _schema(inputs, "candidate_schema_path", f"Company_Candidate_Schema_v{CANDIDATE_SCHEMA_VERSION}.yaml")
+        cver = str(cand.get("candidate_schema_version") or CANDIDATE_SCHEMA_VERSION)                      # 1.11.0: схема по заявленной версии кандидата
+        cver = cver if cver in CANDIDATE_SCHEMA_VERSIONS else CANDIDATE_SCHEMA_VERSION
+        schema = _schema(inputs, "candidate_schema_path", f"Company_Candidate_Schema_v{cver}.yaml")
         cand = _norm(cand)
         errs = _schema_errors(schema, cand)
         tax = _taxonomy_ids(ws, (cand.get("mpc_inputs") or {}).get("driver_taxonomy_version"))
         findings = integrity_candidate(cand, tax)
         n_err = sum(1 for f in findings if f["severity"] == "error")
-        return {"model_version": VERSION, "schema_version": CANDIDATE_SCHEMA_VERSION, "mode": mode, "ticker": cand.get("ticker"),
+        return {"model_version": VERSION, "schema_version": cver, "mode": mode, "ticker": cand.get("ticker"),
                 "schema_errors": errs, "integrity": findings, "pass": not errs and n_err == 0, "rules": rules, "decision": "none"}
     if mode == "calibration":
         cal = inputs.get("calibration")

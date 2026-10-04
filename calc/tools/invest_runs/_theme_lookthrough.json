@@ -1,30 +1,31 @@
 {
- "as_of": "2026-10-03",
+ "as_of": "2026-10-04",
  "aggregate_id": "AI_TOTAL",
  "basis": "revenue",
  "shares": {
   "SPCX": 0.32774507294599436,
   "NVDA": 0.9251930451772482,
   "MSFT": 0.4366993678269468,
-  "META": 0,
-  "ETN": 0,
-  "NBIS": 1.0,
+  "META": 0.0,
+  "ETN": 0.0,
+  "NBIS": 0.9812254650964328,
   "CRWV": 1.0,
-  "ASML": 0,
-  "LLY": 0,
-  "HOOD": 0,
-  "PLTR": 0,
-  "NET": 0,
-  "ASTS": 0,
-  "RKLB": 0,
-  "SPOT": 0,
+  "ASML": 0.0,
+  "LLY": 0.0,
+  "HOOD": 0.0,
+  "PLTR": 0.0,
+  "NET": 0.0,
+  "ASTS": 0.0,
+  "RKLB": 0.0,
+  "SPOT": 0.0,
   "CRWD": 0.0,
   "HPS.A": 0.0,
   "S": 0.0
  },
- "baseline_2026_09_21": 0.542759298600204,
+ "baseline_2026_09_21": 0.5365580697215557,
  "T_S8": 0.40004868569895724,
  "notes": [
-  "2026-10-03: партия 13 — CRWD/S: CYBERSECURITY 100 % (вне AI_TOTAL, таксономия 1.0.1), HPS.A: INDUSTRIAL_POWER 100 % (fallback) → доля AI_TOTAL 0"
+  "2026-10-03: партия 13 — CRWD/S: CYBERSECURITY 100 % (вне AI_TOTAL, таксономия 1.0.1), HPS.A: INDUSTRIAL_POWER 100 % (fallback) → доля AI_TOTAL 0",
+  "2026-10-04: партия 16 — ThemeExposure IMMA для NBIS (AI_CLOUD_COMPUTE 0.9812), CRWV (1.0), SPCX, META заменили заглушки; база 21.09 пересчитана по тем же весам: 0.542759 → 0.536558"
  ]
 }
