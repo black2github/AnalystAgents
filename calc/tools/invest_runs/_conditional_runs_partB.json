@@ -41,26 +41,6 @@
     "run_id": null,
     "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
    },
-   "MSFT": {
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134524Z-company_mc-f162c6-paths.npz",
-    "run_id": null,
-    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
-   },
-   "PLTR": {
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134713Z-company_mc-8d8b95-paths.npz",
-    "run_id": null,
-    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
-   },
-   "NET": {
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134818Z-company_mc-b24c52-paths.npz",
-    "run_id": null,
-    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
-   },
-   "ETN": {
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T134919Z-company_mc-004eab-paths.npz",
-    "run_id": null,
-    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
-   },
    "ASTS": {
     "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T135043Z-company_mc-5b3a3a-paths.npz",
     "run_id": null,
@@ -88,6 +68,26 @@
    },
    "HPS.A": {
     "paths_file": "/data/workspace-invest/portfolio/_runs/20261004T065545Z-company_mc-8d1497-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (пути сценария)"
+   },
+   "ETN": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T220315Z-company_mc-e17e10-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (пути сценария)"
+   },
+   "MSFT": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T220425Z-company_mc-1d1c6f-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (пути сценария)"
+   },
+   "NET": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T220546Z-company_mc-8362c6-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (пути сценария)"
+   },
+   "PLTR": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T220643Z-company_mc-d773fd-paths.npz",
     "run_id": null,
     "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (пути сценария)"
    }
@@ -280,66 +280,6 @@
      "RESTRICTIONS"
     ]
    },
-   "MSFT": {
-    "run_id": "20260930T212200Z-company_mc-0813b3",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212200Z-company_mc-0813b3-paths.npz",
-    "median_CAGR_5Y": 0.027538114275218795,
-    "q05": -0.122906256749068,
-    "q95": 0.17092862001385353,
-    "P_loss_gt_30pct_5Y": 0.144072,
-    "ES5": -0.5776523659973711,
-    "P_2x_5Y": 0.083874,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "RESTRICTIONS",
-    "historical_phases": [
-     "RESTRICTIONS"
-    ]
-   },
-   "PLTR": {
-    "run_id": "20260930T212333Z-company_mc-700f15",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212333Z-company_mc-700f15-paths.npz",
-    "median_CAGR_5Y": 0.00018127155442282383,
-    "q05": -0.1595023577210859,
-    "q95": 0.16853973037420392,
-    "P_loss_gt_30pct_5Y": 0.242284,
-    "ES5": -0.6621088540680177,
-    "P_2x_5Y": 0.072714,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "RESTRICTIONS",
-    "historical_phases": [
-     "RESTRICTIONS"
-    ]
-   },
-   "NET": {
-    "run_id": "20260930T212434Z-company_mc-d236f4",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212434Z-company_mc-d236f4-paths.npz",
-    "median_CAGR_5Y": -0.19859261252340416,
-    "q05": -0.36206943507478356,
-    "q95": -0.026088011159716314,
-    "P_loss_gt_30pct_5Y": 0.894316,
-    "ES5": -0.9209893143162472,
-    "P_2x_5Y": 0.00097,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "RESTRICTIONS",
-    "historical_phases": [
-     "RESTRICTIONS"
-    ]
-   },
-   "ETN": {
-    "run_id": "20260930T212527Z-company_mc-9044aa",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212527Z-company_mc-9044aa-paths.npz",
-    "median_CAGR_5Y": 0.016589161317106527,
-    "q05": -0.14976179641995696,
-    "q95": 0.18795357263332751,
-    "P_loss_gt_30pct_5Y": 0.200384,
-    "ES5": -0.6451086546230473,
-    "P_2x_5Y": 0.100696,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "RESTRICTIONS",
-    "historical_phases": [
-     "RESTRICTIONS"
-    ]
-   },
    "ASTS": {
     "run_id": "20260930T212639Z-company_mc-5df42f",
     "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T212639Z-company_mc-5df42f-paths.npz",
@@ -465,6 +405,122 @@
     "applicable": [
      "CAPITAL_MARKETS",
      "TAIWAN_SUPPLY"
+    ],
+    "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "ETN": {
+    "run_id": "20261009T221619Z-company_mc-e416c4",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T221619Z-company_mc-e416c4-paths.npz",
+    "median_CAGR_5Y": 0.01661059412900512,
+    "q05": -0.1498935845160685,
+    "q95": 0.1885909182244344,
+    "P_loss_gt_30pct_5Y": 0.20055,
+    "P_loss_gt_50pct_5Y": 0.07484,
+    "ES5": -0.6455071315254284,
+    "P_2x_5Y": 0.101396,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CAPITAL_MARKETS",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND"
+    ],
+    "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "MSFT": {
+    "run_id": "20261009T221731Z-company_mc-c8653f",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T221731Z-company_mc-c8653f-paths.npz",
+    "median_CAGR_5Y": 0.02755536317806595,
+    "q05": -0.12321717959910944,
+    "q95": 0.17144673765201504,
+    "P_loss_gt_30pct_5Y": 0.144392,
+    "P_loss_gt_50pct_5Y": 0.04341,
+    "ES5": -0.5785016729614542,
+    "P_2x_5Y": 0.084634,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "CAPITAL_MARKETS",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "SEMICONDUCTOR_WFE"
+    ],
+    "applicable": [
+     "ADVANCED_PACKAGING",
+     "AI_COMPUTE_DEMAND",
+     "HBM_MEMORY",
+     "TAIWAN_SUPPLY"
+    ],
+    "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "NET": {
+    "run_id": "20261009T221909Z-company_mc-7909f2",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T221909Z-company_mc-7909f2-paths.npz",
+    "median_CAGR_5Y": -0.20056107620097796,
+    "q05": -0.3640410113665141,
+    "q95": -0.027011368387724465,
+    "P_loss_gt_30pct_5Y": 0.89707,
+    "P_loss_gt_50pct_5Y": 0.7561,
+    "ES5": -0.922249728871333,
+    "P_2x_5Y": 0.001168,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND",
+     "CAPITAL_MARKETS"
+    ],
+    "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "PLTR": {
+    "run_id": "20261009T222014Z-company_mc-fb2a68",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T222014Z-company_mc-fb2a68-paths.npz",
+    "median_CAGR_5Y": -0.004460557800031351,
+    "q05": -0.16491093419547226,
+    "q95": 0.1654493083266893,
+    "P_loss_gt_30pct_5Y": 0.257584,
+    "P_loss_gt_50pct_5Y": 0.101062,
+    "ES5": -0.6731101619132804,
+    "P_2x_5Y": 0.068552,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CHINA_REVENUE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND",
+     "CAPITAL_MARKETS",
+     "GOVERNMENT_DEFENSE"
     ],
     "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
     "state_at_t0": "RESTRICTIONS",
@@ -669,70 +725,6 @@
      "BLOCKADE"
     ]
    },
-   "MSFT": {
-    "run_id": "20260930T214412Z-company_mc-f40c35",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214412Z-company_mc-f40c35-paths.npz",
-    "median_CAGR_5Y": 0.0293463223032272,
-    "q05": -0.12105918833948943,
-    "q95": 0.17301337755840562,
-    "P_loss_gt_30pct_5Y": 0.13986,
-    "ES5": -0.5729916684848295,
-    "P_2x_5Y": 0.087726,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "BLOCKADE",
-    "historical_phases": [
-     "RESTRICTIONS",
-     "BLOCKADE"
-    ]
-   },
-   "PLTR": {
-    "run_id": "20260930T214542Z-company_mc-b3ae91",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214542Z-company_mc-b3ae91-paths.npz",
-    "median_CAGR_5Y": 0.0025086137100226447,
-    "q05": -0.15717635260594584,
-    "q95": 0.17073942985568208,
-    "P_loss_gt_30pct_5Y": 0.234718,
-    "ES5": -0.6575693257548174,
-    "P_2x_5Y": 0.075902,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "BLOCKADE",
-    "historical_phases": [
-     "RESTRICTIONS",
-     "BLOCKADE"
-    ]
-   },
-   "NET": {
-    "run_id": "20260930T214637Z-company_mc-81ada3",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214637Z-company_mc-81ada3-paths.npz",
-    "median_CAGR_5Y": -0.1968774213864095,
-    "q05": -0.3603154019895331,
-    "q95": -0.024021622335165388,
-    "P_loss_gt_30pct_5Y": 0.890886,
-    "ES5": -0.9198507607388637,
-    "P_2x_5Y": 0.000988,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "BLOCKADE",
-    "historical_phases": [
-     "RESTRICTIONS",
-     "BLOCKADE"
-    ]
-   },
-   "ETN": {
-    "run_id": "20260930T214729Z-company_mc-375acb",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214729Z-company_mc-375acb-paths.npz",
-    "median_CAGR_5Y": 0.01680895667316784,
-    "q05": -0.14963196428223005,
-    "q95": 0.18809325267681384,
-    "P_loss_gt_30pct_5Y": 0.19987,
-    "ES5": -0.6447406127123028,
-    "P_2x_5Y": 0.101106,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "BLOCKADE",
-    "historical_phases": [
-     "RESTRICTIONS",
-     "BLOCKADE"
-    ]
-   },
    "ASTS": {
     "run_id": "20260930T214837Z-company_mc-1d2fe6",
     "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T214837Z-company_mc-1d2fe6-paths.npz",
@@ -863,6 +855,126 @@
     "applicable": [
      "CAPITAL_MARKETS",
      "TAIWAN_SUPPLY"
+    ],
+    "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "ETN": {
+    "run_id": "20261009T222122Z-company_mc-c9eb39",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T222122Z-company_mc-c9eb39-paths.npz",
+    "median_CAGR_5Y": 0.01684628388494469,
+    "q05": -0.14974036205206764,
+    "q95": 0.1888045115955955,
+    "P_loss_gt_30pct_5Y": 0.200014,
+    "P_loss_gt_50pct_5Y": 0.074572,
+    "ES5": -0.6451287536983974,
+    "P_2x_5Y": 0.101804,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CAPITAL_MARKETS",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND"
+    ],
+    "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "MSFT": {
+    "run_id": "20261009T222231Z-company_mc-c3c176",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T222231Z-company_mc-c3c176-paths.npz",
+    "median_CAGR_5Y": 0.02936970766864988,
+    "q05": -0.12130199216904583,
+    "q95": 0.1734871682289758,
+    "P_loss_gt_30pct_5Y": 0.140106,
+    "P_loss_gt_50pct_5Y": 0.041552,
+    "ES5": -0.5738200993786651,
+    "P_2x_5Y": 0.08838,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "CAPITAL_MARKETS",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "SEMICONDUCTOR_WFE"
+    ],
+    "applicable": [
+     "ADVANCED_PACKAGING",
+     "AI_COMPUTE_DEMAND",
+     "HBM_MEMORY",
+     "TAIWAN_SUPPLY"
+    ],
+    "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "NET": {
+    "run_id": "20261009T222351Z-company_mc-1164ee",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T222351Z-company_mc-1164ee-paths.npz",
+    "median_CAGR_5Y": -0.19858822230252404,
+    "q05": -0.36213910264864896,
+    "q95": -0.024569081561668746,
+    "P_loss_gt_30pct_5Y": 0.89314,
+    "P_loss_gt_50pct_5Y": 0.7494,
+    "ES5": -0.9210499225524547,
+    "P_2x_5Y": 0.001206,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND",
+     "CAPITAL_MARKETS"
+    ],
+    "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
+    "state_at_t0": "BLOCKADE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE"
+    ]
+   },
+   "PLTR": {
+    "run_id": "20261009T222449Z-company_mc-328708",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T222449Z-company_mc-328708-paths.npz",
+    "median_CAGR_5Y": -0.0014001247502068992,
+    "q05": -0.1618495979516868,
+    "q95": 0.16843424154223682,
+    "P_loss_gt_30pct_5Y": 0.24793,
+    "P_loss_gt_50pct_5Y": 0.096142,
+    "ES5": -0.6672782024444679,
+    "P_2x_5Y": 0.072328,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CHINA_REVENUE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND",
+     "CAPITAL_MARKETS",
+     "GOVERNMENT_DEFENSE"
     ],
     "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
     "state_at_t0": "BLOCKADE",
@@ -1076,74 +1188,6 @@
      "CONFLICT"
     ]
    },
-   "MSFT": {
-    "run_id": "20260930T220747Z-company_mc-0bd84e",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T220747Z-company_mc-0bd84e-paths.npz",
-    "median_CAGR_5Y": 0.06148235502501409,
-    "q05": -0.09122893959485535,
-    "q95": 0.20638421072883195,
-    "P_loss_gt_30pct_5Y": 0.079654,
-    "ES5": -0.494484728372286,
-    "P_2x_5Y": 0.165338,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "CONFLICT",
-    "historical_phases": [
-     "RESTRICTIONS",
-     "BLOCKADE",
-     "CONFLICT"
-    ]
-   },
-   "PLTR": {
-    "run_id": "20260930T220942Z-company_mc-2497bb",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T220942Z-company_mc-2497bb-paths.npz",
-    "median_CAGR_5Y": 0.0022499704019066646,
-    "q05": -0.1527316265462683,
-    "q95": 0.1631967115412852,
-    "P_loss_gt_30pct_5Y": 0.22838,
-    "ES5": -0.6456098239801773,
-    "P_2x_5Y": 0.067226,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "CONFLICT",
-    "historical_phases": [
-     "RESTRICTIONS",
-     "BLOCKADE",
-     "CONFLICT"
-    ]
-   },
-   "NET": {
-    "run_id": "20260930T221050Z-company_mc-4393ea",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T221050Z-company_mc-4393ea-paths.npz",
-    "median_CAGR_5Y": -0.1617776665041472,
-    "q05": -0.3200187918986193,
-    "q95": 0.003578589511542795,
-    "P_loss_gt_30pct_5Y": 0.82588,
-    "ES5": -0.8888468211831105,
-    "P_2x_5Y": 0.001634,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "CONFLICT",
-    "historical_phases": [
-     "RESTRICTIONS",
-     "BLOCKADE",
-     "CONFLICT"
-    ]
-   },
-   "ETN": {
-    "run_id": "20260930T221145Z-company_mc-23625a",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T221145Z-company_mc-23625a-paths.npz",
-    "median_CAGR_5Y": 0.025122051359151687,
-    "q05": -0.14112810122946073,
-    "q95": 0.19510555004304353,
-    "P_loss_gt_30pct_5Y": 0.176988,
-    "ES5": -0.6263295855397953,
-    "P_2x_5Y": 0.113996,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "CONFLICT",
-    "historical_phases": [
-     "RESTRICTIONS",
-     "BLOCKADE",
-     "CONFLICT"
-    ]
-   },
    "ASTS": {
     "run_id": "20260930T221304Z-company_mc-994cd5",
     "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T221304Z-company_mc-994cd5-paths.npz",
@@ -1287,6 +1331,130 @@
      "BLOCKADE",
      "CONFLICT"
     ]
+   },
+   "ETN": {
+    "run_id": "20261009T222550Z-company_mc-d92731",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T222550Z-company_mc-d92731-paths.npz",
+    "median_CAGR_5Y": 0.025198220055878018,
+    "q05": -0.14121229952078468,
+    "q95": 0.19567307930679173,
+    "P_loss_gt_30pct_5Y": 0.177144,
+    "P_loss_gt_50pct_5Y": 0.063402,
+    "ES5": -0.6266503419908509,
+    "P_2x_5Y": 0.114738,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CAPITAL_MARKETS",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND"
+    ],
+    "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "MSFT": {
+    "run_id": "20261009T222704Z-company_mc-a2f2ac",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T222704Z-company_mc-a2f2ac-paths.npz",
+    "median_CAGR_5Y": 0.06148035844077748,
+    "q05": -0.09153416230131908,
+    "q95": 0.20681880463612498,
+    "P_loss_gt_30pct_5Y": 0.079852,
+    "P_loss_gt_50pct_5Y": 0.020416,
+    "ES5": -0.49523903375676104,
+    "P_2x_5Y": 0.166036,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "CAPITAL_MARKETS",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "SEMICONDUCTOR_WFE"
+    ],
+    "applicable": [
+     "ADVANCED_PACKAGING",
+     "AI_COMPUTE_DEMAND",
+     "HBM_MEMORY",
+     "TAIWAN_SUPPLY"
+    ],
+    "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "NET": {
+    "run_id": "20261009T222821Z-company_mc-76ade1",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T222821Z-company_mc-76ade1-paths.npz",
+    "median_CAGR_5Y": -0.1624483997049736,
+    "q05": -0.3209886006968152,
+    "q95": 0.004353652003572569,
+    "P_loss_gt_30pct_5Y": 0.826498,
+    "P_loss_gt_50pct_5Y": 0.631682,
+    "ES5": -0.8896990649061196,
+    "P_2x_5Y": 0.001936,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND",
+     "CAPITAL_MARKETS"
+    ],
+    "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
+   },
+   "PLTR": {
+    "run_id": "20261009T222916Z-company_mc-590712",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T222916Z-company_mc-590712-paths.npz",
+    "median_CAGR_5Y": 0.000944738939931411,
+    "q05": -0.15471868168580014,
+    "q95": 0.16405300367288123,
+    "P_loss_gt_30pct_5Y": 0.233372,
+    "P_loss_gt_50pct_5Y": 0.084992,
+    "ES5": -0.6502140425170566,
+    "P_2x_5Y": 0.068016,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CHINA_REVENUE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND",
+     "CAPITAL_MARKETS",
+     "GOVERNMENT_DEFENSE"
+    ],
+    "scenario_calibration": "TAIWAN_SEIZURE_v1.1.1.yaml",
+    "state_at_t0": "CONFLICT",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "BLOCKADE",
+     "CONFLICT"
+    ]
    }
   },
   "optimum": {
@@ -1397,26 +1565,6 @@
     "run_id": null,
     "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
    },
-   "MSFT": {
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T203356Z-company_mc-d49736-paths.npz",
-    "run_id": null,
-    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
-   },
-   "PLTR": {
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T203523Z-company_mc-9c382f-paths.npz",
-    "run_id": null,
-    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
-   },
-   "NET": {
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T203624Z-company_mc-db5b00-paths.npz",
-    "run_id": null,
-    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
-   },
-   "ETN": {
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T203724Z-company_mc-6ab9cf-paths.npz",
-    "run_id": null,
-    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (раунды 2–3)"
-   },
    "ASTS": {
     "paths_file": "/data/workspace-invest/portfolio/_runs/20260925T203839Z-company_mc-466cbd-paths.npz",
     "run_id": null,
@@ -1444,6 +1592,26 @@
    },
    "HPS.A": {
     "paths_file": "/data/workspace-invest/portfolio/_runs/20261004T065841Z-company_mc-79cfef-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (пути сценария)"
+   },
+   "ETN": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T221201Z-company_mc-95e4af-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (пути сценария)"
+   },
+   "MSFT": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T221305Z-company_mc-f70e89-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (пути сценария)"
+   },
+   "NET": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T221422Z-company_mc-bbf4f4-paths.npz",
+    "run_id": null,
+    "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (пути сценария)"
+   },
+   "PLTR": {
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T221521Z-company_mc-3ebb0c-paths.npz",
     "run_id": null,
     "note": "RESTRICTIONS = fixed_quarter 0: условный прогон побитно равен безусловному (пути сценария)"
    }
@@ -1636,66 +1804,6 @@
      "RESTRICTIONS"
     ]
    },
-   "MSFT": {
-    "run_id": "20260930T222838Z-company_mc-ffd97c",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T222838Z-company_mc-ffd97c-paths.npz",
-    "median_CAGR_5Y": 0.05304178897083045,
-    "q05": -0.09843172233630709,
-    "q95": 0.19701499877063666,
-    "P_loss_gt_30pct_5Y": 0.09194,
-    "ES5": -0.5142312828856567,
-    "P_2x_5Y": 0.140718,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "RESTRICTIONS",
-    "historical_phases": [
-     "RESTRICTIONS"
-    ]
-   },
-   "PLTR": {
-    "run_id": "20260930T222957Z-company_mc-620802",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T222957Z-company_mc-620802-paths.npz",
-    "median_CAGR_5Y": -0.009382316305177829,
-    "q05": -0.16222600133519402,
-    "q95": 0.14854366138727232,
-    "P_loss_gt_30pct_5Y": 0.264024,
-    "ES5": -0.6649062603087676,
-    "P_2x_5Y": 0.049812,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "RESTRICTIONS",
-    "historical_phases": [
-     "RESTRICTIONS"
-    ]
-   },
-   "NET": {
-    "run_id": "20260930T223054Z-company_mc-4136d3",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T223054Z-company_mc-4136d3-paths.npz",
-    "median_CAGR_5Y": -0.1734680488574904,
-    "q05": -0.33057128511435835,
-    "q95": -0.010283674014673934,
-    "P_loss_gt_30pct_5Y": 0.856738,
-    "ES5": -0.8973613954861599,
-    "P_2x_5Y": 0.001022,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "RESTRICTIONS",
-    "historical_phases": [
-     "RESTRICTIONS"
-    ]
-   },
-   "ETN": {
-    "run_id": "20260930T223149Z-company_mc-0ce224",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T223149Z-company_mc-0ce224-paths.npz",
-    "median_CAGR_5Y": 0.022423893047725962,
-    "q05": -0.1434390032983306,
-    "q95": 0.19208908397228783,
-    "P_loss_gt_30pct_5Y": 0.183456,
-    "ES5": -0.631308947533941,
-    "P_2x_5Y": 0.10872,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "RESTRICTIONS",
-    "historical_phases": [
-     "RESTRICTIONS"
-    ]
-   },
    "ASTS": {
     "run_id": "20260930T223257Z-company_mc-cbfbbd",
     "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T223257Z-company_mc-cbfbbd-paths.npz",
@@ -1821,6 +1929,122 @@
     "applicable": [
      "CAPITAL_MARKETS",
      "TAIWAN_SUPPLY"
+    ],
+    "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "ETN": {
+    "run_id": "20261009T223014Z-company_mc-f4735d",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T223014Z-company_mc-f4735d-paths.npz",
+    "median_CAGR_5Y": 0.02249920451888998,
+    "q05": -0.14350233988547503,
+    "q95": 0.1927255013461617,
+    "P_loss_gt_30pct_5Y": 0.183628,
+    "P_loss_gt_50pct_5Y": 0.066276,
+    "ES5": -0.6316567341743218,
+    "P_2x_5Y": 0.109374,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CAPITAL_MARKETS",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND"
+    ],
+    "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "MSFT": {
+    "run_id": "20261009T223116Z-company_mc-a484da",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T223116Z-company_mc-a484da-paths.npz",
+    "median_CAGR_5Y": 0.053026312310610835,
+    "q05": -0.09869870022456831,
+    "q95": 0.19743024796240552,
+    "P_loss_gt_30pct_5Y": 0.092256,
+    "P_loss_gt_50pct_5Y": 0.024172,
+    "ES5": -0.5150320150175675,
+    "P_2x_5Y": 0.14135,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "CAPITAL_MARKETS",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "SEMICONDUCTOR_WFE"
+    ],
+    "applicable": [
+     "ADVANCED_PACKAGING",
+     "AI_COMPUTE_DEMAND",
+     "HBM_MEMORY",
+     "TAIWAN_SUPPLY"
+    ],
+    "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "NET": {
+    "run_id": "20261009T223231Z-company_mc-7499e1",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T223231Z-company_mc-7499e1-paths.npz",
+    "median_CAGR_5Y": -0.17425546849395018,
+    "q05": -0.33158016520218586,
+    "q95": -0.00961267861828912,
+    "P_loss_gt_30pct_5Y": 0.857254,
+    "P_loss_gt_50pct_5Y": 0.677448,
+    "ES5": -0.8982719900814475,
+    "P_2x_5Y": 0.001288,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND",
+     "CAPITAL_MARKETS"
+    ],
+    "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml",
+    "state_at_t0": "RESTRICTIONS",
+    "historical_phases": [
+     "RESTRICTIONS"
+    ]
+   },
+   "PLTR": {
+    "run_id": "20261009T223326Z-company_mc-3befac",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T223326Z-company_mc-3befac-paths.npz",
+    "median_CAGR_5Y": -0.01097456683205228,
+    "q05": -0.16460194570212064,
+    "q95": 0.14883036148592713,
+    "P_loss_gt_30pct_5Y": 0.270412,
+    "P_loss_gt_50pct_5Y": 0.103386,
+    "ES5": -0.6699097501722712,
+    "P_2x_5Y": 0.050124,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CHINA_REVENUE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND",
+     "CAPITAL_MARKETS",
+     "GOVERNMENT_DEFENSE"
     ],
     "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml",
     "state_at_t0": "RESTRICTIONS",
@@ -2025,70 +2249,6 @@
      "QUARANTINE"
     ]
    },
-   "MSFT": {
-    "run_id": "20260930T225214Z-company_mc-c15a48",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225214Z-company_mc-c15a48-paths.npz",
-    "median_CAGR_5Y": 0.061353831003487236,
-    "q05": -0.0906575632657482,
-    "q95": 0.20555082784360187,
-    "P_loss_gt_30pct_5Y": 0.07877,
-    "ES5": -0.4926593615298721,
-    "P_2x_5Y": 0.163466,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "QUARANTINE",
-    "historical_phases": [
-     "RESTRICTIONS",
-     "QUARANTINE"
-    ]
-   },
-   "PLTR": {
-    "run_id": "20260930T225343Z-company_mc-014256",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225343Z-company_mc-014256-paths.npz",
-    "median_CAGR_5Y": -0.007335215752818092,
-    "q05": -0.15992067410445537,
-    "q95": 0.15006410696922476,
-    "P_loss_gt_30pct_5Y": 0.256478,
-    "ES5": -0.6599888863975578,
-    "P_2x_5Y": 0.05148,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "QUARANTINE",
-    "historical_phases": [
-     "RESTRICTIONS",
-     "QUARANTINE"
-    ]
-   },
-   "NET": {
-    "run_id": "20260930T225445Z-company_mc-52b287",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225445Z-company_mc-52b287-paths.npz",
-    "median_CAGR_5Y": -0.1659582646954572,
-    "q05": -0.32158498066175156,
-    "q95": -0.0051464459023724835,
-    "P_loss_gt_30pct_5Y": 0.84215,
-    "ES5": -0.8897262907741521,
-    "P_2x_5Y": 0.001072,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "QUARANTINE",
-    "historical_phases": [
-     "RESTRICTIONS",
-     "QUARANTINE"
-    ]
-   },
-   "ETN": {
-    "run_id": "20260930T225545Z-company_mc-7af7cf",
-    "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225545Z-company_mc-7af7cf-paths.npz",
-    "median_CAGR_5Y": 0.024247088466095468,
-    "q05": -0.14142828321157377,
-    "q95": 0.1933286814159905,
-    "P_loss_gt_30pct_5Y": 0.178272,
-    "ES5": -0.6268142957382659,
-    "P_2x_5Y": 0.111266,
-    "scenario_mode": "conditional_confirmed_phase",
-    "state_at_t0": "QUARANTINE",
-    "historical_phases": [
-     "RESTRICTIONS",
-     "QUARANTINE"
-    ]
-   },
    "ASTS": {
     "run_id": "20260930T225658Z-company_mc-99feaf",
     "paths_file": "/data/workspace-invest/portfolio/_runs/20260930T225658Z-company_mc-99feaf-paths.npz",
@@ -2219,6 +2379,126 @@
     "applicable": [
      "CAPITAL_MARKETS",
      "TAIWAN_SUPPLY"
+    ],
+    "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "ETN": {
+    "run_id": "20261009T223423Z-company_mc-fd8623",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T223423Z-company_mc-fd8623-paths.npz",
+    "median_CAGR_5Y": 0.024326840068163103,
+    "q05": -0.1414690322340962,
+    "q95": 0.1939323919005936,
+    "P_loss_gt_30pct_5Y": 0.17841,
+    "P_loss_gt_50pct_5Y": 0.063822,
+    "ES5": -0.6271509467662617,
+    "P_2x_5Y": 0.111954,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CAPITAL_MARKETS",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND"
+    ],
+    "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "MSFT": {
+    "run_id": "20261009T223524Z-company_mc-ed640a",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T223524Z-company_mc-ed640a-paths.npz",
+    "median_CAGR_5Y": 0.06134495130788675,
+    "q05": -0.09093714107447981,
+    "q95": 0.20593212554301196,
+    "P_loss_gt_30pct_5Y": 0.079112,
+    "P_loss_gt_50pct_5Y": 0.020058,
+    "ES5": -0.4934252465996273,
+    "P_2x_5Y": 0.164036,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "CAPITAL_MARKETS",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "SEMICONDUCTOR_WFE"
+    ],
+    "applicable": [
+     "ADVANCED_PACKAGING",
+     "AI_COMPUTE_DEMAND",
+     "HBM_MEMORY",
+     "TAIWAN_SUPPLY"
+    ],
+    "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "NET": {
+    "run_id": "20261009T223633Z-company_mc-ff2b59",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T223633Z-company_mc-ff2b59-paths.npz",
+    "median_CAGR_5Y": -0.16629794181255825,
+    "q05": -0.3223025398875177,
+    "q95": -0.0037571995224090263,
+    "P_loss_gt_30pct_5Y": 0.841546,
+    "P_loss_gt_50pct_5Y": 0.64939,
+    "ES5": -0.890431969573379,
+    "P_2x_5Y": 0.001396,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CHINA_REVENUE",
+     "GOVERNMENT_DEFENSE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND",
+     "CAPITAL_MARKETS"
+    ],
+    "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml",
+    "state_at_t0": "QUARANTINE",
+    "historical_phases": [
+     "RESTRICTIONS",
+     "QUARANTINE"
+    ]
+   },
+   "PLTR": {
+    "run_id": "20261009T223727Z-company_mc-aac182",
+    "paths_file": "/data/workspace-invest/portfolio/_runs/20261009T223727Z-company_mc-aac182-paths.npz",
+    "median_CAGR_5Y": -0.008160606370530954,
+    "q05": -0.1615100698031087,
+    "q95": 0.15145846750115763,
+    "P_loss_gt_30pct_5Y": 0.260276,
+    "P_loss_gt_50pct_5Y": 0.097716,
+    "ES5": -0.663597836841699,
+    "P_2x_5Y": 0.052976,
+    "scenario_mode": "conditional_confirmed_phase",
+    "unmapped": [
+     "ADVANCED_PACKAGING",
+     "CHINA_REVENUE",
+     "HBM_MEMORY",
+     "SEMICONDUCTOR_WFE",
+     "TAIWAN_SUPPLY"
+    ],
+    "applicable": [
+     "AI_COMPUTE_DEMAND",
+     "CAPITAL_MARKETS",
+     "GOVERNMENT_DEFENSE"
     ],
     "scenario_calibration": "TAIWAN_QUARANTINE_v1.1.1.yaml",
     "state_at_t0": "QUARANTINE",

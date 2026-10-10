@@ -1,0 +1,2138 @@
+{
+ "run_id": "20261009T223828Z-portfolio_compare-66f8ba",
+ "caps": {
+  "HOOD": 0.0951,
+  "LLY": 0.1435,
+  "PLTR": 0.0952,
+  "NET": 0.0844,
+  "ASTS": 0.0833,
+  "CRWV": 0.1064,
+  "RKLB": 0.0839,
+  "NVDA": 0.1412,
+  "MSFT": 0.1449,
+  "META": 0.1358,
+  "ASML": 0.1058,
+  "NBIS": 0.2947,
+  "ETN": 0.1197,
+  "SPOT": 0.1362,
+  "SPCX": 0.0911,
+  "HPS.A": 0.134,
+  "S": 0.1032,
+  "CRWD": 0.0868
+ },
+ "sectors": {
+  "RKLB": "SPACE",
+  "NVDA": "SEMICONDUCTORS",
+  "NET": "SOFTWARE",
+  "NBIS": "AI_COMPUTE",
+  "MSFT": "SOFTWARE",
+  "META": "INTERNET_PLATFORMS",
+  "LLY": "HEALTHCARE",
+  "HOOD": "FINTECH",
+  "GLD": "GOLD",
+  "ETN": "ELECTRIFICATION",
+  "ASML": "SEMICONDUCTORS",
+  "UFO": "SPACE",
+  "ASTS": "SPACE",
+  "CRWV": "AI_COMPUTE",
+  "PLTR": "SOFTWARE",
+  "SPCX": "SPACE",
+  "SPOT": "INTERNET_PLATFORMS",
+  "CRWD": "SOFTWARE",
+  "HPS.A": "ELECTRIFICATION",
+  "S": "SOFTWARE"
+ },
+ "files": {
+  "HOOD": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-HOOD-paths.npz",
+  "LLY": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-LLY-paths.npz",
+  "PLTR": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-PLTR-paths.npz",
+  "NET": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-NET-paths.npz",
+  "ASTS": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-ASTS-paths.npz",
+  "CRWV": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-CRWV-paths.npz",
+  "RKLB": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-RKLB-paths.npz",
+  "NVDA": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-NVDA-paths.npz",
+  "MSFT": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-MSFT-paths.npz",
+  "META": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-META-paths.npz",
+  "ASML": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-ASML-paths.npz",
+  "NBIS": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-NBIS-paths.npz",
+  "ETN": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-ETN-paths.npz",
+  "SPOT": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-SPOT-paths.npz",
+  "SPCX": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-SPCX-paths.npz",
+  "HPS.A": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-HPS.A-paths.npz",
+  "S": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-S-paths.npz",
+  "CRWD": "/data/workspace-invest/portfolio/_runs/mix-p10-p07-p175-mixture-CRWD-paths.npz"
+ },
+ "limits": {
+  "sector_max": 0.35,
+  "top3_aggregate_max": 0.5,
+  "common_cause_effective_max": 0.35,
+  "roles": {
+   "Challenger_max_per_name": 0.08,
+   "Challenger_aggregate_max": 0.25
+  },
+  "dry_powder": {
+   "Normal": {
+    "min": 0.05,
+    "preferred_max": 0.1,
+    "hard_max": 0.15
+   },
+   "Stress": {
+    "min": 0.05,
+    "preferred_max": 0.15,
+    "hard_max": 0.2
+   },
+   "Shock": {
+    "min": 0.1,
+    "preferred_max": 0.2,
+    "hard_max": 0.3
+   }
+  },
+  "risk_5y": {
+   "p_loss_gt_30_max": 0.2,
+   "p_loss_gt_50_max": 0.1,
+   "es5_min": -0.55,
+   "scenario_concentration_max": 0.6
+  },
+  "cardinality": {
+   "positions_min": 6,
+   "positions_max": 8,
+   "min_position_weight": 0.03,
+   "excludes": [
+    "GLD",
+    "UFO"
+   ]
+  },
+  "theme_policy": {
+   "policy_id": "AI_THEME_NOT_INCREASE_V1",
+   "aggregate_id": "AI_TOTAL",
+   "shares": {
+    "SPCX": 0.32774507294599436,
+    "NVDA": 0.9251930451772482,
+    "MSFT": 0.4366993678269468,
+    "META": 0.0,
+    "ETN": 0.0,
+    "NBIS": 0.9812254650964328,
+    "CRWV": 1.0,
+    "ASML": 0.0,
+    "LLY": 0.0,
+    "HOOD": 0.0,
+    "PLTR": 0.0,
+    "NET": 0.0,
+    "ASTS": 0.0,
+    "RKLB": 0.0,
+    "SPOT": 0.0,
+    "CRWD": 0.0,
+    "HPS.A": 0.0,
+    "S": 0.0
+   },
+   "baseline_value": 0.5365580697215557,
+   "tolerance": 1e-06,
+   "baseline_status": "MATERIALIZED"
+  }
+ },
+ "scenario_constraints": {
+  "p_min": 0.1,
+  "es5_min": -0.4,
+  "p_loss_gt_30_max": 0.25,
+  "scenario_concentration_max": 0.7,
+  "scenarios": [
+   {
+    "id": "TAIWAN_SEIZURE",
+    "probability": 0.1,
+    "paths_files": {
+     "HOOD": "/data/workspace-invest/portfolio/_runs/20260925T133012Z-company_mc-68dd8f-paths.npz",
+     "LLY": "/data/workspace-invest/portfolio/_runs/20260925T133526Z-company_mc-5b0f28-paths.npz",
+     "PLTR": "/data/workspace-invest/portfolio/_runs/20261009T220643Z-company_mc-d773fd-paths.npz",
+     "NET": "/data/workspace-invest/portfolio/_runs/20261009T220546Z-company_mc-8362c6-paths.npz",
+     "ASTS": "/data/workspace-invest/portfolio/_runs/20260925T135043Z-company_mc-5b3a3a-paths.npz",
+     "CRWV": "/data/workspace-invest/portfolio/_runs/20260925T135209Z-company_mc-a2a418-paths.npz",
+     "RKLB": "/data/workspace-invest/portfolio/_runs/20260925T133227Z-company_mc-c5b6a6-paths.npz",
+     "NVDA": "/data/workspace-invest/portfolio/_runs/20260925T132706Z-company_mc-b183d7-paths.npz",
+     "MSFT": "/data/workspace-invest/portfolio/_runs/20261009T220425Z-company_mc-1d1c6f-paths.npz",
+     "META": "/data/workspace-invest/portfolio/_runs/20260925T133825Z-company_mc-37ea96-paths.npz",
+     "ASML": "/data/workspace-invest/portfolio/_runs/20260925T134220Z-company_mc-319a55-paths.npz",
+     "NBIS": "/data/workspace-invest/portfolio/_runs/20260925T132442Z-company_mc-cc4c7b-paths.npz",
+     "ETN": "/data/workspace-invest/portfolio/_runs/20261009T220315Z-company_mc-e17e10-paths.npz",
+     "SPOT": "/data/workspace-invest/portfolio/_runs/20260925T135336Z-company_mc-5dcb6e-paths.npz",
+     "SPCX": "/data/workspace-invest/portfolio/_runs/20260925T204251Z-company_mc-227acd-paths.npz",
+     "HPS.A": "/data/workspace-invest/portfolio/_runs/20261004T065545Z-company_mc-8d1497-paths.npz",
+     "S": "/data/workspace-invest/portfolio/_runs/20261003T213618Z-company_mc-0bb43c-paths.npz",
+     "CRWD": "/data/workspace-invest/portfolio/_runs/20261003T213423Z-company_mc-a903a4-paths.npz"
+    }
+   },
+   {
+    "id": "CHIP_COLD_WAR",
+    "probability": 0.07,
+    "paths_files": {
+     "HOOD": "/data/workspace-invest/portfolio/_runs/20260925T140222Z-company_mc-d4857b-paths.npz",
+     "LLY": "/data/workspace-invest/portfolio/_runs/20260925T140547Z-company_mc-d24156-paths.npz",
+     "PLTR": "/data/workspace-invest/portfolio/_runs/20261009T221103Z-company_mc-210a1f-paths.npz",
+     "NET": "/data/workspace-invest/portfolio/_runs/20261009T221006Z-company_mc-9b8345-paths.npz",
+     "ASTS": "/data/workspace-invest/portfolio/_runs/20260925T141641Z-company_mc-1bc553-paths.npz",
+     "CRWV": "/data/workspace-invest/portfolio/_runs/20260925T141822Z-company_mc-68a67b-paths.npz",
+     "RKLB": "/data/workspace-invest/portfolio/_runs/20260925T140353Z-company_mc-e8d208-paths.npz",
+     "NVDA": "/data/workspace-invest/portfolio/_runs/20260925T135856Z-company_mc-69c058-paths.npz",
+     "MSFT": "/data/workspace-invest/portfolio/_runs/20261009T220849Z-company_mc-6a9f03-paths.npz",
+     "META": "/data/workspace-invest/portfolio/_runs/20260925T140728Z-company_mc-aa5b84-paths.npz",
+     "ASML": "/data/workspace-invest/portfolio/_runs/20260925T140933Z-company_mc-7c2422-paths.npz",
+     "NBIS": "/data/workspace-invest/portfolio/_runs/20260925T135640Z-company_mc-35c9e9-paths.npz",
+     "ETN": "/data/workspace-invest/portfolio/_runs/20261009T220743Z-company_mc-f073ed-paths.npz",
+     "SPOT": "/data/workspace-invest/portfolio/_runs/20260925T141958Z-company_mc-081d3d-paths.npz",
+     "SPCX": "/data/workspace-invest/portfolio/_runs/20260925T204503Z-company_mc-6315bc-paths.npz",
+     "HPS.A": "/data/workspace-invest/portfolio/_runs/20261004T065711Z-company_mc-f8ab9b-paths.npz",
+     "S": "/data/workspace-invest/portfolio/_runs/20261003T213921Z-company_mc-813476-paths.npz",
+     "CRWD": "/data/workspace-invest/portfolio/_runs/20261003T213733Z-company_mc-801c4a-paths.npz"
+    }
+   },
+   {
+    "id": "TAIWAN_QUARANTINE",
+    "probability": 0.175,
+    "paths_files": {
+     "HOOD": "/data/workspace-invest/portfolio/_runs/20260925T202443Z-company_mc-999d79-paths.npz",
+     "LLY": "/data/workspace-invest/portfolio/_runs/20260925T202716Z-company_mc-47eee3-paths.npz",
+     "PLTR": "/data/workspace-invest/portfolio/_runs/20261009T221521Z-company_mc-3ebb0c-paths.npz",
+     "NET": "/data/workspace-invest/portfolio/_runs/20261009T221422Z-company_mc-bbf4f4-paths.npz",
+     "ASTS": "/data/workspace-invest/portfolio/_runs/20260925T203839Z-company_mc-466cbd-paths.npz",
+     "CRWV": "/data/workspace-invest/portfolio/_runs/20260925T203955Z-company_mc-e9208b-paths.npz",
+     "RKLB": "/data/workspace-invest/portfolio/_runs/20260925T202554Z-company_mc-685099-paths.npz",
+     "NVDA": "/data/workspace-invest/portfolio/_runs/20260925T202253Z-company_mc-7b00b3-paths.npz",
+     "MSFT": "/data/workspace-invest/portfolio/_runs/20261009T221305Z-company_mc-f70e89-paths.npz",
+     "META": "/data/workspace-invest/portfolio/_runs/20260925T202910Z-company_mc-9ea02b-paths.npz",
+     "ASML": "/data/workspace-invest/portfolio/_runs/20260925T203149Z-company_mc-85292a-paths.npz",
+     "NBIS": "/data/workspace-invest/portfolio/_runs/20260925T202109Z-company_mc-d77132-paths.npz",
+     "ETN": "/data/workspace-invest/portfolio/_runs/20261009T221201Z-company_mc-95e4af-paths.npz",
+     "SPOT": "/data/workspace-invest/portfolio/_runs/20260925T204147Z-company_mc-99c133-paths.npz",
+     "SPCX": "/data/workspace-invest/portfolio/_runs/20260925T201905Z-company_mc-b0ff51-paths.npz",
+     "HPS.A": "/data/workspace-invest/portfolio/_runs/20261004T065841Z-company_mc-79cfef-paths.npz",
+     "S": "/data/workspace-invest/portfolio/_runs/20261003T214208Z-company_mc-f31a4e-paths.npz",
+     "CRWD": "/data/workspace-invest/portfolio/_runs/20261003T214015Z-company_mc-4194fb-paths.npz"
+    }
+   }
+  ],
+  "base_paths_files": {
+   "HOOD": "/data/workspace-invest/portfolio/_runs/20260924T074150Z-company_mc-038894-paths.npz",
+   "LLY": "/data/workspace-invest/portfolio/_runs/20260924T074630Z-company_mc-89318c-paths.npz",
+   "PLTR": "/data/workspace-invest/portfolio/_runs/20261009T220100Z-company_mc-7dda6e-paths.npz",
+   "NET": "/data/workspace-invest/portfolio/_runs/20261009T215855Z-company_mc-b7d3ef-paths.npz",
+   "ASTS": "/data/workspace-invest/portfolio/_runs/20260925T082018Z-company_mc-17e2e2-paths.npz",
+   "CRWV": "/data/workspace-invest/portfolio/_runs/20260925T115341Z-company_mc-a1b31f-paths.npz",
+   "RKLB": "/data/workspace-invest/portfolio/_runs/20260925T130337Z-company_mc-8c5da8-paths.npz",
+   "NVDA": "/data/workspace-invest/portfolio/_runs/20260925T130452Z-company_mc-edb3bb-paths.npz",
+   "MSFT": "/data/workspace-invest/portfolio/_runs/20261009T215606Z-company_mc-bd34f8-paths.npz",
+   "META": "/data/workspace-invest/portfolio/_runs/20260925T131401Z-company_mc-24fee7-paths.npz",
+   "ASML": "/data/workspace-invest/portfolio/_runs/20260925T131715Z-company_mc-d0c0a0-paths.npz",
+   "NBIS": "/data/workspace-invest/portfolio/_runs/20260925T125909Z-company_mc-d5e46a-paths.npz",
+   "ETN": "/data/workspace-invest/portfolio/_runs/20261009T215315Z-company_mc-2c5b1f-paths.npz",
+   "SPOT": "/data/workspace-invest/portfolio/_runs/20260925T133257Z-company_mc-ca4799-paths.npz",
+   "SPCX": "/data/workspace-invest/portfolio/_runs/20260925T201435Z-company_mc-ad0175-paths.npz",
+   "HPS.A": "/data/workspace-invest/portfolio/_runs/20261004T064913Z-company_mc-001f6b-paths.npz",
+   "S": "/data/workspace-invest/portfolio/_runs/20261004T065334Z-company_mc-3aa543-paths.npz",
+   "CRWD": "/data/workspace-invest/portfolio/_runs/20261004T065128Z-company_mc-7d7c0b-paths.npz"
+  }
+ },
+ "fixed_opt": {
+  "GLD": 0.022,
+  "UFO": 0.0017
+ },
+ "variants": {
+  "current": {
+   "weights": {
+    "ASML": 0.0277,
+    "ASTS": 0.0102,
+    "CRWV": 0.0049,
+    "ETN": 0.0116,
+    "HOOD": 0.1423,
+    "LLY": 0.0822,
+    "META": 0.0547,
+    "MSFT": 0.019,
+    "NBIS": 0.3303,
+    "NET": 0.0177,
+    "NVDA": 0.213,
+    "PLTR": 0.0175,
+    "RKLB": 0.0226,
+    "SPCX": 0.0067,
+    "SPOT": 0.0112
+   },
+   "dry_powder": 0.0047,
+   "positions_count": 15,
+   "mixture_Y5": {
+    "median_CAGR": 0.20773714327531279,
+    "P_2x": 0.70675155,
+    "P_loss_gt_30pct": 0.002594160000000001,
+    "P_loss_gt_50pct": 0.00019970000000000008,
+    "expected_shortfall_5pct": 0.017961330773820148,
+    "CAGR_quantiles": {
+     "0.05": 0.04114301427400324,
+     "0.25": 0.13530087906151134,
+     "0.5": 0.20773714327531279,
+     "0.75": 0.2884515208837699,
+     "0.95": 0.4145385377198816
+    }
+   },
+   "violations": [
+    {
+     "constraint": "cardinality:positions_max",
+     "value": 15,
+     "bound": 8,
+     "excess": 0.07980000000000001
+    },
+    {
+     "constraint": "min_position_weight:ASML",
+     "value": 0.0277,
+     "bound": 0.03,
+     "excess": 0.0023
+    },
+    {
+     "constraint": "min_position_weight:ASTS",
+     "value": 0.0102,
+     "bound": 0.03,
+     "excess": 0.019799999999999998
+    },
+    {
+     "constraint": "min_position_weight:CRWV",
+     "value": 0.0049,
+     "bound": 0.03,
+     "excess": 0.025099999999999997
+    },
+    {
+     "constraint": "min_position_weight:ETN",
+     "value": 0.0116,
+     "bound": 0.03,
+     "excess": 0.0184
+    },
+    {
+     "constraint": "min_position_weight:MSFT",
+     "value": 0.019,
+     "bound": 0.03,
+     "excess": 0.011
+    },
+    {
+     "constraint": "min_position_weight:NET",
+     "value": 0.0177,
+     "bound": 0.03,
+     "excess": 0.012299999999999998
+    },
+    {
+     "constraint": "min_position_weight:PLTR",
+     "value": 0.0175,
+     "bound": 0.03,
+     "excess": 0.012499999999999997
+    },
+    {
+     "constraint": "min_position_weight:RKLB",
+     "value": 0.0226,
+     "bound": 0.03,
+     "excess": 0.0074
+    },
+    {
+     "constraint": "min_position_weight:SPCX",
+     "value": 0.0067,
+     "bound": 0.03,
+     "excess": 0.023299999999999998
+    },
+    {
+     "constraint": "min_position_weight:SPOT",
+     "value": 0.0112,
+     "bound": 0.03,
+     "excess": 0.018799999999999997
+    },
+    {
+     "constraint": "per_name_cap:HOOD",
+     "value": 0.1423,
+     "bound": 0.0951,
+     "excess": 0.047200000000000006
+    },
+    {
+     "constraint": "per_name_cap:NBIS",
+     "value": 0.3303,
+     "bound": 0.2947,
+     "excess": 0.035599999999999965
+    },
+    {
+     "constraint": "per_name_cap:NVDA",
+     "value": 0.213,
+     "bound": 0.1412,
+     "excess": 0.0718
+    },
+    {
+     "constraint": "top3_aggregate_max",
+     "value": 0.6856,
+     "bound": 0.5,
+     "excess": 0.1856
+    },
+    {
+     "constraint": "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+     "value": 0.5523999999999999,
+     "bound": 0.35,
+     "excess": 0.2023999999999999
+    },
+    {
+     "constraint": "common_cause_max:AI_OVERBUILD",
+     "value": 0.48029999999999995,
+     "bound": 0.35,
+     "excess": 0.13029999999999997
+    },
+    {
+     "constraint": "common_cause_max:AI_CLOUD_CUSTOMER_FINANCING_STRESS",
+     "value": 0.42674999999999996,
+     "bound": 0.35,
+     "excess": 0.07674999999999998
+    },
+    {
+     "constraint": "dry_powder_min:Stress",
+     "value": 0.0047,
+     "bound": 0.05,
+     "excess": 0.0453
+    }
+   ],
+   "optimized": null
+  },
+  "T_v1.0": {
+   "weights": {
+    "CRWV": 0.105,
+    "LLY": 0.14,
+    "NBIS": 0.215,
+    "NVDA": 0.11,
+    "RKLB": 0.075,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1963,
+   "positions_count": 6,
+   "mixture_Y5": {
+    "median_CAGR": 0.20752928232936263,
+    "P_2x": 0.76888447,
+    "P_loss_gt_30pct": 4.550000000000001e-06,
+    "P_loss_gt_50pct": 0.0,
+    "expected_shortfall_5pct": 0.33476239548147724,
+    "CAGR_quantiles": {
+     "0.05": 0.08489971843883537,
+     "0.25": 0.1532892284487657,
+     "0.5": 0.20752928232936263,
+     "0.75": 0.2680320042640756,
+     "0.95": 0.364725543884475
+    }
+   },
+   "violations": [],
+   "optimized": null
+  },
+  "U18": {
+   "weights": {
+    "CRWV": 0.105,
+    "HPS.A": 0.12,
+    "LLY": 0.095,
+    "NBIS": 0.195,
+    "NVDA": 0.125,
+    "RKLB": 0.03,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1713,
+   "positions_count": 7,
+   "mixture_Y5": {
+    "median_CAGR": 0.21307720834414723,
+    "P_2x": 0.7911442900000001,
+    "P_loss_gt_30pct": 9.400000000000003e-06,
+    "P_loss_gt_50pct": 0.0,
+    "expected_shortfall_5pct": 0.3429094190994525,
+    "CAGR_quantiles": {
+     "0.05": 0.08817196016658979,
+     "0.25": 0.15908410504699755,
+     "0.5": 0.21307720834414723,
+     "0.75": 0.2717434451372347,
+     "0.95": 0.3640003404723646
+    }
+   },
+   "violations": [],
+   "optimized": {
+    "universe": [
+     "ASML",
+     "ASTS",
+     "CRWD",
+     "CRWV",
+     "ETN",
+     "HOOD",
+     "HPS.A",
+     "LLY",
+     "META",
+     "MSFT",
+     "NBIS",
+     "NET",
+     "NVDA",
+     "PLTR",
+     "RKLB",
+     "S",
+     "SPCX",
+     "SPOT"
+    ],
+    "excluded_from_universe": {},
+    "mixture": {
+     "weights": {
+      "CRWV": 0.105,
+      "HPS.A": 0.12,
+      "LLY": 0.095,
+      "NBIS": 0.195,
+      "NVDA": 0.125,
+      "RKLB": 0.03,
+      "SPOT": 0.135
+     },
+     "dry_powder": 0.1713,
+     "feasible": true,
+     "start_used": "given",
+     "median_CAGR_5Y": 0.21309442621722585,
+     "ES5": 0.3432784816201107,
+     "P_loss_gt_30pct": 1e-05,
+     "binding_constraints": [
+      "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+      "min_position_weight:RKLB",
+      "per_name_cap:CRWV",
+      "per_name_cap:SPOT"
+     ],
+     "violations_at_optimum": [],
+     "turnover_from_current": 0.5307,
+     "search": {
+      "random_starts": 0,
+      "basin_kicks": 0,
+      "exploration_paths": null,
+      "polish_top": 3,
+      "standard_starts": [
+       "current",
+       "equal",
+       "empty",
+       "given"
+      ],
+      "best_source": "given",
+      "improvement_vs_standard_pp": 0.0
+     },
+     "cardinality": {
+      "positions_count": 7,
+      "positions_min": 6,
+      "positions_max": 8,
+      "min_position_weight": 0.03,
+      "below_min": [],
+      "zeroed": [
+       "ASML",
+       "ASTS",
+       "CRWD",
+       "ETN",
+       "HOOD",
+       "META",
+       "MSFT",
+       "NET",
+       "PLTR",
+       "S",
+       "SPCX"
+      ],
+      "excluded_from_count": [
+       "GLD",
+       "UFO"
+      ],
+      "binding": [
+       "min_position_weight:RKLB"
+      ]
+     },
+     "theme_lookthrough": {
+      "policy_id": "AI_THEME_NOT_INCREASE_V1",
+      "aggregate_id": "AI_TOTAL",
+      "binding_basis": "revenue",
+      "value_at_optimum": 0.4119880963409604,
+      "value_at_current": 0.5365580697215558,
+      "baseline_value": 0.5365580697215557,
+      "baseline_status": "MATERIALIZED",
+      "tolerance": 1e-06,
+      "status": "pass",
+      "binding": false
+     }
+    },
+    "by_scenario": {
+     "BASE": {
+      "weights": {
+       "CRWV": 0.105,
+       "HPS.A": 0.13,
+       "LLY": 0.12,
+       "NBIS": 0.215,
+       "NVDA": 0.11,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1613,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.2272356274966998,
+      "ES5": 0.49786075096951404,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "cardinality:positions_min",
+       "common_cause_max:ACQUISITION_INTEGRATION_FAILURE",
+       "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+       "per_name_cap:CRWV",
+       "per_name_cap:HPS.A",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5483,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 6,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "ASTS",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "META",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "RKLB",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "cardinality:positions_min"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.4177347099652303,
+       "value_at_current": 0.5365580697215558,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "TAIWAN_SEIZURE": {
+      "weights": {
+       "ASTS": 0.065,
+       "CRWV": 0.105,
+       "LLY": 0.14,
+       "NBIS": 0.19,
+       "NVDA": 0.065,
+       "RKLB": 0.08,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1963,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.14966693291230182,
+      "ES5": 0.1056242656035775,
+      "P_loss_gt_30pct": 1.2e-05,
+      "binding_constraints": [
+       "per_name_cap:CRWV",
+       "per_name_cap:LLY",
+       "per_name_cap:RKLB",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5855,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 7,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "HPS.A",
+        "META",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": []
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.3515703863048434,
+       "value_at_current": 0.5365580697215558,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "CHIP_COLD_WAR": {
+      "weights": {
+       "ASTS": 0.03,
+       "CRWV": 0.105,
+       "HPS.A": 0.13,
+       "LLY": 0.12,
+       "NBIS": 0.215,
+       "NVDA": 0.11,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1313,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.24435621266063778,
+      "ES5": 0.5475797386005253,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "common_cause_max:ACQUISITION_INTEGRATION_FAILURE",
+       "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+       "min_position_weight:ASTS",
+       "per_name_cap:CRWV",
+       "per_name_cap:HPS.A",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5381,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 7,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "META",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "RKLB",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "min_position_weight:ASTS"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.4177347099652303,
+       "value_at_current": 0.5365580697215558,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "TAIWAN_QUARANTINE": {
+      "weights": {
+       "ASTS": 0.03,
+       "CRWV": 0.105,
+       "HPS.A": 0.06,
+       "LLY": 0.14,
+       "NBIS": 0.185,
+       "NVDA": 0.125,
+       "RKLB": 0.03,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1663,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.1903639864439729,
+      "ES5": 0.30409112024866464,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "cardinality:positions_max",
+       "min_position_weight:ASTS",
+       "min_position_weight:RKLB",
+       "per_name_cap:CRWV",
+       "per_name_cap:LLY",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5305,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 8,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "META",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "cardinality:positions_max",
+        "min_position_weight:ASTS",
+        "min_position_weight:RKLB"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.4021758416899961,
+       "value_at_current": 0.5365580697215558,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     }
+    },
+    "conditional": {},
+    "weights_by_scenario": {
+     "ASML": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "ASTS": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.065,
+      "CHIP_COLD_WAR": 0.03,
+      "TAIWAN_QUARANTINE": 0.03
+     },
+     "CRWD": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "CRWV": {
+      "mixture": 0.105,
+      "BASE": 0.105,
+      "TAIWAN_SEIZURE": 0.105,
+      "CHIP_COLD_WAR": 0.105,
+      "TAIWAN_QUARANTINE": 0.105
+     },
+     "ETN": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "HOOD": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "HPS.A": {
+      "mixture": 0.12,
+      "BASE": 0.13,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.13,
+      "TAIWAN_QUARANTINE": 0.06
+     },
+     "LLY": {
+      "mixture": 0.095,
+      "BASE": 0.12,
+      "TAIWAN_SEIZURE": 0.14,
+      "CHIP_COLD_WAR": 0.12,
+      "TAIWAN_QUARANTINE": 0.14
+     },
+     "META": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "MSFT": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "NBIS": {
+      "mixture": 0.195,
+      "BASE": 0.215,
+      "TAIWAN_SEIZURE": 0.19,
+      "CHIP_COLD_WAR": 0.215,
+      "TAIWAN_QUARANTINE": 0.185
+     },
+     "NET": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "NVDA": {
+      "mixture": 0.125,
+      "BASE": 0.11,
+      "TAIWAN_SEIZURE": 0.065,
+      "CHIP_COLD_WAR": 0.11,
+      "TAIWAN_QUARANTINE": 0.125
+     },
+     "PLTR": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "RKLB": {
+      "mixture": 0.03,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.08,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.03
+     },
+     "S": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "SPCX": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "SPOT": {
+      "mixture": 0.135,
+      "BASE": 0.135,
+      "TAIWAN_SEIZURE": 0.135,
+      "CHIP_COLD_WAR": 0.135,
+      "TAIWAN_QUARANTINE": 0.135
+     }
+    },
+    "dry_powder_by_scenario": {
+     "mixture": 0.1713,
+     "BASE": 0.1613,
+     "TAIWAN_SEIZURE": 0.1963,
+     "CHIP_COLD_WAR": 0.1313,
+     "TAIWAN_QUARANTINE": 0.1663
+    }
+   }
+  },
+  "U15_held": {
+   "weights": {
+    "ASTS": 0.03,
+    "CRWV": 0.105,
+    "LLY": 0.14,
+    "NBIS": 0.215,
+    "NVDA": 0.11,
+    "RKLB": 0.045,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1963,
+   "positions_count": 7,
+   "mixture_Y5": {
+    "median_CAGR": 0.20764924257920936,
+    "P_2x": 0.7695760600000001,
+    "P_loss_gt_30pct": 2.8000000000000007e-06,
+    "P_loss_gt_50pct": 0.0,
+    "expected_shortfall_5pct": 0.33640840166310926,
+    "CAGR_quantiles": {
+     "0.05": 0.08504333978376821,
+     "0.25": 0.15344746309740054,
+     "0.5": 0.20764924257920936,
+     "0.75": 0.2681481393301952,
+     "0.95": 0.3647877738081482
+    }
+   },
+   "violations": [],
+   "optimized": {
+    "universe": [
+     "ASML",
+     "ASTS",
+     "CRWV",
+     "ETN",
+     "HOOD",
+     "LLY",
+     "META",
+     "MSFT",
+     "NBIS",
+     "NET",
+     "NVDA",
+     "PLTR",
+     "RKLB",
+     "SPCX",
+     "SPOT"
+    ],
+    "excluded_from_universe": {},
+    "mixture": {
+     "weights": {
+      "ASTS": 0.03,
+      "CRWV": 0.105,
+      "LLY": 0.14,
+      "NBIS": 0.215,
+      "NVDA": 0.11,
+      "RKLB": 0.045,
+      "SPOT": 0.135
+     },
+     "dry_powder": 0.1963,
+     "feasible": true,
+     "start_used": "given",
+     "median_CAGR_5Y": 0.20760836990731812,
+     "ES5": 0.33652026481420777,
+     "P_loss_gt_30pct": 8e-06,
+     "binding_constraints": [
+      "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+      "min_position_weight:ASTS",
+      "per_name_cap:CRWV",
+      "per_name_cap:LLY",
+      "per_name_cap:SPOT"
+     ],
+     "violations_at_optimum": [],
+     "turnover_from_current": 0.5155,
+     "search": {
+      "random_starts": 0,
+      "basin_kicks": 0,
+      "exploration_paths": null,
+      "polish_top": 3,
+      "standard_starts": [
+       "current",
+       "equal",
+       "empty",
+       "given"
+      ],
+      "best_source": "given",
+      "improvement_vs_standard_pp": 0.0
+     },
+     "cardinality": {
+      "positions_count": 7,
+      "positions_min": 6,
+      "positions_max": 8,
+      "min_position_weight": 0.03,
+      "below_min": [],
+      "zeroed": [
+       "ASML",
+       "ETN",
+       "HOOD",
+       "META",
+       "MSFT",
+       "NET",
+       "PLTR",
+       "SPCX"
+      ],
+      "excluded_from_count": [
+       "GLD",
+       "UFO"
+      ],
+      "binding": [
+       "min_position_weight:ASTS"
+      ]
+     },
+     "theme_lookthrough": {
+      "policy_id": "AI_THEME_NOT_INCREASE_V1",
+      "aggregate_id": "AI_TOTAL",
+      "binding_basis": "revenue",
+      "value_at_optimum": 0.4177347099652304,
+      "value_at_current": 0.5365580697215557,
+      "baseline_value": 0.5365580697215557,
+      "baseline_status": "MATERIALIZED",
+      "tolerance": 1e-06,
+      "status": "pass",
+      "binding": false
+     }
+    },
+    "by_scenario": {
+     "BASE": {
+      "weights": {
+       "ASTS": 0.03,
+       "CRWV": 0.105,
+       "LLY": 0.14,
+       "NBIS": 0.215,
+       "NVDA": 0.11,
+       "RKLB": 0.045,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1963,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.2164502757076493,
+      "ES5": 0.4596428647271062,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+       "min_position_weight:ASTS",
+       "per_name_cap:CRWV",
+       "per_name_cap:LLY",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5155,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 7,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "ETN",
+        "HOOD",
+        "META",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "min_position_weight:ASTS"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.4177347099652304,
+       "value_at_current": 0.5365580697215557,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "TAIWAN_SEIZURE": {
+      "weights": {
+       "ASTS": 0.03,
+       "CRWV": 0.105,
+       "LLY": 0.14,
+       "META": 0.05,
+       "NBIS": 0.18,
+       "NVDA": 0.06,
+       "RKLB": 0.08,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1963,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.14822681483625155,
+      "ES5": 0.1160305757465077,
+      "P_loss_gt_30pct": 8e-06,
+      "binding_constraints": [
+       "cardinality:positions_max",
+       "min_position_weight:ASTS",
+       "per_name_cap:CRWV",
+       "per_name_cap:LLY",
+       "per_name_cap:RKLB",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5505,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 8,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "ETN",
+        "HOOD",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "cardinality:positions_max",
+        "min_position_weight:ASTS"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.33713216642799276,
+       "value_at_current": 0.5365580697215557,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "CHIP_COLD_WAR": {
+      "weights": {
+       "ASTS": 0.03,
+       "CRWV": 0.105,
+       "LLY": 0.14,
+       "NBIS": 0.215,
+       "NVDA": 0.11,
+       "RKLB": 0.06,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1813,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.2274755887492561,
+      "ES5": 0.48732620875207305,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+       "min_position_weight:ASTS",
+       "per_name_cap:CRWV",
+       "per_name_cap:LLY",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5155,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 7,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "ETN",
+        "HOOD",
+        "META",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "min_position_weight:ASTS"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.4177347099652304,
+       "value_at_current": 0.5365580697215557,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "TAIWAN_QUARANTINE": {
+      "weights": {
+       "ASTS": 0.03,
+       "CRWV": 0.105,
+       "LLY": 0.14,
+       "META": 0.065,
+       "NBIS": 0.17,
+       "NVDA": 0.095,
+       "RKLB": 0.04,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1963,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.1814856013288204,
+      "ES5": 0.30397414728736627,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "cardinality:positions_max",
+       "common_cause_max:TAIWAN_SUPPLY_DISRUPTION",
+       "min_position_weight:ASTS",
+       "per_name_cap:CRWV",
+       "per_name_cap:LLY",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5208,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 8,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "ETN",
+        "HOOD",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "cardinality:positions_max",
+        "min_position_weight:ASTS"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.35970166835823214,
+       "value_at_current": 0.5365580697215557,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     }
+    },
+    "conditional": {},
+    "weights_by_scenario": {
+     "ASML": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "ASTS": {
+      "mixture": 0.03,
+      "BASE": 0.03,
+      "TAIWAN_SEIZURE": 0.03,
+      "CHIP_COLD_WAR": 0.03,
+      "TAIWAN_QUARANTINE": 0.03
+     },
+     "CRWV": {
+      "mixture": 0.105,
+      "BASE": 0.105,
+      "TAIWAN_SEIZURE": 0.105,
+      "CHIP_COLD_WAR": 0.105,
+      "TAIWAN_QUARANTINE": 0.105
+     },
+     "ETN": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "HOOD": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "LLY": {
+      "mixture": 0.14,
+      "BASE": 0.14,
+      "TAIWAN_SEIZURE": 0.14,
+      "CHIP_COLD_WAR": 0.14,
+      "TAIWAN_QUARANTINE": 0.14
+     },
+     "META": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.05,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.065
+     },
+     "MSFT": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "NBIS": {
+      "mixture": 0.215,
+      "BASE": 0.215,
+      "TAIWAN_SEIZURE": 0.18,
+      "CHIP_COLD_WAR": 0.215,
+      "TAIWAN_QUARANTINE": 0.17
+     },
+     "NET": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "NVDA": {
+      "mixture": 0.11,
+      "BASE": 0.11,
+      "TAIWAN_SEIZURE": 0.06,
+      "CHIP_COLD_WAR": 0.11,
+      "TAIWAN_QUARANTINE": 0.095
+     },
+     "PLTR": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "RKLB": {
+      "mixture": 0.045,
+      "BASE": 0.045,
+      "TAIWAN_SEIZURE": 0.08,
+      "CHIP_COLD_WAR": 0.06,
+      "TAIWAN_QUARANTINE": 0.04
+     },
+     "SPCX": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "SPOT": {
+      "mixture": 0.135,
+      "BASE": 0.135,
+      "TAIWAN_SEIZURE": 0.135,
+      "CHIP_COLD_WAR": 0.135,
+      "TAIWAN_QUARANTINE": 0.135
+     }
+    },
+    "dry_powder_by_scenario": {
+     "mixture": 0.1963,
+     "BASE": 0.1963,
+     "TAIWAN_SEIZURE": 0.1963,
+     "CHIP_COLD_WAR": 0.1813,
+     "TAIWAN_QUARANTINE": 0.1963
+    }
+   }
+  },
+  "U_noNBIS": {
+   "weights": {
+    "CRWV": 0.105,
+    "ETN": 0.03,
+    "HPS.A": 0.13,
+    "LLY": 0.125,
+    "META": 0.1,
+    "NVDA": 0.14,
+    "RKLB": 0.03,
+    "SPOT": 0.135
+   },
+   "dry_powder": 0.1813,
+   "positions_count": 8,
+   "mixture_Y5": {
+    "median_CAGR": 0.153282918347188,
+    "P_2x": 0.53130438,
+    "P_loss_gt_30pct": 3.600000000000001e-06,
+    "P_loss_gt_50pct": 0.0,
+    "expected_shortfall_5pct": 0.23166899692838774,
+    "CAGR_quantiles": {
+     "0.05": 0.06315034387963592,
+     "0.25": 0.11491575468958559,
+     "0.5": 0.153282918347188,
+     "0.75": 0.19464694216743994,
+     "0.95": 0.25994975378099827
+    }
+   },
+   "violations": [],
+   "optimized": {
+    "universe": [
+     "ASML",
+     "ASTS",
+     "CRWD",
+     "CRWV",
+     "ETN",
+     "HOOD",
+     "HPS.A",
+     "LLY",
+     "META",
+     "MSFT",
+     "NET",
+     "NVDA",
+     "PLTR",
+     "RKLB",
+     "S",
+     "SPCX",
+     "SPOT"
+    ],
+    "excluded_from_universe": {
+     "NBIS": 0.3303
+    },
+    "mixture": {
+     "weights": {
+      "CRWV": 0.105,
+      "ETN": 0.03,
+      "HPS.A": 0.13,
+      "LLY": 0.125,
+      "META": 0.1,
+      "NVDA": 0.14,
+      "RKLB": 0.03,
+      "SPOT": 0.135
+     },
+     "dry_powder": 0.1813,
+     "feasible": true,
+     "start_used": "given",
+     "median_CAGR_5Y": 0.1532548690859159,
+     "ES5": 0.23115319332607637,
+     "P_loss_gt_30pct": 4e-06,
+     "binding_constraints": [
+      "cardinality:positions_max",
+      "min_position_weight:ETN",
+      "min_position_weight:RKLB",
+      "per_name_cap:CRWV",
+      "per_name_cap:HPS.A",
+      "per_name_cap:NVDA",
+      "per_name_cap:SPOT"
+     ],
+     "violations_at_optimum": [],
+     "turnover_from_current": 0.4678,
+     "search": {
+      "random_starts": 0,
+      "basin_kicks": 0,
+      "exploration_paths": null,
+      "polish_top": 3,
+      "standard_starts": [
+       "current",
+       "equal",
+       "empty",
+       "given"
+      ],
+      "best_source": "given",
+      "improvement_vs_standard_pp": 0.0
+     },
+     "cardinality": {
+      "positions_count": 8,
+      "positions_min": 6,
+      "positions_max": 8,
+      "min_position_weight": 0.03,
+      "below_min": [],
+      "zeroed": [
+       "ASML",
+       "ASTS",
+       "CRWD",
+       "HOOD",
+       "MSFT",
+       "NET",
+       "PLTR",
+       "S",
+       "SPCX"
+      ],
+      "excluded_from_count": [
+       "GLD",
+       "UFO"
+      ],
+      "binding": [
+       "cardinality:positions_max",
+       "min_position_weight:ETN",
+       "min_position_weight:RKLB"
+      ]
+     },
+     "theme_lookthrough": {
+      "policy_id": "AI_THEME_NOT_INCREASE_V1",
+      "aggregate_id": "AI_TOTAL",
+      "binding_basis": "revenue",
+      "value_at_optimum": 0.23452702632481476,
+      "value_at_current": 0.212459298600204,
+      "baseline_value": 0.5365580697215557,
+      "baseline_status": "MATERIALIZED",
+      "tolerance": 1e-06,
+      "status": "pass",
+      "binding": false
+     }
+    },
+    "by_scenario": {
+     "BASE": {
+      "weights": {
+       "CRWV": 0.105,
+       "HPS.A": 0.13,
+       "LLY": 0.135,
+       "META": 0.13,
+       "MSFT": 0.035,
+       "NVDA": 0.14,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1663,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.16319442573870357,
+      "ES5": 0.35366933848400584,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "min_position_weight:MSFT",
+       "per_name_cap:CRWV",
+       "per_name_cap:HPS.A",
+       "per_name_cap:NVDA",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.498,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 7,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "ASTS",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "NET",
+        "PLTR",
+        "RKLB",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "min_position_weight:MSFT"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.24981150419875786,
+       "value_at_current": 0.212459298600204,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "TAIWAN_SEIZURE": {
+      "weights": {
+       "ASTS": 0.035,
+       "CRWV": 0.105,
+       "HPS.A": 0.12,
+       "LLY": 0.14,
+       "META": 0.09,
+       "MSFT": 0.075,
+       "RKLB": 0.08,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1963,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.10725029317367907,
+      "ES5": 0.09335548460403334,
+      "P_loss_gt_30pct": 6e-06,
+      "binding_constraints": [
+       "cardinality:positions_max",
+       "min_position_weight:ASTS",
+       "per_name_cap:CRWV",
+       "per_name_cap:LLY",
+       "per_name_cap:RKLB",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.5752,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 8,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "NET",
+        "NVDA",
+        "PLTR",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "cardinality:positions_max",
+        "min_position_weight:ASTS"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.137752452587021,
+       "value_at_current": 0.212459298600204,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "CHIP_COLD_WAR": {
+      "weights": {
+       "CRWV": 0.105,
+       "HPS.A": 0.13,
+       "LLY": 0.14,
+       "META": 0.13,
+       "NVDA": 0.14,
+       "RKLB": 0.03,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1663,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.17720598994501502,
+      "ES5": 0.3839809491891893,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "min_position_weight:RKLB",
+       "per_name_cap:CRWV",
+       "per_name_cap:HPS.A",
+       "per_name_cap:LLY",
+       "per_name_cap:NVDA",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.4944,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 7,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "ASTS",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "MSFT",
+        "NET",
+        "PLTR",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "min_position_weight:RKLB"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.23452702632481476,
+       "value_at_current": 0.212459298600204,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     },
+     "TAIWAN_QUARANTINE": {
+      "weights": {
+       "CRWV": 0.105,
+       "HPS.A": 0.095,
+       "LLY": 0.14,
+       "META": 0.1,
+       "MSFT": 0.035,
+       "NVDA": 0.14,
+       "RKLB": 0.03,
+       "SPOT": 0.135
+      },
+      "dry_powder": 0.1963,
+      "feasible": true,
+      "start_used": "given",
+      "median_CAGR_5Y": 0.13779423464127127,
+      "ES5": 0.21194432265791335,
+      "P_loss_gt_30pct": 0.0,
+      "binding_constraints": [
+       "cardinality:positions_max",
+       "min_position_weight:MSFT",
+       "min_position_weight:RKLB",
+       "per_name_cap:CRWV",
+       "per_name_cap:LLY",
+       "per_name_cap:NVDA",
+       "per_name_cap:SPOT"
+      ],
+      "violations_at_optimum": [],
+      "turnover_from_current": 0.4454,
+      "search": {
+       "random_starts": 0,
+       "basin_kicks": 0,
+       "exploration_paths": null,
+       "polish_top": 3,
+       "standard_starts": [
+        "current",
+        "equal",
+        "empty",
+        "given"
+       ],
+       "best_source": "given",
+       "improvement_vs_standard_pp": 0.0
+      },
+      "cardinality": {
+       "positions_count": 8,
+       "positions_min": 6,
+       "positions_max": 8,
+       "min_position_weight": 0.03,
+       "below_min": [],
+       "zeroed": [
+        "ASML",
+        "ASTS",
+        "CRWD",
+        "ETN",
+        "HOOD",
+        "NET",
+        "PLTR",
+        "S",
+        "SPCX"
+       ],
+       "excluded_from_count": [
+        "GLD",
+        "UFO"
+       ],
+       "binding": [
+        "cardinality:positions_max",
+        "min_position_weight:MSFT",
+        "min_position_weight:RKLB"
+       ]
+      },
+      "theme_lookthrough": {
+       "policy_id": "AI_THEME_NOT_INCREASE_V1",
+       "aggregate_id": "AI_TOTAL",
+       "binding_basis": "revenue",
+       "value_at_optimum": 0.24981150419875786,
+       "value_at_current": 0.212459298600204,
+       "baseline_value": 0.5365580697215557,
+       "baseline_status": "MATERIALIZED",
+       "tolerance": 1e-06,
+       "status": "pass",
+       "binding": false
+      }
+     }
+    },
+    "conditional": {},
+    "weights_by_scenario": {
+     "ASML": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "ASTS": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.035,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "CRWD": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "CRWV": {
+      "mixture": 0.105,
+      "BASE": 0.105,
+      "TAIWAN_SEIZURE": 0.105,
+      "CHIP_COLD_WAR": 0.105,
+      "TAIWAN_QUARANTINE": 0.105
+     },
+     "ETN": {
+      "mixture": 0.03,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "HOOD": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "HPS.A": {
+      "mixture": 0.13,
+      "BASE": 0.13,
+      "TAIWAN_SEIZURE": 0.12,
+      "CHIP_COLD_WAR": 0.13,
+      "TAIWAN_QUARANTINE": 0.095
+     },
+     "LLY": {
+      "mixture": 0.125,
+      "BASE": 0.135,
+      "TAIWAN_SEIZURE": 0.14,
+      "CHIP_COLD_WAR": 0.14,
+      "TAIWAN_QUARANTINE": 0.14
+     },
+     "META": {
+      "mixture": 0.1,
+      "BASE": 0.13,
+      "TAIWAN_SEIZURE": 0.09,
+      "CHIP_COLD_WAR": 0.13,
+      "TAIWAN_QUARANTINE": 0.1
+     },
+     "MSFT": {
+      "mixture": 0.0,
+      "BASE": 0.035,
+      "TAIWAN_SEIZURE": 0.075,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.035
+     },
+     "NET": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "NVDA": {
+      "mixture": 0.14,
+      "BASE": 0.14,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.14,
+      "TAIWAN_QUARANTINE": 0.14
+     },
+     "PLTR": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "RKLB": {
+      "mixture": 0.03,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.08,
+      "CHIP_COLD_WAR": 0.03,
+      "TAIWAN_QUARANTINE": 0.03
+     },
+     "S": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "SPCX": {
+      "mixture": 0.0,
+      "BASE": 0.0,
+      "TAIWAN_SEIZURE": 0.0,
+      "CHIP_COLD_WAR": 0.0,
+      "TAIWAN_QUARANTINE": 0.0
+     },
+     "SPOT": {
+      "mixture": 0.135,
+      "BASE": 0.135,
+      "TAIWAN_SEIZURE": 0.135,
+      "CHIP_COLD_WAR": 0.135,
+      "TAIWAN_QUARANTINE": 0.135
+     }
+    },
+    "dry_powder_by_scenario": {
+     "mixture": 0.1813,
+     "BASE": 0.1663,
+     "TAIWAN_SEIZURE": 0.1963,
+     "CHIP_COLD_WAR": 0.1663,
+     "TAIWAN_QUARANTINE": 0.1963
+    }
+   }
+  }
+ }
+}
