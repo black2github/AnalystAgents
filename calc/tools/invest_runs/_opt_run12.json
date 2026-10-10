@@ -2134,5 +2134,549 @@
     }
    }
   }
+ },
+ "stability_U18": {
+  "run_id": "20261010T012536Z-portfolio_stability-e49b9b",
+  "classification": {
+   "class": "structurally_stable",
+   "criteria": {
+    "hard_constraint_feasibility": {
+     "value": 0.9984,
+     "limit": 0.95,
+     "pass": true
+    },
+    "median_turnover_from_central": {
+     "value": 0.075,
+     "limit": 0.25,
+     "pass": true
+    },
+    "p90_turnover_from_central": {
+     "value": 0.145,
+     "limit": 0.5,
+     "pass": true
+    },
+    "driver_knockout_feasible_replacement": {
+     "value": null,
+     "pass": null,
+     "status": "not_evaluated (driver knockout requires stability.resimulate)"
+    },
+    "median_5y_cagr_sign_flip_fraction": {
+     "value": 0.0,
+     "limit": 0.2,
+     "pass": true
+    }
+   },
+   "criteria_not_evaluated": [
+    "driver_knockout_feasible_replacement"
+   ]
+  },
+  "feasibility_rate": 0.9984,
+  "companies": {
+   "ASML": {
+    "class": "excluded_at_central",
+    "central_weight": 0.0,
+    "inclusion_frequency": 0.0,
+    "note": "центральный вес < 1 % — критерии веса не применяются (§6); частота включения показывает, входит ли бумага при возмущениях"
+   },
+   "ASTS": {
+    "class": "conditional",
+    "central_weight": 0.03,
+    "inclusion_frequency": 0.7205,
+    "spread_ok": true,
+    "median_deviation_ok": true,
+    "spread_limit": 0.04,
+    "median_deviation_limit": 0.02,
+    "collapse_to_zero_frequency": 0.2795
+   },
+   "CRWD": {
+    "class": "excluded_at_central",
+    "central_weight": 0.0,
+    "inclusion_frequency": 0.0,
+    "note": "центральный вес < 1 % — критерии веса не применяются (§6); частота включения показывает, входит ли бумага при возмущениях"
+   },
+   "CRWV": {
+    "class": "stable",
+    "central_weight": 0.105,
+    "inclusion_frequency": 1.0,
+    "spread_ok": true,
+    "median_deviation_ok": true,
+    "spread_limit": 0.0525,
+    "median_deviation_limit": 0.0262,
+    "collapse_to_zero_frequency": 0.0
+   },
+   "ETN": {
+    "class": "excluded_at_central",
+    "central_weight": 0.0,
+    "inclusion_frequency": 0.063,
+    "note": "центральный вес < 1 % — критерии веса не применяются (§6); частота включения показывает, входит ли бумага при возмущениях"
+   },
+   "HOOD": {
+    "class": "excluded_at_central",
+    "central_weight": 0.0,
+    "inclusion_frequency": 0.0,
+    "note": "центральный вес < 1 % — критерии веса не применяются (§6); частота включения показывает, входит ли бумага при возмущениях"
+   },
+   "HPS.A": {
+    "class": "conditional",
+    "central_weight": 0.065,
+    "inclusion_frequency": 0.9806,
+    "spread_ok": false,
+    "median_deviation_ok": false,
+    "spread_limit": 0.04,
+    "median_deviation_limit": 0.02,
+    "collapse_to_zero_frequency": 0.0194
+   },
+   "LLY": {
+    "class": "conditional",
+    "central_weight": 0.14,
+    "inclusion_frequency": 0.9871,
+    "spread_ok": false,
+    "median_deviation_ok": true,
+    "spread_limit": 0.07,
+    "median_deviation_limit": 0.035,
+    "collapse_to_zero_frequency": 0.0129
+   },
+   "META": {
+    "class": "excluded_at_central",
+    "central_weight": 0.0,
+    "inclusion_frequency": 0.1147,
+    "note": "центральный вес < 1 % — критерии веса не применяются (§6); частота включения показывает, входит ли бумага при возмущениях"
+   },
+   "MSFT": {
+    "class": "excluded_at_central",
+    "central_weight": 0.0,
+    "inclusion_frequency": 0.0178,
+    "note": "центральный вес < 1 % — критерии веса не применяются (§6); частота включения показывает, входит ли бумага при возмущениях"
+   },
+   "NBIS": {
+    "class": "stable",
+    "central_weight": 0.185,
+    "inclusion_frequency": 1.0,
+    "spread_ok": true,
+    "median_deviation_ok": true,
+    "spread_limit": 0.0925,
+    "median_deviation_limit": 0.0462,
+    "collapse_to_zero_frequency": 0.0
+   },
+   "NET": {
+    "class": "excluded_at_central",
+    "central_weight": 0.0,
+    "inclusion_frequency": 0.0,
+    "note": "центральный вес < 1 % — критерии веса не применяются (§6); частота включения показывает, входит ли бумага при возмущениях"
+   },
+   "NVDA": {
+    "class": "stable",
+    "central_weight": 0.12,
+    "inclusion_frequency": 0.9887,
+    "spread_ok": true,
+    "median_deviation_ok": true,
+    "spread_limit": 0.06,
+    "median_deviation_limit": 0.03,
+    "collapse_to_zero_frequency": 0.0113
+   },
+   "PLTR": {
+    "class": "excluded_at_central",
+    "central_weight": 0.0,
+    "inclusion_frequency": 0.0145,
+    "note": "центральный вес < 1 % — критерии веса не применяются (§6); частота включения показывает, входит ли бумага при возмущениях"
+   },
+   "RKLB": {
+    "class": "conditional",
+    "central_weight": 0.03,
+    "inclusion_frequency": 0.7932,
+    "spread_ok": false,
+    "median_deviation_ok": true,
+    "spread_limit": 0.04,
+    "median_deviation_limit": 0.02,
+    "collapse_to_zero_frequency": 0.2068
+   },
+   "S": {
+    "class": "excluded_at_central",
+    "central_weight": 0.0,
+    "inclusion_frequency": 0.0081,
+    "note": "центральный вес < 1 % — критерии веса не применяются (§6); частота включения показывает, входит ли бумага при возмущениях"
+   },
+   "SPCX": {
+    "class": "excluded_at_central",
+    "central_weight": 0.0,
+    "inclusion_frequency": 0.0,
+    "note": "центральный вес < 1 % — критерии веса не применяются (§6); частота включения показывает, входит ли бумага при возмущениях"
+   },
+   "SPOT": {
+    "class": "stable",
+    "central_weight": 0.135,
+    "inclusion_frequency": 1.0,
+    "spread_ok": true,
+    "median_deviation_ok": true,
+    "spread_limit": 0.0675,
+    "median_deviation_limit": 0.0338,
+    "collapse_to_zero_frequency": 0.0
+   }
+  },
+  "central": {},
+  "scenario_sensitivity": {
+   "status": "evaluated",
+   "central_probabilities": {
+    "TAIWAN_SEIZURE": 0.1,
+    "CHIP_COLD_WAR": 0.07,
+    "TAIWAN_QUARANTINE": 0.175,
+    "BASE": 0.655
+   },
+   "burdens_at_central": {
+    "TAIWAN_SEIZURE": 0.04010054331599775,
+    "CHIP_COLD_WAR": 0.0,
+    "TAIWAN_QUARANTINE": 0.031088524236182916
+   },
+   "max_burden_scenario": "TAIWAN_SEIZURE",
+   "up10_status": "built",
+   "es5_Y5_by_scenario_at_central_weights": {
+    "BASE": 0.48391784651583947,
+    "TAIWAN_SEIZURE": 0.08291241335586197,
+    "CHIP_COLD_WAR": 0.5239598607480666,
+    "TAIWAN_QUARANTINE": 0.3062691365947942
+   },
+   "max_abs_weight_shift_vs_central": 0.015000000000000013,
+   "rule": "§3.3: p_s×0.75 и p_s×1.25 по каждому non-BASE сценарию, затем renormalize всех (включая BASE); up10: сценарий с max B_s (центральные веса) +0.10, у остальных пропорционально; масса доноров < 0.10 → invalid без усечения; после каждого — смесь, ScenarioConcentration и Optimizer"
+  },
+  "loo": {
+   "CRWV": {
+    "feasible": true,
+    "start_used": "given",
+    "capacity": {
+     "lp_max_placeable": 1.446,
+     "required_min_placed": 0.7763,
+     "headroom": 0.6697,
+     "structurally_infeasible": false,
+     "argmax_weights": {
+      "ASML": 0.1058,
+      "ASTS": 0.0833,
+      "CRWD": 0.0,
+      "ETN": 0.1197,
+      "HOOD": 0.0951,
+      "HPS.A": 0.078,
+      "LLY": 0.1435,
+      "META": 0.1358,
+      "MSFT": 0.0672,
+      "NBIS": 0.0,
+      "NET": 0.0844,
+      "NVDA": 0.0236,
+      "PLTR": 0.0952,
+      "RKLB": 0.0839,
+      "S": 0.1032,
+      "SPCX": 0.0911,
+      "SPOT": 0.1362
+     },
+     "note": "оценка сверху без топ-3 и риск-лимитов; structurally_infeasible=true доказывает недопустимость, false её не гарантирует"
+    },
+    "weights": {
+     "ASML": 0.0,
+     "ASTS": 0.03,
+     "CRWD": 0.0,
+     "CRWV": 0.0,
+     "ETN": 0.0,
+     "HOOD": 0.0,
+     "HPS.A": 0.065,
+     "LLY": 0.115,
+     "META": 0.045,
+     "MSFT": 0.0,
+     "NBIS": 0.23,
+     "NET": 0.0,
+     "NVDA": 0.13,
+     "PLTR": 0.0,
+     "RKLB": 0.03,
+     "S": 0.0,
+     "SPCX": 0.0,
+     "SPOT": 0.135
+    },
+    "dry_powder": 0.1963,
+    "median_CAGR_5Y": 0.1867180220475111,
+    "ES5": 0.23645989914746493,
+    "violations": [],
+    "turnover_from_central": 0.13,
+    "median_CAGR_5Y_delta_vs_central": -0.01930587120649463
+   },
+   "HPS.A": {
+    "feasible": true,
+    "start_used": "given",
+    "capacity": {
+     "lp_max_placeable": 1.4322,
+     "required_min_placed": 0.7763,
+     "headroom": 0.6559,
+     "structurally_infeasible": false,
+     "argmax_weights": {
+      "ASML": 0.0101,
+      "ASTS": 0.0833,
+      "CRWD": 0.0672,
+      "CRWV": 0.0,
+      "ETN": 0.1197,
+      "HOOD": 0.0951,
+      "LLY": 0.1435,
+      "META": 0.1358,
+      "MSFT": 0.0,
+      "NBIS": 0.0552,
+      "NET": 0.0844,
+      "NVDA": 0.1283,
+      "PLTR": 0.0952,
+      "RKLB": 0.0839,
+      "S": 0.1032,
+      "SPCX": 0.0911,
+      "SPOT": 0.1362
+     },
+     "note": "оценка сверху без топ-3 и риск-лимитов; structurally_infeasible=true доказывает недопустимость, false её не гарантирует"
+    },
+    "weights": {
+     "ASML": 0.0,
+     "ASTS": 0.03,
+     "CRWD": 0.0,
+     "CRWV": 0.105,
+     "ETN": 0.0,
+     "HOOD": 0.0,
+     "HPS.A": 0.0,
+     "LLY": 0.14,
+     "META": 0.0,
+     "MSFT": 0.0,
+     "NBIS": 0.215,
+     "NET": 0.0,
+     "NVDA": 0.11,
+     "PLTR": 0.0,
+     "RKLB": 0.045,
+     "S": 0.0,
+     "SPCX": 0.0,
+     "SPOT": 0.135
+    },
+    "dry_powder": 0.1963,
+    "median_CAGR_5Y": 0.20747950630382794,
+    "ES5": 0.3363211380807981,
+    "violations": [],
+    "turnover_from_central": 0.075,
+    "median_CAGR_5Y_delta_vs_central": 0.0014556130498222242
+   },
+   "LLY": {
+    "feasible": true,
+    "start_used": "given",
+    "capacity": {
+     "lp_max_placeable": 1.3743,
+     "required_min_placed": 0.7763,
+     "headroom": 0.598,
+     "structurally_infeasible": false,
+     "argmax_weights": {
+      "ASML": 0.1058,
+      "ASTS": 0.0833,
+      "CRWD": 0.021,
+      "CRWV": 0.0,
+      "ETN": 0.1197,
+      "HOOD": 0.0951,
+      "HPS.A": 0.134,
+      "META": 0.1358,
+      "MSFT": 0.0462,
+      "NBIS": 0.0,
+      "NET": 0.0844,
+      "NVDA": 0.0394,
+      "PLTR": 0.0952,
+      "RKLB": 0.0839,
+      "S": 0.1032,
+      "SPCX": 0.0911,
+      "SPOT": 0.1362
+     },
+     "note": "оценка сверху без топ-3 и риск-лимитов; structurally_infeasible=true доказывает недопустимость, false её не гарантирует"
+    },
+    "weights": {
+     "ASML": 0.0,
+     "ASTS": 0.03,
+     "CRWD": 0.0,
+     "CRWV": 0.105,
+     "ETN": 0.0,
+     "HOOD": 0.0,
+     "HPS.A": 0.13,
+     "LLY": 0.0,
+     "META": 0.06,
+     "MSFT": 0.0,
+     "NBIS": 0.195,
+     "NET": 0.0,
+     "NVDA": 0.08,
+     "PLTR": 0.0,
+     "RKLB": 0.045,
+     "S": 0.0,
+     "SPCX": 0.0,
+     "SPOT": 0.135
+    },
+    "dry_powder": 0.1963,
+    "median_CAGR_5Y": 0.20732406775529832,
+    "ES5": 0.32236321467088547,
+    "violations": [],
+    "turnover_from_central": 0.18,
+    "median_CAGR_5Y_delta_vs_central": 0.0013001745012926058
+   },
+   "NBIS": {
+    "feasible": true,
+    "start_used": "given",
+    "capacity": {
+     "lp_max_placeable": 1.446,
+     "required_min_placed": 0.7763,
+     "headroom": 0.6697,
+     "structurally_infeasible": false,
+     "argmax_weights": {
+      "ASML": 0.1058,
+      "ASTS": 0.0833,
+      "CRWD": 0.0,
+      "CRWV": 0.0,
+      "ETN": 0.1197,
+      "HOOD": 0.0951,
+      "HPS.A": 0.078,
+      "LLY": 0.1435,
+      "META": 0.1358,
+      "MSFT": 0.0672,
+      "NET": 0.0844,
+      "NVDA": 0.0236,
+      "PLTR": 0.0952,
+      "RKLB": 0.0839,
+      "S": 0.1032,
+      "SPCX": 0.0911,
+      "SPOT": 0.1362
+     },
+     "note": "оценка сверху без топ-3 и риск-лимитов; structurally_infeasible=true доказывает недопустимость, false её не гарантирует"
+    },
+    "weights": {
+     "ASML": 0.0,
+     "ASTS": 0.03,
+     "CRWD": 0.0,
+     "CRWV": 0.105,
+     "ETN": 0.0,
+     "HOOD": 0.0,
+     "HPS.A": 0.115,
+     "LLY": 0.14,
+     "META": 0.09,
+     "MSFT": 0.0,
+     "NBIS": 0.0,
+     "NET": 0.0,
+     "NVDA": 0.135,
+     "PLTR": 0.0,
+     "RKLB": 0.03,
+     "S": 0.0,
+     "SPCX": 0.0,
+     "SPOT": 0.135
+    },
+    "dry_powder": 0.1963,
+    "median_CAGR_5Y": 0.15094480669122623,
+    "ES5": 0.24137325580686328,
+    "violations": [],
+    "turnover_from_central": 0.185,
+    "median_CAGR_5Y_delta_vs_central": -0.05507908656277949
+   },
+   "NVDA": {
+    "feasible": true,
+    "start_used": "given",
+    "capacity": {
+     "lp_max_placeable": 1.4381,
+     "required_min_placed": 0.7763,
+     "headroom": 0.6618,
+     "structurally_infeasible": false,
+     "argmax_weights": {
+      "ASML": 0.1058,
+      "ASTS": 0.0833,
+      "CRWD": 0.0,
+      "CRWV": 0.0315,
+      "ETN": 0.1197,
+      "HOOD": 0.0951,
+      "HPS.A": 0.0622,
+      "LLY": 0.1435,
+      "META": 0.1358,
+      "MSFT": 0.0672,
+      "NBIS": 0.0,
+      "NET": 0.0844,
+      "PLTR": 0.0952,
+      "RKLB": 0.0839,
+      "S": 0.1032,
+      "SPCX": 0.0911,
+      "SPOT": 0.1362
+     },
+     "note": "оценка сверху без топ-3 и риск-лимитов; structurally_infeasible=true доказывает недопустимость, false её не гарантирует"
+    },
+    "weights": {
+     "ASML": 0.0,
+     "ASTS": 0.03,
+     "CRWD": 0.0,
+     "CRWV": 0.105,
+     "ETN": 0.0,
+     "HOOD": 0.0,
+     "HPS.A": 0.08,
+     "LLY": 0.11,
+     "META": 0.065,
+     "MSFT": 0.0,
+     "NBIS": 0.23,
+     "NET": 0.0,
+     "NVDA": 0.0,
+     "PLTR": 0.0,
+     "RKLB": 0.03,
+     "S": 0.0,
+     "SPCX": 0.0,
+     "SPOT": 0.135
+    },
+    "dry_powder": 0.1913,
+    "median_CAGR_5Y": 0.20443775220535543,
+    "ES5": 0.3216758176825561,
+    "violations": [],
+    "turnover_from_central": 0.15000000000000002,
+    "median_CAGR_5Y_delta_vs_central": -0.0015861410486502914
+   },
+   "SPOT": {
+    "feasible": true,
+    "start_used": "given",
+    "capacity": {
+     "lp_max_placeable": 1.3098,
+     "required_min_placed": 0.7763,
+     "headroom": 0.5335,
+     "structurally_infeasible": false,
+     "argmax_weights": {
+      "ASML": 0.1058,
+      "ASTS": 0.0833,
+      "CRWD": 0.0,
+      "CRWV": 0.0,
+      "ETN": 0.1197,
+      "HOOD": 0.0951,
+      "HPS.A": 0.078,
+      "LLY": 0.1435,
+      "META": 0.1358,
+      "MSFT": 0.0672,
+      "NBIS": 0.0,
+      "NET": 0.0844,
+      "NVDA": 0.0236,
+      "PLTR": 0.0952,
+      "RKLB": 0.0839,
+      "S": 0.1032,
+      "SPCX": 0.0911
+     },
+     "note": "оценка сверху без топ-3 и риск-лимитов; structurally_infeasible=true доказывает недопустимость, false её не гарантирует"
+    },
+    "weights": {
+     "ASML": 0.0,
+     "ASTS": 0.06,
+     "CRWD": 0.0,
+     "CRWV": 0.105,
+     "ETN": 0.0,
+     "HOOD": 0.0,
+     "HPS.A": 0.1,
+     "LLY": 0.14,
+     "META": 0.04,
+     "MSFT": 0.0,
+     "NBIS": 0.18,
+     "NET": 0.0,
+     "NVDA": 0.105,
+     "PLTR": 0.0,
+     "RKLB": 0.05,
+     "S": 0.0,
+     "SPCX": 0.0,
+     "SPOT": 0.0
+    },
+    "dry_powder": 0.1963,
+    "median_CAGR_5Y": 0.20101039224071693,
+    "ES5": 0.281524942035477,
+    "violations": [],
+    "turnover_from_central": 0.15500000000000003,
+    "median_CAGR_5Y_delta_vs_central": -0.00501350101328879
+   }
+  },
+  "runs_total": 620,
+  "note": "клиент отвалился по 12-часовому таймауту (пауза контейнера владельцем); результат взят из _runs"
  }
 }
