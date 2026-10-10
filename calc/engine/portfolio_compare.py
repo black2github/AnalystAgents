@@ -38,7 +38,7 @@ import numpy as np
 from engine import portfolio_optimizer as po
 from engine import portfolio_paths as pp
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 Y5KEYS = ("median_CAGR", "P_loss_gt_30pct", "P_loss_gt_50pct", "expected_shortfall_5pct", "P_2x")
 
 
@@ -65,7 +65,7 @@ def _opt_summary(o: dict) -> dict:
             "violations_at_optimum": o.get("violations_at_optimum"), "turnover_from_current": o.get("turnover_from_current"), "search": o.get("search"), "cardinality": o.get("cardinality"), "theme_lookthrough": o.get("theme_lookthrough")}
 
 
-def _optimize_universe(v: dict, tmpl: dict, opts: dict, scen: list, cond: list, seed: int) -> dict:
+def _optimize_universe(v: dict, tmpl: dict, opts: dict, scen: list, cond: list, seed: int, prog=None) -> dict:
     """Вселенная без весов → оптимум на смеси (веса варианта) + оптимумы под сценариями / условными фазами."""
     uni = [str(t) for t in (v.get("universe") or [])]
     if not uni:
@@ -96,6 +96,8 @@ def _optimize_universe(v: dict, tmpl: dict, opts: dict, scen: list, cond: list, 
         if opts.get(k):
             inp[k] = int(opts[k])
     o_mix = po.run(inp, seed)
+    if prog:
+        prog.tick(note=f"{v['id']}: оптимум на смеси")
     res = {"universe": uni, "excluded_from_universe": excluded, "mixture": _opt_summary(o_mix), "by_scenario": {}, "conditional": {}}
     given = {t: float(w) for t, w in o_mix["proposed_weights"].items()}; given_dp = float(o_mix["dry_powder_weight"])
     base = {k: x for k, x in inp.items() if k != "scenario_constraints"}
@@ -107,6 +109,8 @@ def _optimize_universe(v: dict, tmpl: dict, opts: dict, scen: list, cond: list, 
                 res["by_scenario"][s["id"]] = {"error": f"нет путей для {[t for t in uni if t not in sfiles]}"}; continue
             try:
                 res["by_scenario"][s["id"]] = _opt_summary(po.run({**base, "paths_files": sfiles}, seed))
+                if prog:
+                    prog.tick(note=f"{v['id']}: оптимум под {s['id']}")
             except Exception as e:  # noqa: BLE001 — оптимум под сценарием необязателен; причина — в выход
                 res["by_scenario"][s["id"]] = {"error": str(e)[:200]}
     if opts.get("conditional", False):
@@ -116,6 +120,8 @@ def _optimize_universe(v: dict, tmpl: dict, opts: dict, scen: list, cond: list, 
                 res["conditional"][key] = {"error": f"нет путей для {[t for t in uni if t not in cfiles]}"}; continue
             try:
                 res["conditional"][key] = _opt_summary(po.run({**base, "paths_files": cfiles}, seed))
+                if prog:
+                    prog.tick(note=f"{v['id']}: оптимум под фазой {key}")
             except Exception as e:  # noqa: BLE001
                 res["conditional"][key] = {"error": str(e)[:200]}
     cols = {"mixture": res["mixture"]} | {k: x for k, x in res["by_scenario"].items() if "weights" in x} | {k: x for k, x in res["conditional"].items() if "weights" in x}
@@ -134,11 +140,17 @@ def run(inputs: dict, seed: int) -> dict:
     tmpl = inputs.get("optimizer_inputs") or {}
     uopts = inputs.get("universe_options") or {}
     optimized = {}
+    n_uni = sum(1 for v in variants if v.get("universe") is not None)
+    prog = None
+    if n_uni:
+        from engine.progress import Progress
+        per = 1 + (len(inputs.get("scenarios") or []) if uopts.get("per_scenario", True) else 0) + (len(inputs.get("conditional") or []) if uopts.get("conditional", False) else 0)
+        prog = Progress("portfolio_compare", inputs, total=n_uni * per); prog.stage_start("universes", n_uni * per, note=f"вселенных {n_uni}, вызовов оптимизатора на вселенную {per}")
     for v in variants:                                                       # 1.1.0: вселенная → веса через оптимизатор (до загрузки путей)
         if v.get("universe") is not None:
             if not tmpl:
                 raise ValueError(f"вариант {v['id']}: universe требует optimizer_inputs")
-            optimized[str(v["id"])] = r = _optimize_universe(v, tmpl, uopts, inputs.get("scenarios") or [], inputs.get("conditional") or [], seed)
+            optimized[str(v["id"])] = r = _optimize_universe(v, tmpl, uopts, inputs.get("scenarios") or [], inputs.get("conditional") or [], seed, prog)
             v["weights"] = dict(r["mixture"]["weights"]); v["dry_powder"] = r["mixture"]["dry_powder"]
     ref_id = str(inputs.get("reference_id") or ids[0])
     if ref_id not in ids:
@@ -250,6 +262,8 @@ def run(inputs: dict, seed: int) -> dict:
         if o["theme"] and R["theme"]:
             row["theme_pp"] = 100 * (o["theme"]["value"] - R["theme"]["value"])
         comparison[vid] = row
+    if prog:
+        prog.finish("вселенные посчитаны; картины и ранжирование")
     tol = float(inputs.get("objective_tolerance_pp", 0.5)) / 100.0
 
     def better(a, b):

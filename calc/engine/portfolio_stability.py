@@ -366,17 +366,28 @@ def _run_task(task: dict) -> dict:
     return res
 
 
-def _execute(tasks: list, inputs: dict, n: int, cw: dict, cdp: float, workers: int) -> list:
+def _execute(tasks: list, inputs: dict, n: int, cw: dict, cdp: float, workers: int, prog=None) -> list:
+    """prog — вехи прогресса (engine.progress.Progress): тик на каждую завершённую задачу, порядок результатов сохраняется."""
     if workers <= 1 or len(tasks) <= 1:
         _worker_init(inputs, n, cw, cdp)
-        return [_run_task(t) for t in tasks]
+        out = []
+        for t in tasks:
+            out.append(_run_task(t))
+            if prog:
+                prog.tick(note=f"{t['family']} {t['label']}")
+        return out
     keys = ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"); backup = {k: os.environ.get(k) for k in keys}
     for k in keys:
         os.environ[k] = "1"                                            # потомки (spawn) стартуют с одним потоком BLAS — без оверсабскрипшна
     try:
         from engine import stability_worker                       # неперезагружаемая обёртка: устойчива к importlib.reload сайдкара
         with ProcessPoolExecutor(max_workers=min(workers, len(tasks)), mp_context=mp.get_context("spawn"), initializer=stability_worker.init, initargs=(inputs, n, cw, cdp)) as ex:
-            return list(ex.map(stability_worker.task, tasks, chunksize=1))
+            futs = [ex.submit(stability_worker.task, t) for t in tasks]
+            from concurrent.futures import as_completed
+            for i, f in enumerate(as_completed(futs)):
+                if prog:
+                    prog.tick(note=f"задач завершено {i + 1}")
+            return [f.result() for f in futs]
     finally:
         for k, v in backup.items():
             if v is None:
@@ -567,7 +578,10 @@ def run(inputs: dict, seed: int) -> dict:
         add("combined", f"lhs:{i}", ops, layer, ("lhs", i))
 
     # --- исполнение
-    results = _execute(tasks, inp, n, cw, cdp, workers)
+    from engine.progress import Progress
+    prog = Progress("portfolio_stability", inp, total=len(tasks)); prog.stage_start("tasks", len(tasks), note=f"семейства {sorted(fam)}, workers {workers}, задач {len(tasks)}")
+    results = _execute(tasks, inp, n, cw, cdp, workers, prog)
+    prog.finish(f"задач {len(tasks)}")
     runs = [r for r in results if r["family"] != "loo"]   # популяция §5–6 (LOO — отдельно); knockout и вехи — тоже возмущения предпосылок
     ret_sens: dict = {}
     loo: dict = {}

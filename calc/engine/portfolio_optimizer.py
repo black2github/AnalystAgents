@@ -488,6 +488,11 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
     scfg = {"random_starts": 8, "basin_kicks": 6, "exploration_paths": 50_000, "polish_top": 3, **(inputs.get("search") or {})}
     rng = np.random.default_rng(np.random.SeedSequence([int(seed) & 0xFFFFFFFF, 0x5EA7C4]))
     cands = []
+    from engine.progress import Progress
+    n_rand0, n_kick0 = int(scfg["random_starts"]), int(scfg["basin_kicks"])
+    prog = Progress("portfolio_optimizer", inputs, total=len(starts) + n_rand0 + n_kick0 + (int(scfg["polish_top"]) if (n_rand0 or n_kick0) else 0), min_interval_s=30.0) if (n_rand0 or n_kick0) else None
+    if prog:
+        prog.stage_start("standard_starts", note=f"стартов {len(starts)}, случайных {n_rand0}, толчков {n_kick0}, шлифовка {scfg['polish_top']}")
     for s in starts:
         if s == "current":
             w0, dp0 = P.cur.copy(), P.dp_cur
@@ -507,6 +512,8 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
             w, wdp, nf2 = _search(P, w, wdp, P.fine, max_iter=30); nf += nf2
             ev = P.evaluate(w, wdp, full=True); V = P.violations(w, wdp, ev)
         cands.append({"start": s, "w": w, "wdp": wdp, "ev": ev, "feasible": not V, "violations": V, "evals": ne + nf})
+        if prog:
+            prog.tick(note=f"старт {s}")
     n_std = len(cands)
     # --- 1.4.0: глобальный поиск — случайные старты и basin hopping на разведочной выборке, шлифовка лучших на search_paths
     n_rand, n_kick = int(scfg["random_starts"]), int(scfg["basin_kicks"])
@@ -546,6 +553,8 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
             if P.min_pos is not None:
                 w0[sup] = np.maximum(w0[sup], P.min_pos)
             c = local(w0, dp0); c["start"] = f"random:{r}"; expl.append(c)
+            if prog:
+                prog.tick(note=f"random:{r}")
         pool = cands + expl
         best_e = pool[0]
         for c in pool[1:]:
@@ -576,11 +585,15 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
                     w0[i] -= amt; w0[j] += amt
             dp0 = round(P.budget - w0.sum(), 9)
             c = local(w0, dp0); c["start"] = f"kick:{kk}"; expl.append(c)
+            if prog:
+                prog.tick(note=f"kick:{kk}")
             if is_better(c, best_e):
                 best_e = c
         # шлифовка лучших различных локальных оптимумов на полной поисковой выборке
         P.set_search_paths(n_full_search)
         seen = set(); ranked = sorted(pool + expl, key=lambda c: (not c["feasible"], -(c["ev"]["horizons"]["Y5"]["median_CAGR"]) if c["feasible"] else sum(v["excess"] for v in c["violations"])))
+        if prog:
+            prog.stage = "polish"
         polished = []
         for c in ranked:
             kk_ = key_of(c)
@@ -592,11 +605,15 @@ def run(inputs: dict, seed: int, data: dict | None = None) -> dict:
             w1, dp1, e2 = _search(P, c["w"], c["wdp"], P.fine, max_iter=30)
             ev1 = P.evaluate(w1, dp1, full=True); V1 = P.violations(w1, dp1, ev1)
             polished.append({"start": c["start"], "w": w1, "wdp": dp1, "ev": ev1, "feasible": not V1, "violations": V1, "evals": c["evals"] + e2})
+            if prog:
+                prog.tick(note="шлифовка " + str(c["start"]))
             if len(polished) >= int(scfg["polish_top"]):
                 break
         cands += polished
         search_block["distinct_local_optima"] = len({key_of(c) for c in pool + expl})
         search_block["exploration_candidates"] = [{"start": c["start"], "feasible": c["feasible"], "median_CAGR_5Y": c["ev"]["horizons"]["Y5"]["median_CAGR"], "ES5": c["ev"]["horizons"]["Y5"]["expected_shortfall_5pct"]} for c in expl]
+    if prog:
+        prog.finish("поиск завершён; итог на полных путях")
     feas = [c for c in cands if c["feasible"]]
     if feas:
         best = feas[0]
