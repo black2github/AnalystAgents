@@ -5,3 +5,5 @@ workspace/
 config/
 data.host-snapshot-*__pycache__/
 *.pyc
+# Настоящие адреса и имена серверов банка - только локально (репозиторий публичный)
+tools/ngate-route/config.psd1
