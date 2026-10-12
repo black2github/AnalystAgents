@@ -81,8 +81,10 @@ foreach ($e in $cfg.HostsEntries) { Write-Host "[5/5] hosts: $($e.Name) -> $($e.
 
 # Итог
 Start-Sleep -Seconds 3
-Write-Host "`nМаршрут к шлюзу:"
-Get-NetRoute -DestinationPrefix $cfg.GatewayPrefix -ErrorAction SilentlyContinue |
-    Format-Table InterfaceAlias, NextHop, RouteMetric -AutoSize
+$direct = @($cfg.DirectPrefixes | Where-Object { $_ })
+if ($direct.Count -eq 0) { $direct = @($cfg.GatewayPrefix | Where-Object { $_ }) }
+Write-Host "`nМаршруты напрямую, мимо Happ:"
+Get-NetRoute -DestinationPrefix $direct -ErrorAction SilentlyContinue |
+    Format-Table DestinationPrefix, InterfaceAlias, NextHop, RouteMetric -AutoSize
 Write-Host 'Журнал задачи:'
 Get-Content -LiteralPath (Join-Path $InstallDir 'ngate-gw-route.log') -Tail 3 -ErrorAction SilentlyContinue

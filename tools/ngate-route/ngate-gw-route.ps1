@@ -1,6 +1,7 @@
-﻿# Маршрут к шлюзу NGate через текущий физический адаптер, мимо TUN Happ.
+﻿# Маршруты к сетям банка «напрямую, мимо TUN Happ» через текущий физический адаптер: сеть шлюза NGate
+# и публичные сервисы банка, которые NGate не маршрутизирует. Маршруты NGate (/32) точнее и остаются в туннеле.
 # Запускается задачей планировщика NGateGatewayRoute от SYSTEM: при старте, при входе и при подключении к сети.
-# Сеть шлюза берётся из config.psd1 рядом со скриптом (install.ps1 копирует его вместе со скриптом).
+# Сети берутся из config.psd1 рядом со скриптом (DirectPrefixes; старый формат - GatewayPrefix).
 $ErrorActionPreference = 'Stop'
 $LogFile = Join-Path $PSScriptRoot 'ngate-gw-route.log'
 
@@ -22,7 +23,10 @@ function Get-PhysicalDefaultRoute {
 }
 
 try {
-    $Prefix = (Import-PowerShellDataFile -LiteralPath (Join-Path $PSScriptRoot 'config.psd1')).GatewayPrefix
+    $cfg = Import-PowerShellDataFile -LiteralPath (Join-Path $PSScriptRoot 'config.psd1')
+    $Prefixes = @($cfg.DirectPrefixes | Where-Object { $_ })
+    if ($Prefixes.Count -eq 0) { $Prefixes = @($cfg.GatewayPrefix | Where-Object { $_ }) }
+    if ($Prefixes.Count -eq 0) { throw 'в config.psd1 нет DirectPrefixes' }
 
     # После подключения к сети шлюз по DHCP появляется не сразу: ждём до 60 секунд.
     $def = $null
@@ -35,19 +39,21 @@ try {
         exit 0
     }
 
-    # Номера адаптеров и шлюз меняются (перезагрузка, другая сеть): убираем маршруты не туда.
-    foreach ($r in @(Get-NetRoute -DestinationPrefix $Prefix -ErrorAction SilentlyContinue)) {
-        if ($r.ifIndex -ne $def.ifIndex -or $r.NextHop -ne $def.NextHop) {
-            $r | Remove-NetRoute -Confirm:$false
-            Write-Log ('удалён устаревший маршрут: {0} через {1}' -f $r.InterfaceAlias, $r.NextHop)
+    foreach ($Prefix in $Prefixes) {
+        # Номера адаптеров и шлюз меняются (перезагрузка, другая сеть): убираем маршруты не туда.
+        foreach ($r in @(Get-NetRoute -DestinationPrefix $Prefix -ErrorAction SilentlyContinue)) {
+            if ($r.ifIndex -ne $def.ifIndex -or $r.NextHop -ne $def.NextHop) {
+                $r | Remove-NetRoute -Confirm:$false
+                Write-Log ('удалён устаревший маршрут: {0} через {1} ({2})' -f $Prefix, $r.NextHop, $r.InterfaceAlias)
+            }
         }
-    }
 
-    if (Get-NetRoute -DestinationPrefix $Prefix -InterfaceIndex $def.ifIndex -ErrorAction SilentlyContinue) {
-        Write-Log ('маршрут на месте: {0} через {1} ({2})' -f $Prefix, $def.NextHop, $def.InterfaceAlias)
-    } else {
-        New-NetRoute -DestinationPrefix $Prefix -InterfaceIndex $def.ifIndex -NextHop $def.NextHop -RouteMetric 1 -PolicyStore ActiveStore | Out-Null
-        Write-Log ('маршрут добавлен: {0} через {1} ({2})' -f $Prefix, $def.NextHop, $def.InterfaceAlias)
+        if (Get-NetRoute -DestinationPrefix $Prefix -InterfaceIndex $def.ifIndex -ErrorAction SilentlyContinue) {
+            Write-Log ('маршрут на месте: {0} через {1} ({2})' -f $Prefix, $def.NextHop, $def.InterfaceAlias)
+        } else {
+            New-NetRoute -DestinationPrefix $Prefix -InterfaceIndex $def.ifIndex -NextHop $def.NextHop -RouteMetric 1 -PolicyStore ActiveStore | Out-Null
+            Write-Log ('маршрут добавлен: {0} через {1} ({2})' -f $Prefix, $def.NextHop, $def.InterfaceAlias)
+        }
     }
 } catch {
     Write-Log ('ошибка: {0}' -f $_.Exception.Message)

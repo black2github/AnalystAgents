@@ -7,3 +7,5 @@ data.host-snapshot-*__pycache__/
 *.pyc
 # Настоящие адреса и имена серверов банка - только локально (репозиторий публичный)
 tools/ngate-route/config.psd1
+# Архивы (в т.ч. копии tools с config.psd1 для переноса на другой ноутбук)
+*.zip
